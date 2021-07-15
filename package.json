@@ -1,0 +1,19 @@
+{
+  "name": "@nectis/nectis-observable",
+  "description": "Nectis observable.",
+  "author": "Jonathan Terrell for Springbrook S.L.",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/nectis/nectis-observable.git"
+  },
+  "keywords": [
+    "nectis",
+    "observable"
+  ],
+  "version": "0.0.1",
+  "devDependencies": {
+    "grunt": "^1.4.1"
+  },
+  "scripts": {}
+}
