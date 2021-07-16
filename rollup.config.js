@@ -19,7 +19,7 @@ export default [
         input: pkg.main,
         output: [
             {
-                chunkFileNames: 'nectis-engine-[name]-[hash]-es.js',
+                chunkFileNames: 'nectis-observable-[name]-[hash]-es.js',
                 dir: './dist',
                 entryFileNames: 'nectis-observable-es.js',
                 exports: 'auto',
