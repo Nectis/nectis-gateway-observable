@@ -11334,7 +11334,8 @@ TimeSeriesScale.defaults = TimeScale.defaults;
  * @copyright Copyright (c) 2019-2021 Springbrook S.L.
  * @license "Apache-2.0"
  */
-// const ChartJS = await require(`chart.js@${version}`);
+Chart.register(CategoryScale);
+// import Chart from 'chart.js/auto'
 
 const palettes = {
     category10: ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'],
