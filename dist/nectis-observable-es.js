@@ -397,11 +397,15 @@ const getWorkforceSizeForYear = (year) => {
     };
 };
 
+const getWorkforceSizeForYear2 = (year) => {
+    return workforceSizeByYear;
+};
+
 // -------------------------------------------------------------------------------------------------------------------------------
 // Exports
 // -------------------------------------------------------------------------------------------------------------------------------
 
-var Data = { getWorkforceSizeForYear };
+var Data = { getWorkforceSizeForYear, getWorkforceSizeForYear2 };
 
 /**
  * @author Jonathan Terrell <jonathan.terrell@springbrook.es>
