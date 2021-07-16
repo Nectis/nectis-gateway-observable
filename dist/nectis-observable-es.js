@@ -43,7 +43,7 @@ class ChartJSVisualiser {
 
     async show() {
         let chartElement = this.element.querySelector('#chart');
-        if (chartElement) chartElement.remove();
+        if (chartElement) await chartElement.remove();
         const canvas = document.createElement('canvas');
         canvas.setAttribute('id', 'chart');
         chartElement = this.element.appendChild(canvas);
