@@ -43,12 +43,12 @@ class ChartJSVisualiser {
 
     async show() {
         let chartElement = this.element.querySelector('#chart');
-        if (chartElement) await chartElement.remove();
+        if (chartElement) chartElement.remove();
         const canvas = document.createElement('canvas');
         canvas.setAttribute('id', 'chart');
         chartElement = this.element.appendChild(canvas);
         if (!Chart) {
-            Chart = loadChartJS();
+            Chart = await loadChartJS();
             console.log(4444, Chart);
         }
         this.visual = new Chart(chartElement, this.options);
