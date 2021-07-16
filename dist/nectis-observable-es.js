@@ -180,4 +180,12 @@ class TableVisualiser {
 
 var Table$1 = { TableVisualiser };
 
+// -------------------------------------------------------------------------------------------------------------------------------
+// Procedures
+// -------------------------------------------------------------------------------------------------------------------------------
+
+const replaceContent = (element, content) => {
+    element.replaceChildren(content);
+};
+
 export { ChartJS, Table$1 as Table };
