@@ -12,21 +12,17 @@
         "observable"
     ],
     "main": "./src/index.js",
-    "version": "0.0.18",
+    "version": "0.0.19",
     "devDependencies": {
         "@nectis/eslint-config-nectis": "^0.1.71",
         "@rollup/plugin-commonjs": "^19.0.1",
         "@rollup/plugin-json": "^4.1.0",
         "@rollup/plugin-node-resolve": "^13.0.2",
-        "@typescript-eslint/eslint-plugin": "^4.28.3",
-        "@typescript-eslint/parser": "^4.28.3",
         "eslint": "^7.30.0",
         "grunt": "^1.4.1",
         "grunt-bump": "^0.8.0",
         "grunt-run": "^0.8.1",
-        "rollup": "^2.53.2",
-        "rollup-plugin-typescript2": "^0.30.0",
-        "typescript": "^4.3.5"
+        "rollup": "^2.53.2"
     },
     "scripts": {},
     "dependencies": {

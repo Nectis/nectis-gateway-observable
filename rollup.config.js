@@ -8,7 +8,6 @@ import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import pkg from './package.json';
-// import typescript from 'rollup-plugin-typescript2';
 
 // -------------------------------------------------------------------------------------------------------------------------------
 // Exports
@@ -27,6 +26,6 @@ export default [
                 format: 'es'
             }
         ],
-        plugins: [json(), /* typescript(), */ nodeResolve(), commonjs()]
+        plugins: [json(), nodeResolve(), commonjs()]
     }
 ];
