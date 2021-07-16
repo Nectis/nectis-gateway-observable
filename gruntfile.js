@@ -1,6 +1,17 @@
-module.exports = function init(_grunt) {
+/**
+ * @author Jonathan Terrell <jonathan.terrell@springbrook.es>
+ * @copyright Copyright (c) 2019-2021 Springbrook S.L.
+ * @license "Apache-2.0"
+ */
+
+// -------------------------------------------------------------------------------------------------------------------------------
+// Exports
+// -------------------------------------------------------------------------------------------------------------------------------
+
+module.exports = (grunt) => {
   // Initialise configuration.
-  _grunt.initConfig({
+  grunt.initConfig({
+    // Bump configuration.
     bump: {
       options: {
         commitFiles: ["-a"],
@@ -10,9 +21,10 @@ module.exports = function init(_grunt) {
       },
     },
 
+    // Run configuration.
     run: {
       audit: { args: ["npm", "audit"], cmd: "npx" },
-      deploy: { args: ["deploy"], cmd: "firebase" },
+      install: { args: ["npm", "install"], cmd: "npx" },
       licenseChecker: {
         args: [
           "license-checker",
@@ -24,26 +36,26 @@ module.exports = function init(_grunt) {
         cmd: "npx",
       },
       licenseNLF: { args: ["nlf", "-d"], cmd: "npx" },
-      lint: { args: ["eslint", "*.js"], cmd: "npx" },
+      lint: { args: ["eslint", "src/**/*.js"], cmd: "npx" },
       outdated: { args: ["npm", "outdated"], cmd: "npx" },
       publish: { args: ["publish"], cmd: "npx" },
+      rollup: { args: ["rollup", "-c"], cmd: "npx" },
       test: { args: ["WARNING: No tests implemented."], cmd: "echo" },
-      update: { args: ["npm", "update", "--save/--save-dev"], cmd: "npx" },
+      update: { args: ["npm-check-updates", "-u"], cmd: "npx" },
     },
   });
-
   // Load external tasks.
-  _grunt.loadNpmTasks("grunt-bump");
-  _grunt.loadNpmTasks("grunt-run");
+  grunt.loadNpmTasks("grunt-bump");
+  grunt.loadNpmTasks("grunt-run");
 
   // Register local tasks.
-  _grunt.registerTask("audit", ["run:audit"]);
-  _grunt.registerTask("build", ["run:deploy"]);
-  _grunt.registerTask("licenseCheck", ["run:licenseChecker", "run:licenseNLF"]);
-  _grunt.registerTask("lint", ["run:lint"]);
-  _grunt.registerTask("outdated", ["run:outdated"]);
-  _grunt.registerTask("release", ["bump", "run:deploy"]);
-  _grunt.registerTask("test", ["run:test"]);
-  _grunt.registerTask("sync", ["bump"]);
-  _grunt.registerTask("update", ["run:update"]);
+  grunt.registerTask("audit", ["run:audit"]);
+  grunt.registerTask("build", ["run:rollup"]);
+  grunt.registerTask("licenseCheck", ["run:licenseChecker", "run:licenseNLF"]);
+  grunt.registerTask("lint", ["run:lint"]);
+  grunt.registerTask("outdated", ["run:outdated"]);
+  grunt.registerTask("release", ["run:rollup", "bump", "run:publish"]);
+  grunt.registerTask("test", ["run:test"]);
+  grunt.registerTask("sync", ["bump"]);
+  grunt.registerTask("update", ["run:update", "run:install"]);
 };
