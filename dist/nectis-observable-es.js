@@ -11357,12 +11357,52 @@ const palettes = {
 const getColour = function getColour(paletteId, index) {
     return palettes[paletteId][index % palettes[paletteId].length];
 };
+// // Default Options - animation.
+// Chart.defaults.animation = false;
+// // Default Options - font.
+// Chart.defaults.font.size = 16;
+// // Default Options - layout.
+// Chart.defaults.layout.padding = 2;
+// // Default Options - plugin - legend.
+// Chart.defaults.plugins.legend.position = 'bottom';
+// Chart.defaults.plugins.legend.labels.boxHeight = 15;
+// Chart.defaults.plugins.legend.labels.boxWidth = 30;
+// // Default Options - plugin - title.
+// Chart.defaults.plugins.title.display = true;
+// Chart.defaults.plugins.title.font.size = 20;
+// Chart.defaults.plugins.title.font.weight = 'normal';
+// // Default Options - responsiveness.
+// Chart.defaults.maintainAspectRatio = false;
+class ChartJSVisualiser {
+    element;
+    options;
+    visual;
+    constructor(element, options) {
+        this.element = element;
+        this.options = options;
+        this.visual = undefined;
+    }
+    show() {
+        let chartElement = this.element.querySelector('#chart');
+        if (chartElement)
+            chartElement.remove();
+        const canvas = document.createElement('canvas');
+        canvas.setAttribute('id', 'chart');
+        chartElement = this.element.appendChild(canvas);
+        this.visual = new Chart(chartElement, this.options);
+        return this;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    resize(items) {
+        return this;
+    }
+}
 
 /**
  * @author Jonathan Terrell <jonathan.terrell@springbrook.es>
  * @copyright Copyright (c) 2019-2021 Springbrook S.L.
  * @license "Apache-2.0"
  */
-const ChartJS = { getColour, palettes };
+const ChartJS = { ChartJSVisualiser, getColour, palettes };
 
 export { ChartJS };

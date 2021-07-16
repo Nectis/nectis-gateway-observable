@@ -4,9 +4,9 @@
  * @license "Apache-2.0"
  */
 
-import { getColour, palettes } from './ChartJS';
+import { ChartJSVisualiser, getColour, palettes } from './ChartJS';
 
-const ChartJS = { getColour, palettes };
+const ChartJS = { ChartJSVisualiser, getColour, palettes };
 
 // -------------------------------------------------------------------------------------------------------------------------------
 // Exports
