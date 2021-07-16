@@ -11,8 +11,8 @@
         "nectis",
         "observable"
     ],
-    "main": "./src/index.ts",
-    "version": "0.0.16",
+    "main": "./src/index.js",
+    "version": "0.0.17",
     "devDependencies": {
         "@nectis/eslint-config-nectis": "^0.1.71",
         "@rollup/plugin-commonjs": "^19.0.1",

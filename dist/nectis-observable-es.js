@@ -11335,6 +11335,7 @@ TimeSeriesScale.defaults = TimeScale.defaults;
  * @license "Apache-2.0"
  */
 // const ChartJS = await require(`chart.js@${version}`);
+
 const palettes = {
     category10: ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'],
     dark2: ['#1b9e77', '#d95f02', '#7570b3', '#e7298a', '#66a61e', '#e6ab02', '#a6761d', '#666666'],
@@ -11354,45 +11355,50 @@ const palettes = {
     ],
     tableau10: ['#4e79a7', '#f28e2c', '#e15759', '#76b7b2', '#59a14f', '#edc949', '#af7aa1', '#ff9da7', '#9c755f', '#bab0ab']
 };
+
 const getColour = function getColour(paletteId, index) {
     return palettes[paletteId][index % palettes[paletteId].length];
 };
+
 // // Default Options - animation.
 // Chart.defaults.animation = false;
+
 // // Default Options - font.
 // Chart.defaults.font.size = 16;
+
 // // Default Options - layout.
 // Chart.defaults.layout.padding = 2;
+
 // // Default Options - plugin - legend.
 // Chart.defaults.plugins.legend.position = 'bottom';
 // Chart.defaults.plugins.legend.labels.boxHeight = 15;
 // Chart.defaults.plugins.legend.labels.boxWidth = 30;
+
 // // Default Options - plugin - title.
 // Chart.defaults.plugins.title.display = true;
 // Chart.defaults.plugins.title.font.size = 20;
 // Chart.defaults.plugins.title.font.weight = 'normal';
+
 // // Default Options - responsiveness.
 // Chart.defaults.maintainAspectRatio = false;
+
 class ChartJSVisualiser {
-    element;
-    options;
-    visual;
     constructor(element, options) {
         this.element = element;
         this.options = options;
         this.visual = undefined;
     }
+
     show() {
         let chartElement = this.element.querySelector('#chart');
-        if (chartElement)
-            chartElement.remove();
+        if (chartElement) chartElement.remove();
         const canvas = document.createElement('canvas');
         canvas.setAttribute('id', 'chart');
         chartElement = this.element.appendChild(canvas);
         this.visual = new Chart(chartElement, this.options);
         return this;
     }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
     resize(items) {
         return this;
     }
@@ -11403,6 +11409,7 @@ class ChartJSVisualiser {
  * @copyright Copyright (c) 2019-2021 Springbrook S.L.
  * @license "Apache-2.0"
  */
+
 const ChartJS = { ChartJSVisualiser, getColour, palettes };
 
 export { ChartJS };
