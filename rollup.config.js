@@ -20,16 +20,9 @@ export default [
         input: pkg.main,
         output: [
             {
-                chunkFileNames: 'nectis-engine-[name]-[hash]-cjs.js',
-                dir: './dist',
-                entryFileNames: 'nectis-engine-cjs.js',
-                exports: 'auto',
-                format: 'cjs'
-            },
-            {
                 chunkFileNames: 'nectis-engine-[name]-[hash]-es.js',
                 dir: './dist',
-                entryFileNames: 'nectis-engine-es.js',
+                entryFileNames: 'nectis-observable-es.js',
                 exports: 'auto',
                 format: 'es'
             }
