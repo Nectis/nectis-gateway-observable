@@ -26,4 +26,11 @@ const getColour = function getColour(paletteId, index) {
     return palettes[paletteId][index % palettes[paletteId].length];
 };
 
-export { getColour, palettes };
+/**
+ * @author Jonathan Terrell <jonathan.terrell@springbrook.es>
+ * @copyright Copyright (c) 2019-2021 Springbrook S.L.
+ * @license "Apache-2.0"
+ */
+const ChartJS = { getColour, palettes };
+
+export { ChartJS };
