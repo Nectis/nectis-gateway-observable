@@ -11338,6 +11338,7 @@ Chart.register(CategoryScale);
 Chart.register(LineController);
 Chart.register(LineElement);
 Chart.register(LinearScale);
+Chart.register(PointElement);
 // import Chart from 'chart.js/auto'
 
 const palettes = {
