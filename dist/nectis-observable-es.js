@@ -511,4 +511,4 @@ const formatCellValue = (column, value) => {
     }
 };
 
-export { ChartJS, Data, Table$1 as Table };
+export { ChartJS, Data, Table$1 as Table, Table$1 as Theme };
