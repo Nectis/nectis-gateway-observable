@@ -53,7 +53,7 @@ class ChartJSVisualiser {
         chartElement = this.element.appendChild(canvas);
         if (!Chart) {
             Chart = await loadChartJS();
-            console.log('Loading Chart.js', Chart);
+            console.log('Chart.js loaded', Chart);
         }
         this.visual = new Chart(chartElement, this.options);
         return this;
