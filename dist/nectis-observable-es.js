@@ -140,7 +140,7 @@ class Table {
             // header.appendChild(html`<th${buildCellStyle(column)}>${column.label}</th>`);
             const th = document.createElement('th');
             th.style.cssText = buildCellStyle(column);
-            const text = document.createTextNode(column.label);
+            const text = document.createTextNode(column.label.replaceAll('<br>', '\n'));
             th.append(text);
             header.appendChild(th);
         }
