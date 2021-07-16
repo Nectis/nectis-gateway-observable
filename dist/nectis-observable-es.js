@@ -11335,7 +11335,7 @@ TimeSeriesScale.defaults = TimeScale.defaults;
  * @license "Apache-2.0"
  */
 Chart.register(CategoryScale);
-// Chart.register(LinearScale);
+Chart.register(LinearScale);
 // import Chart from 'chart.js/auto'
 
 const palettes = {
