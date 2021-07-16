@@ -11357,22 +11357,6 @@ const palettes = {
 const getColour = function getColour(paletteId, index) {
     return palettes[paletteId][index % palettes[paletteId].length];
 };
-// Default Options - animation.
-Chart.defaults.animation = false;
-// Default Options - font.
-Chart.defaults.font.size = 16;
-// Default Options - layout.
-Chart.defaults.layout.padding = 2;
-// Default Options - plugin - legend.
-Chart.defaults.plugins.legend.position = 'bottom';
-Chart.defaults.plugins.legend.labels.boxHeight = 15;
-Chart.defaults.plugins.legend.labels.boxWidth = 30;
-// Default Options - plugin - title.
-Chart.defaults.plugins.title.display = true;
-Chart.defaults.plugins.title.font.size = 20;
-Chart.defaults.plugins.title.font.weight = 'normal';
-// Default Options - responsiveness.
-Chart.defaults.maintainAspectRatio = false;
 
 /**
  * @author Jonathan Terrell <jonathan.terrell@springbrook.es>
