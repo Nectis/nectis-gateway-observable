@@ -6,7 +6,7 @@
 
 import commonjs from '@rollup/plugin-commonjs';
 import css from 'rollup-plugin-import-css';
-import json from '@rollup/plugin-json';
+// import json from '@rollup/plugin-json';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import pkg from './package.json';
 
@@ -27,6 +27,6 @@ export default [
                 format: 'es'
             }
         ],
-        plugins: [css(), json(), nodeResolve(), commonjs()]
+        plugins: [css(), /* json(), */ nodeResolve(), commonjs()]
     }
 ];
