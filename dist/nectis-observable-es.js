@@ -5,8 +5,10 @@
  */
 
 // -------------------------------------------------------------------------------------------------------------------------------
-// ?
+// Declarations - Variables
 // -------------------------------------------------------------------------------------------------------------------------------
+
+let Chart;
 
 const palettes = {
     category10: ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'],
@@ -28,7 +30,9 @@ const palettes = {
     tableau10: ['#4e79a7', '#f28e2c', '#e15759', '#76b7b2', '#59a14f', '#edc949', '#af7aa1', '#ff9da7', '#9c755f', '#bab0ab']
 };
 
-let Chart;
+// -------------------------------------------------------------------------------------------------------------------------------
+// Declarations - Variables
+// -------------------------------------------------------------------------------------------------------------------------------
 
 const getColour = function getColour(paletteId, index) {
     return palettes[paletteId][index % palettes[paletteId].length];
@@ -49,7 +53,7 @@ class ChartJSVisualiser {
         chartElement = this.element.appendChild(canvas);
         if (!Chart) {
             Chart = await loadChartJS();
-            console.log(4444, Chart);
+            console.log('Loading Chart.js', Chart);
         }
         this.visual = new Chart(chartElement, this.options);
         return this;
@@ -60,10 +64,22 @@ class ChartJSVisualiser {
     }
 }
 
-const loadChartJS = async function () {
+// -------------------------------------------------------------------------------------------------------------------------------
+// Exports
+// -------------------------------------------------------------------------------------------------------------------------------
+
+var ChartJS = { ChartJSVisualiser, getColour };
+
+// -------------------------------------------------------------------------------------------------------------------------------
+// Procedures
+// -------------------------------------------------------------------------------------------------------------------------------
+
+const loadChartJS = async () => {
+    // Import Chart.js module.
     const chartJS = await import('./nectis-observable-chart.esm-343412f9-es.js');
     const Chart = chartJS.Chart;
 
+    // Register controllers, elements, scales and plugins.
     Chart.register(chartJS.BarController);
     Chart.register(chartJS.BarElement);
     Chart.register(chartJS.CategoryScale);
@@ -88,13 +104,5 @@ const loadChartJS = async function () {
 
     return Chart;
 };
-
-/**
- * @author Jonathan Terrell <jonathan.terrell@springbrook.es>
- * @copyright Copyright (c) 2019-2021 Springbrook S.L.
- * @license "Apache-2.0"
- */
-
-const ChartJS = { ChartJSVisualiser, getColour };
 
 export { ChartJS };
