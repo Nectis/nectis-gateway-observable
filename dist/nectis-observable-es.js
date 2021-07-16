@@ -140,6 +140,8 @@ class Table {
             // header.appendChild(html`<th${buildCellStyle(column)}>${column.label}</th>`);
             const th = document.createElement('th');
             th.style.cssText = buildCellStyle(column);
+            const text = document.createTextNode(column.label);
+            th.append(text);
             header.appendChild(th);
         }
         table.appendChild(header);
@@ -164,6 +166,7 @@ class Table {
                     text = document.createTextNode(formatCellValue(column, record[column.source]));
                 }
                 td.appendChild(text);
+                row.appendChild(td);
             }
             table.appendChild(row);
         }
