@@ -51,7 +51,7 @@ class ChartJSVisualiser {
         const canvas = document.createElement('canvas');
         canvas.setAttribute('id', 'chart');
         chartElement = this.element.appendChild(canvas);
-        console.log('Check if char os loaded?');
+        console.log('Check if chart is loaded?');
         if (!Chart) {
             Chart = await loadChartJS();
             console.log('Chart.js loaded', Chart);
@@ -106,4 +106,78 @@ const loadChartJS = async () => {
     return Chart;
 };
 
-export { ChartJS };
+/**
+ * @author Jonathan Terrell <jonathan.terrell@springbrook.es>
+ * @copyright Copyright (c) 2019-2021 Springbrook S.L.
+ * @license "Apache-2.0"
+ */
+
+// -------------------------------------------------------------------------------------------------------------------------------
+// Declarations - ?
+// -------------------------------------------------------------------------------------------------------------------------------
+
+class Table {
+    constructor(element, options) {
+        const data = options.data;
+        const columns = options.columns;
+
+        const wrapper = html`<div style="overflow-x: scroll; padding: 10px 0 10px 10px"></div>`;
+        const tableWrapper = html`<div style="display: flex"></div>`;
+        const table = html`<table style="flex: 1 1 auto"></table>`;
+        const tableRightPadding = html`<div style="flex: 0 0 10px"></div>`; // Implements padding on right.
+
+        const header = html`<tr></tr>`;
+        for (const column of columns) {
+            header.appendChild(html`<th${buildCellStyle(column)}>${column.label}</th>`);
+        }
+        table.appendChild(header);
+
+        for (const record of data) {
+            const row = html`<tr></tr>`;
+            for (const column of columns) {
+                if (typeof column.source === 'function') {
+                    row.appendChild(html`
+                        <td${buildCellStyle(column)}>
+                        ${formatCellValue(column, column.source(record, column))}
+                        </td>`);
+                } else {
+                    row.appendChild(html`
+                        <td${buildCellStyle(column)}>
+                        ${formatCellValue(column, record[column.source])}
+                        </td>`);
+                }
+            }
+            table.appendChild(row);
+        }
+
+        tableWrapper.appendChild(table);
+        tableWrapper.appendChild(tableRightPadding);
+        wrapper.appendChild(tableWrapper);
+        replaceContent(element, wrapper);
+    }
+}
+
+class TableVisualiser {
+    constructor(element, options) {
+        this.element = element;
+        this.options = options;
+        this.visual = undefined;
+    }
+
+    show() {
+        this.visual = new Table(this.element, this.options);
+        return this;
+    }
+
+    resize(items) {
+        return this;
+    }
+}
+
+// -------------------------------------------------------------------------------------------------------------------------------
+// Exports
+// -------------------------------------------------------------------------------------------------------------------------------
+
+var Table$1 = { TableVisualiser };
+
+export { ChartJS, Table$1 as Table };
