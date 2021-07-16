@@ -121,31 +121,49 @@ class Table {
         const data = options.data;
         const columns = options.columns;
 
-        const wrapper = html`<div style="overflow-x: scroll; padding: 10px 0 10px 10px"></div>`;
-        const tableWrapper = html`<div style="display: flex"></div>`;
-        const table = html`<table style="flex: 1 1 auto"></table>`;
-        const tableRightPadding = html`<div style="flex: 0 0 10px"></div>`; // Implements padding on right.
+        // const wrapper = html`<div style="overflow-x: scroll; padding: 10px 0 10px 10px"></div>`;
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'overflow-x: scroll; padding: 10px 0 10px 10px';
+        // const tableWrapper = html`<div style="display: flex"></div>`;
+        const tableWrapper = document.createElement('div');
+        tableWrapper.style.cssText = 'display: flex';
+        // const table = html`<table style="flex: 1 1 auto"></table>`;
+        const table = document.createElement('table');
+        table.style.cssText = 'flex: 1 1 auto';
+        // const tableRightPadding = html`<div style="flex: 0 0 10px"></div>`; // Implements padding on right.
+        const tableRightPadding = document.createElement('div'); // Implements padding on right.
+        tableRightPadding.style.cssText = 'flex: 0 0 10px';
 
-        const header = html`<tr></tr>`;
+        //const header = html`<tr></tr>`;
+        const header = document.createElement('tr');
         for (const column of columns) {
-            header.appendChild(html`<th${buildCellStyle(column)}>${column.label}</th>`);
+            // header.appendChild(html`<th${buildCellStyle(column)}>${column.label}</th>`);
+            const th = document.createElement('th');
+            th.style.cssText = buildCellStyle(column);
+            header.appendChild(th);
         }
         table.appendChild(header);
 
         for (const record of data) {
-            const row = html`<tr></tr>`;
+            // const row = html`<tr></tr>`;
+            const row = document.createElement('tr');
             for (const column of columns) {
+                const td = document.createElement('td');
+                let text;
                 if (typeof column.source === 'function') {
-                    row.appendChild(html`
-                        <td${buildCellStyle(column)}>
-                        ${formatCellValue(column, column.source(record, column))}
-                        </td>`);
+                    // row.appendChild(html`
+                    //     <td${buildCellStyle(column)}>
+                    //     ${formatCellValue(column, column.source(record, column))}
+                    //     </td>`);
+                    text = document.createTextNode(formatCellValue(column, column.source(record, column)));
                 } else {
-                    row.appendChild(html`
-                        <td${buildCellStyle(column)}>
-                        ${formatCellValue(column, record[column.source])}
-                        </td>`);
+                    // row.appendChild(html`
+                    //     <td${buildCellStyle(column)}>
+                    //     ${formatCellValue(column, record[column.source])}
+                    //     </td>`);
+                    text = document.createTextNode(formatCellValue(column, record[column.source]));
                 }
+                td.appendChild(text);
             }
             table.appendChild(row);
         }
@@ -183,6 +201,26 @@ var Table$1 = { TableVisualiser };
 // -------------------------------------------------------------------------------------------------------------------------------
 // Procedures
 // -------------------------------------------------------------------------------------------------------------------------------
+
+const buildCellStyle = (column) => {
+    switch (column.type) {
+        case 'decimalNumber':
+        case 'wholeNumber':
+            return ` text-align: ${column.align || 'right'}`;
+        default:
+            return ` text-align: ${column.align || 'left'}`;
+    }
+};
+
+const formatCellValue = (column, value) => {
+    if (!value) return '';
+    switch (column.type) {
+        case 'decimalNumber':
+            return value.toLocaleString(undefined, { minimumFractionDigits: 2 });
+        default:
+            return value.toLocaleString();
+    }
+};
 
 const replaceContent = (element, content) => {
     element.replaceChildren(content);
