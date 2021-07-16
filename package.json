@@ -11,7 +11,7 @@
     "nectis",
     "observable"
   ],
-  "main": "./index.js",
+  "main": "./src/index.js",
   "version": "0.0.5",
   "devDependencies": {
     "grunt": "^1.4.1",
