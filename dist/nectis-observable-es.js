@@ -51,6 +51,7 @@ class ChartJSVisualiser {
         const canvas = document.createElement('canvas');
         canvas.setAttribute('id', 'chart');
         chartElement = this.element.appendChild(canvas);
+        console.log('Check if char os loaded?');
         if (!Chart) {
             Chart = await loadChartJS();
             console.log('Chart.js loaded', Chart);
