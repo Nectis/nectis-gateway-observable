@@ -62,6 +62,7 @@ const loadChartJS = async () => {
     Chart.register(chartJS.LinearScale);
     Chart.register(chartJS.PointElement);
     Chart.register(chartJS.Title);
+    Chart.register(chartJS.Tooltip);
 
     // Modify default options.
     Chart.defaults.animation = false;
