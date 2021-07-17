@@ -50,7 +50,7 @@ const getLegendSymbol = (legendHitBoxes, legendIndex) => {
 
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
-    const gradient = context.createLinearGradient(0, top, 0 + 30, top + 15);
+    const gradient = context.createLinearGradient(left, top, left + 30, top + 15);
 
     gradient.addColorStop(0, green);
     gradient.addColorStop(0.47, green);

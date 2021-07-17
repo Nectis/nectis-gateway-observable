@@ -106,12 +106,12 @@ const getLegendSymbol = (legendHitBoxes, legendIndex) => {
     const orange = legendIndex === 0 ? Theme.getColour('paired', 6) : Theme.getColour('paired', 7);
 
     if (legendHitBoxes.length < legendIndex + 1) return undefined;
-    legendHitBoxes[legendIndex].left;
+    const left = legendHitBoxes[legendIndex].left;
     const top = legendHitBoxes[legendIndex].top;
 
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
-    const gradient = context.createLinearGradient(0, top, 0 + 30, top + 15);
+    const gradient = context.createLinearGradient(left, top, left + 30, top + 15);
 
     gradient.addColorStop(0, green);
     gradient.addColorStop(0.47, green);
