@@ -5,6 +5,7 @@
  */
 
 import ChartJS from './ChartJS';
+import Highcharts from './Highcharts';
 import Table from './Table';
 import Theme from './Theme';
 import WorkforceSize from './WorkforceSize';
@@ -13,4 +14,4 @@ import WorkforceSize from './WorkforceSize';
 // Exports
 // -------------------------------------------------------------------------------------------------------------------------------
 
-export { ChartJS, Table, Theme, WorkforceSize };
+export { ChartJS, Highcharts, Table, Theme, WorkforceSize };
