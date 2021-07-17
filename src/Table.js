@@ -95,6 +95,7 @@ const buildCellStyle = (column) => {
 
 const formatCellValue = (column, value) => {
     if (!value) return '';
+    console.log(1111, column, column.type);
     switch (column.type) {
         case 'decimalNumber':
             return value.toLocaleString(undefined, { minimumFractionDigits: 2 });
