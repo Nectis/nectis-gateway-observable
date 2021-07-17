@@ -244,7 +244,7 @@ const getStyle = () => themeStyle;
 // Exports
 // -------------------------------------------------------------------------------------------------------------------------------
 
-var Theme = { colours, getNarrativeStyle, getStyle };
+var Theme = { colours, getColour, getNarrativeStyle, getStyle };
 
 /**
  * @author Jonathan Terrell <jonathan.terrell@springbrook.es>
