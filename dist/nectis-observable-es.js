@@ -10,46 +10,9 @@
 
 let Chart;
 
-const palettes = {
-    category10: ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'],
-    dark2: ['#1b9e77', '#d95f02', '#7570b3', '#e7298a', '#66a61e', '#e6ab02', '#a6761d', '#666666'],
-    paired: [
-        '#a6cee3',
-        '#1f78b4',
-        '#b2df8a',
-        '#33a02c',
-        '#fb9a99',
-        '#e31a1c',
-        '#fdbf6f',
-        '#ff7f00',
-        '#cab2d6',
-        '#6a3d9a',
-        '#ffff99',
-        '#b15928'
-    ],
-    tableau10: ['#4e79a7', '#f28e2c', '#e15759', '#76b7b2', '#59a14f', '#edc949', '#af7aa1', '#ff9da7', '#9c755f', '#bab0ab']
-};
-
 // -------------------------------------------------------------------------------------------------------------------------------
-// Declarations - Variables
+// Declarations - Classes
 // -------------------------------------------------------------------------------------------------------------------------------
-
-const getColour = function getColour(paletteId, index) {
-    return palettes[paletteId][index % palettes[paletteId].length];
-};
-
-const colours = {
-    opening: getColour('tableau10', 5),
-    starting: getColour('tableau10', 3),
-    hires: getColour('paired', 2),
-    terminations: getColour('paired', 6),
-    ending: getColour('tableau10', 0),
-    closing: getColour('tableau10', 2),
-    openCloseDecrease: getColour('paired', 6),
-    openCloseIncrease: getColour('paired', 2),
-    startStopDecrease: getColour('paired', 7),
-    startStopIncrease: getColour('paired', 3)
-};
 
 class ChartJSVisualiser {
     constructor(element, options) {
@@ -64,11 +27,7 @@ class ChartJSVisualiser {
         const canvas = document.createElement('canvas');
         canvas.setAttribute('id', 'chart');
         chartElement = this.element.appendChild(canvas);
-        console.log('Check if chart is loaded?');
-        if (!Chart) {
-            Chart = await loadChartJS();
-            console.log('Chart.js loaded', Chart);
-        }
+        if (!Chart) Chart = await loadChartJS();
         this.visual = new Chart(chartElement, this.options);
         return this;
     }
@@ -82,7 +41,7 @@ class ChartJSVisualiser {
 // Exports
 // -------------------------------------------------------------------------------------------------------------------------------
 
-var ChartJS = { ChartJSVisualiser, colours };
+var ChartJS = { ChartJSVisualiser };
 
 // -------------------------------------------------------------------------------------------------------------------------------
 // Procedures
@@ -91,7 +50,7 @@ var ChartJS = { ChartJSVisualiser, colours };
 const loadChartJS = async () => {
     // Import Chart.js module.
     const chartJS = await import('./nectis-observable-chart.esm-343412f9-es.js');
-    const Chart = chartJS.Chart;
+    Chart = chartJS.Chart;
 
     // Register controllers, elements, scales and plugins.
     Chart.register(chartJS.BarController);
@@ -126,12 +85,180 @@ const loadChartJS = async () => {
  */
 
 // -------------------------------------------------------------------------------------------------------------------------------
+// Declarations - Classes
+// -------------------------------------------------------------------------------------------------------------------------------
+
+class Table {
+    constructor(element, options) {
+        const data = options.data;
+        const columns = options.columns;
+
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'overflow-x: scroll; padding: 10px 0 10px 10px';
+        const tableWrapper = document.createElement('div');
+        tableWrapper.style.cssText = 'display: flex';
+        const table = document.createElement('table');
+        table.style.cssText = 'flex: 1 1 auto';
+        const tableRightPadding = document.createElement('div'); // Implements padding on right.
+        tableRightPadding.style.cssText = 'flex: 0 0 10px';
+
+        const header = document.createElement('tr');
+        for (const column of columns) {
+            const th = document.createElement('th');
+            th.style.cssText = buildCellStyle(column);
+            const text = document.createTextNode(column.label);
+            th.append(text);
+            header.appendChild(th);
+        }
+        table.appendChild(header);
+
+        for (const record of data) {
+            const row = document.createElement('tr');
+            for (const column of columns) {
+                const td = document.createElement('td');
+                let text;
+                if (typeof column.source === 'function') {
+                    text = document.createTextNode(formatCellValue(column, column.source(record, column)));
+                } else {
+                    text = document.createTextNode(formatCellValue(column, record[column.source]));
+                }
+                td.appendChild(text);
+                row.appendChild(td);
+            }
+            table.appendChild(row);
+        }
+
+        tableWrapper.appendChild(table);
+        tableWrapper.appendChild(tableRightPadding);
+        wrapper.appendChild(tableWrapper);
+        element.replaceChildren(wrapper);
+    }
+}
+
+class TableVisualiser {
+    constructor(element, options) {
+        this.element = element;
+        this.options = options;
+        this.visual = undefined;
+    }
+
+    show() {
+        this.visual = new Table(this.element, this.options);
+        return this;
+    }
+
+    resize(items) {
+        return this;
+    }
+}
+
+// -------------------------------------------------------------------------------------------------------------------------------
+// Exports
+// -------------------------------------------------------------------------------------------------------------------------------
+
+var Table$1 = { TableVisualiser };
+
+// -------------------------------------------------------------------------------------------------------------------------------
+// Procedures
+// -------------------------------------------------------------------------------------------------------------------------------
+
+const buildCellStyle = (column) => {
+    switch (column.type) {
+        case 'decimalNumber':
+        case 'wholeNumber':
+            return ` text-align: ${column.align || 'right'}`;
+        default:
+            return ` text-align: ${column.align || 'left'}`;
+    }
+};
+
+const formatCellValue = (column, value) => {
+    if (!value) return '';
+    switch (column.type) {
+        case 'decimalNumber':
+            return value.toLocaleString(undefined, { minimumFractionDigits: 2 });
+        default:
+            return value.toLocaleString();
+    }
+};
+
+var narrativeStyle = ".nectis * {\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans',\n        'Helvetica Neue', sans-serif;\n}\n\n.nectis h1 {\n    font-weight: 400;\n    font-size: 26px;\n    margin-left: auto;\n    margin-right: auto;\n    max-width: 640px;\n}\n\n.nectis h2 {\n    border-bottom: 1px solid #eee;\n    font-weight: 400;\n    font-size: 22px;\n    margin-left: auto;\n    margin-right: auto;\n    max-width: 640px;\n    padding-bottom: 5px;\n}\n.nectis h2::before {\n    background-image: url('https://nectis-content.web.app/analytics-light.svg');\n    background-size: 27px 24px;\n    content: '';\n    display: inline-block;\n    height: 24px;\n    margin-right: 10px;\n    width: 27px;\n}\n\n.nectis p {\n    font-size: 16px;\n    margin-left: auto;\n    margin-right: auto;\n    max-width: 640px;\n}\n\n.nectis ul {\n    font-size: 16px;\n    margin-left: auto;\n    margin-right: auto;\n    max-width: 640px;\n}\n\n.nectis div.warning {\n    background-color: rgba(255, 229, 100, 0.3);\n    border-left: 0.5rem #e7c000 solid;\n    color: #6b5900;\n    font-size: 16px;\n    margin: 16px auto;\n    max-width: 640px;\n}\n.nectis div.warning > div {\n    font-weight: 600;\n    padding: 8px 24px;\n}\n.nectis div.warning > div > div {\n    font-weight: 400;\n}\n";
+
+var themeStyle = "/**** Fonts */\n/* .nectis * { font-family: Arial, Helvetica, sans-serif; } */\n.nectis * {\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans',\n        'Helvetica Neue', sans-serif;\n}\n\n/**** HTML Elements */\n.nectis table {\n    border-collapse: collapse;\n    margin: 0;\n    max-width: none;\n}\n.nectis tr:not(:last-child) {\n    border-bottom: solid 1px #eee;\n    line-height: normal;\n}\n.nectis th {\n    font-size: 16px;\n    font-weight: 400;\n    padding: 5px 16px;\n    vertical-align: bottom;\n}\n.nectis td {\n    font-size: 16px;\n    padding: 5px 16px;\n}\n\n/**** Caret */\n.nectis .caret {\n    background: transparent;\n    border: 6px solid transparent;\n    display: inline-block;\n    height: 0;\n    pointer-events: none;\n    position: absolute;\n    width: 0;\n}\n.nectis .caret.right {\n    border-left-color: rgba(0, 0, 0, 0.75);\n}\n.nectis .caret.left {\n    border-right-color: rgba(0, 0, 0, 0.75);\n}\n\n/**** Chart Container */\n.nectis .chartContainer {\n    background: #fefefe;\n    border: 1px solid #f7f7f7;\n    height: 500px;\n    margin: 32px 0;\n    padding: 10px;\n}\n\n/**** Collection Reference */\n/* .nectis .collection {\n    color: #888;\n    font-size: 14px;\n    font-style: italic;\n    margin: auto;\n    margin-top: -3px;\n    max-width: 640px;\n} */\n\n/**** Tab Bar */\n.nectis .tabBar {\n    border-bottom: 1px solid #eee;\n    height: 48px;\n}\n\n/**** Tab Button */\n.nectis .tabButton {\n    border-bottom: 2px solid transparent;\n    cursor: pointer;\n    display: flex;\n    font-size: 16px;\n    flex-direction: column;\n    justify-content: center;\n    padding-left: 15px;\n    padding-right: 15px;\n}\n.nectis .tabButton:hover {\n    background: #f7f7f7;\n}\n.nectis .tabButton.selected {\n    border-bottom-color: #388e3c;\n}\n.nectis .tabButton.selected:hover {\n    background: #eef5ef;\n}\n\n/**** Table Container */\n.nectis .tableContainer {\n    background: #fefefe;\n    border: 1px solid #f7f7f7;\n    margin: 32px 0;\n}\n\n/**** Tooltip */\n.nectis .tooltip {\n    font-size: 14px;\n}\n.nectis .tooltip tr {\n    border: none;\n}\n.nectis .tooltip td {\n    border: none !important;\n    font-size: 14px;\n    padding: 0;\n}\n.nectis .tooltip td:last-child {\n    text-align: right;\n}\n\n/**** Vendor Button */\n.nectis .vendorButton {\n    border-top: 2px solid transparent;\n    align-items: center;\n    cursor: pointer;\n    display: flex;\n    font-size: 16px;\n    flex-direction: row;\n    padding: 5px 10px 7px 10px;\n}\n.nectis .vendorButton:hover {\n    background: #f7f7f7;\n}\n.nectis .vendorButton.selected {\n    border-top-color: #388e3c;\n}\n.nectis .vendorButton.selected:hover {\n    background: #eef5ef;\n}\n";
+
+/**
+ * @author Jonathan Terrell <jonathan.terrell@springbrook.es>
+ * @copyright Copyright (c) 2019-2021 Springbrook S.L.
+ * @license "Apache-2.0"
+ */
+
+// -------------------------------------------------------------------------------------------------------------------------------
+// Declarations - ?
+// -------------------------------------------------------------------------------------------------------------------------------
+
+const palettes = {
+    category10: ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'],
+    dark2: ['#1b9e77', '#d95f02', '#7570b3', '#e7298a', '#66a61e', '#e6ab02', '#a6761d', '#666666'],
+    paired: [
+        '#a6cee3',
+        '#1f78b4',
+        '#b2df8a',
+        '#33a02c',
+        '#fb9a99',
+        '#e31a1c',
+        '#fdbf6f',
+        '#ff7f00',
+        '#cab2d6',
+        '#6a3d9a',
+        '#ffff99',
+        '#b15928'
+    ],
+    tableau10: ['#4e79a7', '#f28e2c', '#e15759', '#76b7b2', '#59a14f', '#edc949', '#af7aa1', '#ff9da7', '#9c755f', '#bab0ab']
+};
+
+const getColour = function getColour(paletteId, index) {
+    return palettes[paletteId][index % palettes[paletteId].length];
+};
+
+const colours = {
+    /* eslint-disable sort-keys */
+    opening: getColour('tableau10', 5),
+    starting: getColour('tableau10', 3),
+    hires: getColour('paired', 2),
+    terminations: getColour('paired', 6),
+    ending: getColour('tableau10', 0),
+    closing: getColour('tableau10', 2),
+    openCloseDecrease: getColour('paired', 6),
+    openCloseIncrease: getColour('paired', 2),
+    startStopDecrease: getColour('paired', 7),
+    startStopIncrease: getColour('paired', 3)
+    /* eslint-enable sort-keys */
+};
+
+const getNarrativeStyle = () => narrativeStyle;
+
+const getStyle = () => themeStyle;
+
+// -------------------------------------------------------------------------------------------------------------------------------
+// Exports
+// -------------------------------------------------------------------------------------------------------------------------------
+
+var Theme = { colours, getNarrativeStyle, getStyle };
+
+/**
+ * @author Jonathan Terrell <jonathan.terrell@springbrook.es>
+ * @copyright Copyright (c) 2019-2021 Springbrook S.L.
+ * @license "Apache-2.0"
+ */
+
+// -------------------------------------------------------------------------------------------------------------------------------
 // Declarations - Variables
 // -------------------------------------------------------------------------------------------------------------------------------
 
 const monthAbbreviations = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 const workforceSizeByYear = [
+    /* eslint-disable sort-keys */
     {
         month: 1,
         openingHeadcount: 1105,
@@ -360,6 +487,7 @@ const workforceSizeByYear = [
         closingFTE: 0,
         closingHeadcount: 1211
     }
+    /* eslint-enable sort-keys */
 ];
 
 const getWorkforceSizeForYear = (year) => {
@@ -397,6 +525,7 @@ const getWorkforceSizeForYear = (year) => {
     }
 
     return {
+        /* eslint-disable sort-keys */
         openingHeadcounts,
         startingHires,
         startingHeadcounts,
@@ -409,149 +538,18 @@ const getWorkforceSizeForYear = (year) => {
         closingHeadcounts,
         openingClosingHeadcounts,
         startingEndingHeadcounts
+        /* eslint-enable sort-keys */
     };
 };
 
-const getWorkforceSizeForYear2 = (year) => {
-    return workforceSizeByYear;
-};
+const getWorkforceSizeForYear2 = (year) => workforceSizeByYear;
+
+const workforceSizeYear = 2020;
 
 // -------------------------------------------------------------------------------------------------------------------------------
 // Exports
 // -------------------------------------------------------------------------------------------------------------------------------
 
-var WorkforceSize = { getWorkforceSizeForYear, getWorkforceSizeForYear2, monthAbbreviations };
-
-/**
- * @author Jonathan Terrell <jonathan.terrell@springbrook.es>
- * @copyright Copyright (c) 2019-2021 Springbrook S.L.
- * @license "Apache-2.0"
- */
-
-// -------------------------------------------------------------------------------------------------------------------------------
-// Declarations - ?
-// -------------------------------------------------------------------------------------------------------------------------------
-
-class Table {
-    constructor(element, options) {
-        const data = options.data;
-        const columns = options.columns;
-
-        const wrapper = document.createElement('div');
-        wrapper.style.cssText = 'overflow-x: scroll; padding: 10px 0 10px 10px';
-        const tableWrapper = document.createElement('div');
-        tableWrapper.style.cssText = 'display: flex';
-        const table = document.createElement('table');
-        table.style.cssText = 'flex: 1 1 auto';
-        const tableRightPadding = document.createElement('div'); // Implements padding on right.
-        tableRightPadding.style.cssText = 'flex: 0 0 10px';
-
-        const header = document.createElement('tr');
-        for (const column of columns) {
-            const th = document.createElement('th');
-            th.style.cssText = buildCellStyle(column);
-            const text = document.createTextNode(column.label);
-            th.append(text);
-            header.appendChild(th);
-        }
-        table.appendChild(header);
-
-        for (const record of data) {
-            const row = document.createElement('tr');
-            for (const column of columns) {
-                const td = document.createElement('td');
-                let text;
-                if (typeof column.source === 'function') {
-                    text = document.createTextNode(formatCellValue(column, column.source(record, column)));
-                } else {
-                    text = document.createTextNode(formatCellValue(column, record[column.source]));
-                }
-                td.appendChild(text);
-                row.appendChild(td);
-            }
-            table.appendChild(row);
-        }
-
-        tableWrapper.appendChild(table);
-        tableWrapper.appendChild(tableRightPadding);
-        wrapper.appendChild(tableWrapper);
-        element.replaceChildren(wrapper);
-    }
-}
-
-class TableVisualiser {
-    constructor(element, options) {
-        this.element = element;
-        this.options = options;
-        this.visual = undefined;
-    }
-
-    show() {
-        this.visual = new Table(this.element, this.options);
-        return this;
-    }
-
-    resize(items) {
-        return this;
-    }
-}
-
-// -------------------------------------------------------------------------------------------------------------------------------
-// Exports
-// -------------------------------------------------------------------------------------------------------------------------------
-
-var Table$1 = { TableVisualiser };
-
-// -------------------------------------------------------------------------------------------------------------------------------
-// Procedures
-// -------------------------------------------------------------------------------------------------------------------------------
-
-const buildCellStyle = (column) => {
-    switch (column.type) {
-        case 'decimalNumber':
-        case 'wholeNumber':
-            return ` text-align: ${column.align || 'right'}`;
-        default:
-            return ` text-align: ${column.align || 'left'}`;
-    }
-};
-
-const formatCellValue = (column, value) => {
-    if (!value) return '';
-    switch (column.type) {
-        case 'decimalNumber':
-            return value.toLocaleString(undefined, { minimumFractionDigits: 2 });
-        default:
-            return value.toLocaleString();
-    }
-};
-
-var narrativeStyle = ".nectis * {\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans',\n        'Helvetica Neue', sans-serif;\n}\n\n.nectis h1 {\n    font-weight: 400;\n    font-size: 26px;\n    margin-left: auto;\n    margin-right: auto;\n    max-width: 640px;\n}\n\n.nectis h2 {\n    border-bottom: 1px solid #eee;\n    font-weight: 400;\n    font-size: 22px;\n    margin-left: auto;\n    margin-right: auto;\n    max-width: 640px;\n    padding-bottom: 5px;\n}\n.nectis h2::before {\n    background-image: url('https://nectis-content.web.app/analytics-light.svg');\n    background-size: 27px 24px;\n    content: '';\n    display: inline-block;\n    height: 24px;\n    margin-right: 10px;\n    width: 27px;\n}\n\n.nectis p {\n    font-size: 16px;\n    margin-left: auto;\n    margin-right: auto;\n    max-width: 640px;\n}\n\n.nectis ul {\n    font-size: 16px;\n    margin-left: auto;\n    margin-right: auto;\n    max-width: 640px;\n}\n\n.nectis div.warning {\n    background-color: rgba(255, 229, 100, 0.3);\n    border-left: 0.5rem #e7c000 solid;\n    color: #6b5900;\n    font-size: 16px;\n    margin: 16px auto;\n    max-width: 640px;\n}\n.nectis div.warning > div {\n    font-weight: 600;\n    padding: 8px 24px;\n}\n.nectis div.warning > div > div {\n    font-weight: 400;\n}\n";
-
-var themeStyle = "/**** Fonts */\n/* .nectis * { font-family: Arial, Helvetica, sans-serif; } */\n.nectis * {\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans',\n        'Helvetica Neue', sans-serif;\n}\n\n/**** HTML Elements */\n.nectis h1 {\n    font-weight: 400;\n    font-size: 26px;\n    margin-left: auto;\n    margin-right: auto;\n    /* margin-bottom: 16px; */\n    /* margin-top: 32px; */\n    max-width: 640px;\n}\n.nectis h2 {\n    border-bottom: 1px solid #eee;\n    font-weight: 400;\n    font-size: 22px;\n    margin-left: auto;\n    margin-right: auto;\n    /* margin-bottom: 16px; */\n    /* margin-top: 32px; */\n    max-width: 640px;\n    padding-bottom: 5px;\n}\n.nectis h2::before {\n    background-image: url('https://nectis-content.web.app/analytics-light.svg');\n    background-size: 27px 24px;\n    content: '';\n    display: inline-block;\n    height: 24px;\n    margin-right: 10px;\n    width: 27px;\n}\n.nectis p {\n    font-size: 16px;\n    margin-left: auto;\n    margin-right: auto;\n    /* margin-bottom: 16px; */\n    /* margin-top: 16px; */\n    max-width: 640px;\n}\n.nectis table {\n    border-collapse: collapse;\n    margin: 0;\n    max-width: none;\n}\n.nectis tr:not(:last-child) {\n    border-bottom: solid 1px #eee;\n    line-height: normal;\n}\n.nectis th {\n    font-size: 16px;\n    font-weight: 400;\n    padding: 5px 16px;\n    vertical-align: bottom;\n}\n.nectis td {\n    font-size: 16px;\n    padding: 5px 16px;\n}\n.nectis ul {\n    font-size: 16px;\n    margin-left: auto;\n    margin-right: auto;\n    /* margin-bottom: 16px; */\n    /* margin-top: 16px; */\n    max-width: 640px;\n}\n\n/**** Caret */\n.nectis .caret {\n    background: transparent;\n    border: 6px solid transparent;\n    display: inline-block;\n    height: 0;\n    pointer-events: none;\n    position: absolute;\n    width: 0;\n}\n.nectis .caret.right {\n    border-left-color: rgba(0, 0, 0, 0.75);\n}\n.nectis .caret.left {\n    border-right-color: rgba(0, 0, 0, 0.75);\n}\n\n/**** Chart Container */\n.nectis .chartContainer {\n    background: #fefefe;\n    border: 1px solid #f7f7f7;\n    height: 500px;\n    margin: 32px 0;\n    padding: 10px;\n}\n\n/**** Collection Reference */\n/* .nectis .collection {\n    color: #888;\n    font-size: 14px;\n    font-style: italic;\n    margin: auto;\n    margin-top: -3px;\n    max-width: 640px;\n} */\n\n/**** Tab Bar */\n.nectis .tabBar {\n    border-bottom: 1px solid #eee;\n    height: 48px;\n}\n\n/**** Tab Button */\n.nectis .tabButton {\n    border-bottom: 2px solid transparent;\n    cursor: pointer;\n    display: flex;\n    font-size: 16px;\n    flex-direction: column;\n    justify-content: center;\n    padding-left: 15px;\n    padding-right: 15px;\n}\n.nectis .tabButton:hover {\n    background: #f7f7f7;\n}\n.nectis .tabButton.selected {\n    border-bottom-color: #388e3c;\n}\n.nectis .tabButton.selected:hover {\n    background: #eef5ef;\n}\n\n/**** Table Container */\n.nectis .tableContainer {\n    background: #fefefe;\n    border: 1px solid #f7f7f7;\n    margin: 32px 0;\n}\n\n/**** Tooltip */\n.nectis .tooltip {\n    font-size: 14px;\n}\n.nectis .tooltip tr {\n    border: none;\n}\n.nectis .tooltip td {\n    border: none !important;\n    font-size: 14px;\n    padding: 0;\n}\n.nectis .tooltip td:last-child {\n    text-align: right;\n}\n\n/**** Vendor Button */\n.nectis .vendorButton {\n    border-top: 2px solid transparent;\n    align-items: center;\n    cursor: pointer;\n    display: flex;\n    font-size: 16px;\n    flex-direction: row;\n    padding: 5px 10px 7px 10px;\n}\n.nectis .vendorButton:hover {\n    background: #f7f7f7;\n}\n.nectis .vendorButton.selected {\n    border-top-color: #388e3c;\n}\n.nectis .vendorButton.selected:hover {\n    background: #eef5ef;\n}\n\n/**** Warning */\n.nectis .warning {\n    background-color: rgba(255, 229, 100, 0.3);\n    border-left: 0.5rem #e7c000 solid;\n    color: #6b5900;\n    font-size: 16px;\n    margin-left: auto;\n    margin-right: auto;\n    max-width: 640px;\n}\n.nectis .warning > div {\n    font-weight: 600;\n    padding: 8px 24px;\n}\n.nectis .warning > div > div {\n    font-weight: 400;\n}\n";
-
-/**
- * @author Jonathan Terrell <jonathan.terrell@springbrook.es>
- * @copyright Copyright (c) 2019-2021 Springbrook S.L.
- * @license "Apache-2.0"
- */
-
-// -------------------------------------------------------------------------------------------------------------------------------
-// Declarations - ?
-// -------------------------------------------------------------------------------------------------------------------------------
-
-const getNarrativeStyle = () => {
-    return narrativeStyle;
-};
-
-const getStyle = () => {
-    return themeStyle;
-};
-
-// -------------------------------------------------------------------------------------------------------------------------------
-// Exports
-// -------------------------------------------------------------------------------------------------------------------------------
-
-var Theme = { getNarrativeStyle, getStyle };
+var WorkforceSize = { getWorkforceSizeForYear, getWorkforceSizeForYear2, monthAbbreviations, workforceSizeYear };
 
 export { ChartJS, Table$1 as Table, Theme, WorkforceSize };
