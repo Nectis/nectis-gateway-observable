@@ -4,6 +4,8 @@
  * @license "Apache-2.0"
  */
 
+import Theme from './Theme';
+
 // -------------------------------------------------------------------------------------------------------------------------------
 // Declarations - Variables
 // -------------------------------------------------------------------------------------------------------------------------------
@@ -27,6 +29,7 @@ class ChartJSVisualiser {
         const canvas = document.createElement('canvas');
         canvas.setAttribute('id', 'chart');
         chartElement = this.element.appendChild(canvas);
+        // eslint-disable-next-line require-atomic-updates
         if (!Chart) Chart = await loadChartJS();
         this.visual = new Chart(chartElement, this.options);
         return this;
@@ -37,11 +40,34 @@ class ChartJSVisualiser {
     }
 }
 
+const getLegendSymbol = (legendHitBoxes, legendIndex) => {
+    const green = legendIndex === 0 ? Theme.getColour('paired', 2) : Theme.getColour('paired', 3);
+    const orange = legendIndex === 0 ? Theme.getColour('paired', 6) : Theme.getColour('paired', 7);
+
+    if (legendHitBoxes.length < legendIndex + 1) return undefined;
+    const left = legendHitBoxes[legendIndex].left;
+    const top = legendHitBoxes[legendIndex].top;
+
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    const gradient = context.createLinearGradient(left, top, left + 30, top + 15);
+
+    gradient.addColorStop(0, green);
+    gradient.addColorStop(0.47, green);
+    gradient.addColorStop(0.47, 'white');
+    gradient.addColorStop(0.53, 'white');
+    gradient.addColorStop(0.53, orange);
+    gradient.addColorStop(1, orange);
+
+    canvas.remove();
+    return gradient;
+};
+
 // -------------------------------------------------------------------------------------------------------------------------------
 // Exports
 // -------------------------------------------------------------------------------------------------------------------------------
 
-export default { ChartJSVisualiser };
+export default { ChartJSVisualiser, getLegendSymbol };
 
 // -------------------------------------------------------------------------------------------------------------------------------
 // Procedures

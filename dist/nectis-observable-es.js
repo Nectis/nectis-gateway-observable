@@ -1,3 +1,66 @@
+var narrativeStyle = ".nectis * {\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans',\n        'Helvetica Neue', sans-serif;\n}\n\n.nectis h1 {\n    font-weight: 400;\n    font-size: 26px;\n    margin-left: auto;\n    margin-right: auto;\n    max-width: 640px;\n}\n\n.nectis h2 {\n    border-bottom: 1px solid #eee;\n    font-weight: 400;\n    font-size: 22px;\n    margin-left: auto;\n    margin-right: auto;\n    max-width: 640px;\n    padding-bottom: 5px;\n}\n.nectis h2::before {\n    background-image: url('https://nectis-content.web.app/analytics-light.svg');\n    background-size: 27px 24px;\n    content: '';\n    display: inline-block;\n    height: 24px;\n    margin-right: 10px;\n    width: 27px;\n}\n\n.nectis p {\n    font-size: 16px;\n    margin-left: auto;\n    margin-right: auto;\n    max-width: 640px;\n}\n\n.nectis ul {\n    font-size: 16px;\n    margin-left: auto;\n    margin-right: auto;\n    max-width: 640px;\n}\n\n.nectis div.warning {\n    background-color: rgba(255, 229, 100, 0.3);\n    border-left: 0.5rem #e7c000 solid;\n    color: #6b5900;\n    font-size: 16px;\n    margin: 16px auto;\n    max-width: 640px;\n}\n.nectis div.warning > div {\n    font-weight: 600;\n    padding: 8px 24px;\n}\n.nectis div.warning > div > div {\n    font-weight: 400;\n}\n";
+
+var themeStyle = "/**** Fonts */\n/* .nectis * { font-family: Arial, Helvetica, sans-serif; } */\n.nectis * {\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans',\n        'Helvetica Neue', sans-serif;\n}\n\n/**** HTML Elements */\n.nectis table {\n    border-collapse: collapse;\n    margin: 0;\n    max-width: none;\n}\n.nectis tr:not(:last-child) {\n    border-bottom: solid 1px #eee;\n    line-height: normal;\n}\n.nectis th {\n    font-size: 16px;\n    font-weight: 400;\n    padding: 5px 16px;\n    vertical-align: bottom;\n}\n.nectis td {\n    font-size: 16px;\n    padding: 5px 16px;\n}\n\n/**** Caret */\n.nectis .caret {\n    background: transparent;\n    border: 6px solid transparent;\n    display: inline-block;\n    height: 0;\n    pointer-events: none;\n    position: absolute;\n    width: 0;\n}\n.nectis .caret.right {\n    border-left-color: rgba(0, 0, 0, 0.75);\n}\n.nectis .caret.left {\n    border-right-color: rgba(0, 0, 0, 0.75);\n}\n\n/**** Chart Container */\n.nectis .chartContainer {\n    background: #fefefe;\n    border: 1px solid #f7f7f7;\n    height: 500px;\n    margin: 32px 0;\n    padding: 10px;\n}\n\n/**** Collection Reference */\n/* .nectis .collection {\n    color: #888;\n    font-size: 14px;\n    font-style: italic;\n    margin: auto;\n    margin-top: -3px;\n    max-width: 640px;\n} */\n\n/**** Tab Bar */\n.nectis .tabBar {\n    border-bottom: 1px solid #eee;\n    height: 48px;\n}\n\n/**** Tab Button */\n.nectis .tabButton {\n    border-bottom: 2px solid transparent;\n    cursor: pointer;\n    display: flex;\n    font-size: 16px;\n    flex-direction: column;\n    justify-content: center;\n    padding-left: 15px;\n    padding-right: 15px;\n}\n.nectis .tabButton:hover {\n    background: #f7f7f7;\n}\n.nectis .tabButton.selected {\n    border-bottom-color: #388e3c;\n}\n.nectis .tabButton.selected:hover {\n    background: #eef5ef;\n}\n\n/**** Table Container */\n.nectis .tableContainer {\n    background: #fefefe;\n    border: 1px solid #f7f7f7;\n    margin: 32px 0;\n}\n\n/**** Tooltip */\n.nectis .tooltip {\n    font-size: 14px;\n}\n.nectis .tooltip tr {\n    border: none;\n}\n.nectis .tooltip td {\n    border: none !important;\n    font-size: 14px;\n    padding: 0;\n}\n.nectis .tooltip td:last-child {\n    text-align: right;\n}\n\n/**** Vendor Button */\n.nectis .vendorButton {\n    border-top: 2px solid transparent;\n    align-items: center;\n    cursor: pointer;\n    display: flex;\n    font-size: 16px;\n    flex-direction: row;\n    padding: 5px 10px 7px 10px;\n}\n.nectis .vendorButton:hover {\n    background: #f7f7f7;\n}\n.nectis .vendorButton.selected {\n    border-top-color: #388e3c;\n}\n.nectis .vendorButton.selected:hover {\n    background: #eef5ef;\n}\n";
+
+/**
+ * @author Jonathan Terrell <jonathan.terrell@springbrook.es>
+ * @copyright Copyright (c) 2019-2021 Springbrook S.L.
+ * @license "Apache-2.0"
+ */
+
+// -------------------------------------------------------------------------------------------------------------------------------
+// Declarations - ?
+// -------------------------------------------------------------------------------------------------------------------------------
+
+const palettes = {
+    category10: ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'],
+    dark2: ['#1b9e77', '#d95f02', '#7570b3', '#e7298a', '#66a61e', '#e6ab02', '#a6761d', '#666666'],
+    paired: [
+        '#a6cee3',
+        '#1f78b4',
+        '#b2df8a',
+        '#33a02c',
+        '#fb9a99',
+        '#e31a1c',
+        '#fdbf6f',
+        '#ff7f00',
+        '#cab2d6',
+        '#6a3d9a',
+        '#ffff99',
+        '#b15928'
+    ],
+    tableau10: ['#4e79a7', '#f28e2c', '#e15759', '#76b7b2', '#59a14f', '#edc949', '#af7aa1', '#ff9da7', '#9c755f', '#bab0ab']
+};
+
+const getColour = function getColour(paletteId, index) {
+    return palettes[paletteId][index % palettes[paletteId].length];
+};
+
+const colours = {
+    /* eslint-disable sort-keys */
+    opening: getColour('tableau10', 5),
+    starting: getColour('tableau10', 3),
+    hires: getColour('paired', 2),
+    terminations: getColour('paired', 6),
+    ending: getColour('tableau10', 0),
+    closing: getColour('tableau10', 2),
+    openCloseDecrease: getColour('paired', 6),
+    openCloseIncrease: getColour('paired', 2),
+    startStopDecrease: getColour('paired', 7),
+    startStopIncrease: getColour('paired', 3)
+    /* eslint-enable sort-keys */
+};
+
+const getNarrativeStyle = () => narrativeStyle;
+
+const getStyle = () => themeStyle;
+
+// -------------------------------------------------------------------------------------------------------------------------------
+// Exports
+// -------------------------------------------------------------------------------------------------------------------------------
+
+var Theme = { colours, getColour, getNarrativeStyle, getStyle };
+
 /**
  * @author Jonathan Terrell <jonathan.terrell@springbrook.es>
  * @copyright Copyright (c) 2019-2021 Springbrook S.L.
@@ -27,6 +90,7 @@ class ChartJSVisualiser {
         const canvas = document.createElement('canvas');
         canvas.setAttribute('id', 'chart');
         chartElement = this.element.appendChild(canvas);
+        // eslint-disable-next-line require-atomic-updates
         if (!Chart) Chart = await loadChartJS();
         this.visual = new Chart(chartElement, this.options);
         return this;
@@ -37,11 +101,34 @@ class ChartJSVisualiser {
     }
 }
 
+const getLegendSymbol = (legendHitBoxes, legendIndex) => {
+    const green = legendIndex === 0 ? Theme.getColour('paired', 2) : Theme.getColour('paired', 3);
+    const orange = legendIndex === 0 ? Theme.getColour('paired', 6) : Theme.getColour('paired', 7);
+
+    if (legendHitBoxes.length < legendIndex + 1) return undefined;
+    const left = legendHitBoxes[legendIndex].left;
+    const top = legendHitBoxes[legendIndex].top;
+
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    const gradient = context.createLinearGradient(left, top, left + 30, top + 15);
+
+    gradient.addColorStop(0, green);
+    gradient.addColorStop(0.47, green);
+    gradient.addColorStop(0.47, 'white');
+    gradient.addColorStop(0.53, 'white');
+    gradient.addColorStop(0.53, orange);
+    gradient.addColorStop(1, orange);
+
+    canvas.remove();
+    return gradient;
+};
+
 // -------------------------------------------------------------------------------------------------------------------------------
 // Exports
 // -------------------------------------------------------------------------------------------------------------------------------
 
-var ChartJS = { ChartJSVisualiser };
+var ChartJS = { ChartJSVisualiser, getLegendSymbol };
 
 // -------------------------------------------------------------------------------------------------------------------------------
 // Procedures
@@ -195,69 +282,6 @@ const formatCellValue = (column, value) => {
             return value.toLocaleString();
     }
 };
-
-var narrativeStyle = ".nectis * {\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans',\n        'Helvetica Neue', sans-serif;\n}\n\n.nectis h1 {\n    font-weight: 400;\n    font-size: 26px;\n    margin-left: auto;\n    margin-right: auto;\n    max-width: 640px;\n}\n\n.nectis h2 {\n    border-bottom: 1px solid #eee;\n    font-weight: 400;\n    font-size: 22px;\n    margin-left: auto;\n    margin-right: auto;\n    max-width: 640px;\n    padding-bottom: 5px;\n}\n.nectis h2::before {\n    background-image: url('https://nectis-content.web.app/analytics-light.svg');\n    background-size: 27px 24px;\n    content: '';\n    display: inline-block;\n    height: 24px;\n    margin-right: 10px;\n    width: 27px;\n}\n\n.nectis p {\n    font-size: 16px;\n    margin-left: auto;\n    margin-right: auto;\n    max-width: 640px;\n}\n\n.nectis ul {\n    font-size: 16px;\n    margin-left: auto;\n    margin-right: auto;\n    max-width: 640px;\n}\n\n.nectis div.warning {\n    background-color: rgba(255, 229, 100, 0.3);\n    border-left: 0.5rem #e7c000 solid;\n    color: #6b5900;\n    font-size: 16px;\n    margin: 16px auto;\n    max-width: 640px;\n}\n.nectis div.warning > div {\n    font-weight: 600;\n    padding: 8px 24px;\n}\n.nectis div.warning > div > div {\n    font-weight: 400;\n}\n";
-
-var themeStyle = "/**** Fonts */\n/* .nectis * { font-family: Arial, Helvetica, sans-serif; } */\n.nectis * {\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans',\n        'Helvetica Neue', sans-serif;\n}\n\n/**** HTML Elements */\n.nectis table {\n    border-collapse: collapse;\n    margin: 0;\n    max-width: none;\n}\n.nectis tr:not(:last-child) {\n    border-bottom: solid 1px #eee;\n    line-height: normal;\n}\n.nectis th {\n    font-size: 16px;\n    font-weight: 400;\n    padding: 5px 16px;\n    vertical-align: bottom;\n}\n.nectis td {\n    font-size: 16px;\n    padding: 5px 16px;\n}\n\n/**** Caret */\n.nectis .caret {\n    background: transparent;\n    border: 6px solid transparent;\n    display: inline-block;\n    height: 0;\n    pointer-events: none;\n    position: absolute;\n    width: 0;\n}\n.nectis .caret.right {\n    border-left-color: rgba(0, 0, 0, 0.75);\n}\n.nectis .caret.left {\n    border-right-color: rgba(0, 0, 0, 0.75);\n}\n\n/**** Chart Container */\n.nectis .chartContainer {\n    background: #fefefe;\n    border: 1px solid #f7f7f7;\n    height: 500px;\n    margin: 32px 0;\n    padding: 10px;\n}\n\n/**** Collection Reference */\n/* .nectis .collection {\n    color: #888;\n    font-size: 14px;\n    font-style: italic;\n    margin: auto;\n    margin-top: -3px;\n    max-width: 640px;\n} */\n\n/**** Tab Bar */\n.nectis .tabBar {\n    border-bottom: 1px solid #eee;\n    height: 48px;\n}\n\n/**** Tab Button */\n.nectis .tabButton {\n    border-bottom: 2px solid transparent;\n    cursor: pointer;\n    display: flex;\n    font-size: 16px;\n    flex-direction: column;\n    justify-content: center;\n    padding-left: 15px;\n    padding-right: 15px;\n}\n.nectis .tabButton:hover {\n    background: #f7f7f7;\n}\n.nectis .tabButton.selected {\n    border-bottom-color: #388e3c;\n}\n.nectis .tabButton.selected:hover {\n    background: #eef5ef;\n}\n\n/**** Table Container */\n.nectis .tableContainer {\n    background: #fefefe;\n    border: 1px solid #f7f7f7;\n    margin: 32px 0;\n}\n\n/**** Tooltip */\n.nectis .tooltip {\n    font-size: 14px;\n}\n.nectis .tooltip tr {\n    border: none;\n}\n.nectis .tooltip td {\n    border: none !important;\n    font-size: 14px;\n    padding: 0;\n}\n.nectis .tooltip td:last-child {\n    text-align: right;\n}\n\n/**** Vendor Button */\n.nectis .vendorButton {\n    border-top: 2px solid transparent;\n    align-items: center;\n    cursor: pointer;\n    display: flex;\n    font-size: 16px;\n    flex-direction: row;\n    padding: 5px 10px 7px 10px;\n}\n.nectis .vendorButton:hover {\n    background: #f7f7f7;\n}\n.nectis .vendorButton.selected {\n    border-top-color: #388e3c;\n}\n.nectis .vendorButton.selected:hover {\n    background: #eef5ef;\n}\n";
-
-/**
- * @author Jonathan Terrell <jonathan.terrell@springbrook.es>
- * @copyright Copyright (c) 2019-2021 Springbrook S.L.
- * @license "Apache-2.0"
- */
-
-// -------------------------------------------------------------------------------------------------------------------------------
-// Declarations - ?
-// -------------------------------------------------------------------------------------------------------------------------------
-
-const palettes = {
-    category10: ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'],
-    dark2: ['#1b9e77', '#d95f02', '#7570b3', '#e7298a', '#66a61e', '#e6ab02', '#a6761d', '#666666'],
-    paired: [
-        '#a6cee3',
-        '#1f78b4',
-        '#b2df8a',
-        '#33a02c',
-        '#fb9a99',
-        '#e31a1c',
-        '#fdbf6f',
-        '#ff7f00',
-        '#cab2d6',
-        '#6a3d9a',
-        '#ffff99',
-        '#b15928'
-    ],
-    tableau10: ['#4e79a7', '#f28e2c', '#e15759', '#76b7b2', '#59a14f', '#edc949', '#af7aa1', '#ff9da7', '#9c755f', '#bab0ab']
-};
-
-const getColour = function getColour(paletteId, index) {
-    return palettes[paletteId][index % palettes[paletteId].length];
-};
-
-const colours = {
-    /* eslint-disable sort-keys */
-    opening: getColour('tableau10', 5),
-    starting: getColour('tableau10', 3),
-    hires: getColour('paired', 2),
-    terminations: getColour('paired', 6),
-    ending: getColour('tableau10', 0),
-    closing: getColour('tableau10', 2),
-    openCloseDecrease: getColour('paired', 6),
-    openCloseIncrease: getColour('paired', 2),
-    startStopDecrease: getColour('paired', 7),
-    startStopIncrease: getColour('paired', 3)
-    /* eslint-enable sort-keys */
-};
-
-const getNarrativeStyle = () => narrativeStyle;
-
-const getStyle = () => themeStyle;
-
-// -------------------------------------------------------------------------------------------------------------------------------
-// Exports
-// -------------------------------------------------------------------------------------------------------------------------------
-
-var Theme = { colours, getColour, getNarrativeStyle, getStyle };
 
 /**
  * @author Jonathan Terrell <jonathan.terrell@springbrook.es>
