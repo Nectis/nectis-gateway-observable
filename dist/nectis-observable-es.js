@@ -38,6 +38,19 @@ const getColour = function getColour(paletteId, index) {
     return palettes[paletteId][index % palettes[paletteId].length];
 };
 
+const colours = {
+    opening: getColour('tableau10', 5),
+    starting: getColour('tableau10', 3),
+    hires: getColour('paired', 2),
+    terminations: getColour('paired', 6),
+    ending: getColour('tableau10', 0),
+    closing: getColour('tableau10', 2),
+    openCloseDecrease: getColour('paired', 6),
+    openCloseIncrease: getColour('paired', 2),
+    startStopDecrease: getColour('paired', 7),
+    startStopIncrease: getColour('paired', 3)
+};
+
 class ChartJSVisualiser {
     constructor(element, options) {
         this.element = element;
@@ -69,7 +82,7 @@ class ChartJSVisualiser {
 // Exports
 // -------------------------------------------------------------------------------------------------------------------------------
 
-var ChartJS = { ChartJSVisualiser, getColour };
+var ChartJS = { ChartJSVisualiser, colours };
 
 // -------------------------------------------------------------------------------------------------------------------------------
 // Procedures
@@ -405,7 +418,7 @@ const getWorkforceSizeForYear2 = (year) => {
 // Exports
 // -------------------------------------------------------------------------------------------------------------------------------
 
-var Data = { getWorkforceSizeForYear, getWorkforceSizeForYear2 };
+var WorkforceSize = { getWorkforceSizeForYear, getWorkforceSizeForYear2 };
 
 /**
  * @author Jonathan Terrell <jonathan.terrell@springbrook.es>
@@ -533,4 +546,4 @@ const getStyle = () => {
 
 var Theme = { getStyle };
 
-export { ChartJS, Data, Table$1 as Table, Theme };
+export { ChartJS, Table$1 as Table, Theme, WorkforceSize };
