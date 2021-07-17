@@ -84,7 +84,7 @@ export default { TableVisualiser };
 // -------------------------------------------------------------------------------------------------------------------------------
 
 const buildCellStyle = (column) => {
-    switch (column.type) {
+    switch (column.typeId) {
         case 'decimalNumber':
         case 'wholeNumber':
             return ` text-align: ${column.align || 'right'}`;
@@ -95,10 +95,9 @@ const buildCellStyle = (column) => {
 
 const formatCellValue = (column, value) => {
     if (!value) return '';
-    console.log(1111, column, column.type);
-    switch (column.type) {
+    switch (column.typeId) {
         case 'decimalNumber':
-            return value.toLocaleString(undefined, { minimumFractionDigits: 2 });
+            return value.toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2 });
         default:
             return value.toLocaleString();
     }
