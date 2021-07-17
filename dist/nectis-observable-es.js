@@ -129,6 +129,8 @@ const loadChartJS = async () => {
 // Declarations - Variables
 // -------------------------------------------------------------------------------------------------------------------------------
 
+const monthAbbreviations = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
 const workforceSizeByYear = [
     {
         month: 1,
@@ -418,7 +420,7 @@ const getWorkforceSizeForYear2 = (year) => {
 // Exports
 // -------------------------------------------------------------------------------------------------------------------------------
 
-var WorkforceSize = { getWorkforceSizeForYear, getWorkforceSizeForYear2 };
+var WorkforceSize = { getWorkforceSizeForYear, getWorkforceSizeForYear2, monthAbbreviations };
 
 /**
  * @author Jonathan Terrell <jonathan.terrell@springbrook.es>
