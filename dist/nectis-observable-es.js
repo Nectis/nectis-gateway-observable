@@ -86,6 +86,18 @@ const loadChartJS = async () => {
  */
 
 // -------------------------------------------------------------------------------------------------------------------------------
+// Exports
+// -------------------------------------------------------------------------------------------------------------------------------
+
+var Highcharts = {};
+
+/**
+ * @author Jonathan Terrell <jonathan.terrell@springbrook.es>
+ * @copyright Copyright (c) 2019-2021 Springbrook S.L.
+ * @license "Apache-2.0"
+ */
+
+// -------------------------------------------------------------------------------------------------------------------------------
 // Declarations - Classes
 // -------------------------------------------------------------------------------------------------------------------------------
 
@@ -117,6 +129,7 @@ class Table {
             const row = document.createElement('tr');
             for (const column of columns) {
                 const td = document.createElement('td');
+                td.style.cssText = buildCellStyle(column);
                 let text;
                 if (typeof column.source === 'function') {
                     text = document.createTextNode(formatCellValue(column, column.source(record, column)));
@@ -553,4 +566,4 @@ const workforceSizeYear = 2020;
 
 var WorkforceSize = { getWorkforceSizeForYear, getWorkforceSizeForYear2, monthAbbreviations, workforceSizeYear };
 
-export { ChartJS, Table$1 as Table, Theme, WorkforceSize };
+export { ChartJS, Highcharts, Table$1 as Table, Theme, WorkforceSize };

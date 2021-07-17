@@ -36,6 +36,7 @@ class Table {
             const row = document.createElement('tr');
             for (const column of columns) {
                 const td = document.createElement('td');
+                td.style.cssText = buildCellStyle(column);
                 let text;
                 if (typeof column.source === 'function') {
                     text = document.createTextNode(formatCellValue(column, column.source(record, column)));
