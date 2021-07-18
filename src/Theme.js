@@ -4,9 +4,10 @@
  * @license "Apache-2.0"
  */
 
-import chartJSStyle from './chartJSStyle.css';
-import narrativeStyle from './narrativeStyle.css';
-import themeStyle from './themeStyle.css';
+import chartJSStyle from './styles/chartJSStyle.css';
+import narrativeStyle from './styles/narrativeStyle.css';
+import tableStyle from './styles/tableStyle.css';
+import themeStyle from './styles/themeStyle.css';
 
 // -------------------------------------------------------------------------------------------------------------------------------
 // Declarations - ?
@@ -57,8 +58,10 @@ const getNarrativeStyle = () => narrativeStyle;
 
 const getStyle = () => themeStyle;
 
+const getTableStyle = () => tableStyle;
+
 // -------------------------------------------------------------------------------------------------------------------------------
 // Exports
 // -------------------------------------------------------------------------------------------------------------------------------
 
-export default { colours, getChartJSStyle, getColour, getNarrativeStyle, getStyle };
+export default { colours, getChartJSStyle, getColour, getNarrativeStyle, getStyle, getTableStyle };
