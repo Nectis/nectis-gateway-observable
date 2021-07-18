@@ -1,0 +1,66 @@
+function _visualise() {
+  new TabPanelVisualiser(
+    presentation.querySelector("#pointInTimeHeadcountTile"),
+    [
+      { label: "Default", visualise: pointInTimeChartJSVisualise }
+      //{
+      //  label: "Other",
+      //  visualise: element => {
+      //    return new ChartPanelVisualiser(element, [
+      //      { typeId: "highcharts", visualise: pointInTimeHighchartsVisualise }
+      //    ]);
+      //  }
+      //}
+    ]
+  ).show();
+
+  new TabPanelVisualiser(
+    presentation.querySelector("#headcountRangesContainer"),
+    [
+      {
+        label: "Default",
+        visualise: element => {
+          return new ChartPanelVisualiser(element, [
+            { typeId: "highcharts", visualise: headcountRangeChartJSVisualise }
+          ]);
+        }
+      }
+    ]
+  ).show();
+
+  //headcountRangeChartJSVisualise(
+  //  presentation.querySelector("#headcountRangesContainer")
+  //);
+
+  new TabPanelVisualiser(
+    presentation.querySelector("#hiresTerminationsContainer"),
+    [
+      {
+        label: "Default",
+        visualise: element => {
+          return new ChartPanelVisualiser(element, [
+            { typeId: "highcharts", visualise: hiresTerminationsVisualise }
+          ]);
+        }
+      }
+    ]
+  ).show();
+
+  new TabPanelVisualiser(
+    presentation.querySelector("#headcountProgressionContainer"),
+    [
+      {
+        label: "Default",
+        visualise: element => {
+          return new ChartPanelVisualiser(element, [
+            { typeId: "highcharts", visualise: headcountProgressionVisualise }
+          ]);
+        }
+      }
+    ]
+  ).show();
+
+  headcountSummaryVisualise(
+    presentation.querySelector("#headcountSummaryContainer")
+  );
+}
