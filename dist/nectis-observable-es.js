@@ -413,7 +413,12 @@ const buildTabbedTile = (tile, visuals) =>
                                 <img height="24" src="https://nectis-content.web.app/chartjs-logo.svg" />
                                 <div style="padding-left: 3px">Chart.js</div>
                             </div>`,
-                            { onclick: (event) => selectItem(tile, visual) }
+                            {
+                                onclick: (event) => {
+                                    console.log(1234);
+                                    selectItem(tile, visual);
+                                }
+                            }
                         )}`;
                     case 'eCharts':
                         return ` ${Object.assign(
@@ -429,7 +434,12 @@ const buildTabbedTile = (tile, visuals) =>
                                 <img height="18" src="https://nectis-content.web.app/highcharts-logo.png" />
                                 <div style="padding-left: 5px">Highcharts</div>
                             </div>`,
-                            { onclick: (event) => selectItem(tile, visual) }
+                            {
+                                onclick: (event) => {
+                                    console.log(5678);
+                                    selectItem(tile, visual);
+                                }
+                            }
                         )}`;
                     default:
                         return '';
@@ -455,9 +465,7 @@ const showVisual = (tile, visual) => {
     const panelElement = tile.element.querySelector('#visual');
     removeContent(panelElement);
     if (visual.visualise) {
-        console.log(1111, visual);
         tile.currentVisualiser = visual.visualise(panelElement);
-        //tile.currentVisualiser.show();
     } else {
         tile.currentVisualiser = undefined;
     }
