@@ -60,7 +60,8 @@ export default { HighchartsVisualiser };
 const loadHighcharts = async () => {
     // Import Highcharts modules.
     Highcharts = await import('highcharts');
-    await import('highcharts/highcharts-more'); // TODO: Use promiseAll to import more the one additional module.
+    const highchartsMore = await import('highcharts/highcharts-more'); // TODO: Use promiseAll to import more the one additional module.
+    highchartsMore(Highcharts);
 
     // Modify default options.
     Highcharts.setOptions({ lang: { thousandsSep: ',' } });

@@ -413,7 +413,8 @@ var Highcharts$1 = { HighchartsVisualiser };
 const loadHighcharts = async () => {
     // Import Highcharts modules.
     Highcharts = await import('./nectis-observable-highcharts-bb3f57fd-es.js').then(function (n) { return n.h; });
-    await import('./nectis-observable-highcharts-more-b57e5fc4-es.js').then(function (n) { return n.h; }); // TODO: Use promiseAll to import more the one additional module.
+    const highchartsMore = await import('./nectis-observable-highcharts-more-b57e5fc4-es.js').then(function (n) { return n.h; }); // TODO: Use promiseAll to import more the one additional module.
+    highchartsMore(Highcharts);
 
     // Modify default options.
     Highcharts.setOptions({ lang: { thousandsSep: ',' } });
