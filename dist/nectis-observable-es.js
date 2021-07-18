@@ -426,7 +426,7 @@ const visualTypes = new Map([
 ]);
 
 const buildTab = (visual) => {
-    const visualType = visualTypes[visual.typeId];
+    const visualType = visualTypes.get(visual.typeId);
 
     const tabElement = document.createElement('div');
     tabElement.className = 'vendorButton';
