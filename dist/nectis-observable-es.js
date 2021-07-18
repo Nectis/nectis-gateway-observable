@@ -358,6 +358,42 @@ const loadChartJS = async () => {
  */
 
 // -------------------------------------------------------------------------------------------------------------------------------
+// Exports
+// -------------------------------------------------------------------------------------------------------------------------------
+
+var ChartPanel = {};
+
+/**
+ * @author Jonathan Terrell <jonathan.terrell@springbrook.es>
+ * @copyright Copyright (c) 2019-2021 Springbrook S.L.
+ * @license "Apache-2.0"
+ */
+
+// -------------------------------------------------------------------------------------------------------------------------------
+// Exports
+// -------------------------------------------------------------------------------------------------------------------------------
+
+var D3XYChart = {};
+
+/**
+ * @author Jonathan Terrell <jonathan.terrell@springbrook.es>
+ * @copyright Copyright (c) 2019-2021 Springbrook S.L.
+ * @license "Apache-2.0"
+ */
+
+// -------------------------------------------------------------------------------------------------------------------------------
+// Exports
+// -------------------------------------------------------------------------------------------------------------------------------
+
+var ECharts = {};
+
+/**
+ * @author Jonathan Terrell <jonathan.terrell@springbrook.es>
+ * @copyright Copyright (c) 2019-2021 Springbrook S.L.
+ * @license "Apache-2.0"
+ */
+
+// -------------------------------------------------------------------------------------------------------------------------------
 // Declarations - Variables
 // -------------------------------------------------------------------------------------------------------------------------------
 
@@ -417,6 +453,18 @@ const loadHighcharts = async () => {
     highchartsMore(Highcharts);
     Highcharts.setOptions({ lang: { thousandsSep: ',' } }); // Modify default options.
 };
+
+/**
+ * @author Jonathan Terrell <jonathan.terrell@springbrook.es>
+ * @copyright Copyright (c) 2019-2021 Springbrook S.L.
+ * @license "Apache-2.0"
+ */
+
+// -------------------------------------------------------------------------------------------------------------------------------
+// Exports
+// -------------------------------------------------------------------------------------------------------------------------------
+
+var TabPanel = {};
 
 /**
  * @author Jonathan Terrell <jonathan.terrell@springbrook.es>
@@ -830,4 +878,4 @@ const workforceSizeYear = 2020;
 
 var WorkforceSize = { getWorkforceSizeForYear, getWorkforceSizeForYear2, monthAbbreviations, workforceSizeYear };
 
-export { ChartJS$1 as ChartJS, Highcharts$1 as Highcharts, Table$1 as Table, Theme, WorkforceSize };
+export { ChartJS$1 as ChartJS, ChartPanel, D3XYChart as D3XYCharts, ECharts, Highcharts$1 as Highcharts, TabPanel, Table$1 as Table, Theme, WorkforceSize };
