@@ -61,7 +61,8 @@ const loadHighcharts = async () => {
     // Import Highcharts modules.
     Highcharts = await import('highcharts');
     const highchartsMore = await import('highcharts/highcharts-more'); // TODO: Use promiseAll to import more the one additional module.
-    highchartsMore(Highcharts);
+    console.log(highchartsMore);
+    // highchartsMore(Highcharts);
 
     // Modify default options.
     Highcharts.setOptions({ lang: { thousandsSep: ',' } });
