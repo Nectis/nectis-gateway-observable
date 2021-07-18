@@ -1,0 +1,18 @@
+.nectis .vendorButton {
+    border-top: 2px solid transparent;
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    font-size: 16px;
+    flex-direction: row;
+    padding: 5px 10px 7px 10px;
+}
+.nectis .vendorButton:hover {
+    background: #f7f7f7;
+}
+.nectis .vendorButton.selected {
+    border-top-color: #388e3c;
+}
+.nectis .vendorButton.selected:hover {
+    background: #eef5ef;
+}
