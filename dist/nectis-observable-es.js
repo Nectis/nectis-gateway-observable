@@ -375,7 +375,7 @@ class HighchartsVisualiser {
     }
 
     async show() {
-        if (!Highcharts) await loadHighcharts2();
+        if (!Highcharts) await loadHighcharts();
 
         this.visual = Highcharts.chart(this.element, this.options, (chart) => {
             addBorderToLegendSymbols(chart);
@@ -406,7 +406,11 @@ const addBorderToLegendSymbols = (chart) => {
 
 var Highcharts$1 = { HighchartsVisualiser };
 
-const loadHighcharts2 = async () => {
+// -------------------------------------------------------------------------------------------------------------------------------
+// Procedures
+// -------------------------------------------------------------------------------------------------------------------------------
+
+const loadHighcharts = async () => {
     const imports = await Promise.all([import('./nectis-observable-highcharts-bb3f57fd-es.js').then(function (n) { return n.h; }), import('./nectis-observable-highcharts-more-b57e5fc4-es.js').then(function (n) { return n.h; })]);
     Highcharts = imports[0];
     const highchartsMore = imports[1].default;
