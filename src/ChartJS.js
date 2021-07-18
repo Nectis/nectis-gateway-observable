@@ -10,7 +10,7 @@ import Theme from './Theme';
 // Declarations - Variables
 // -------------------------------------------------------------------------------------------------------------------------------
 
-let Chart;
+let ChartJS;
 
 // -------------------------------------------------------------------------------------------------------------------------------
 // Declarations - Classes
@@ -30,8 +30,8 @@ class ChartJSVisualiser {
         canvas.setAttribute('id', 'chart');
         chartElement = this.element.appendChild(canvas);
         // eslint-disable-next-line require-atomic-updates
-        if (!Chart) Chart = await loadChartJS();
-        this.visual = new Chart(chartElement, this.options);
+        if (!ChartJS) await loadChartJS();
+        this.visual = new ChartJS(chartElement, this.options);
         return this;
     }
 
@@ -259,31 +259,29 @@ export default { ChartJSVisualiser, drawConnectionLines, getLegendSymbol, headco
 const loadChartJS = async () => {
     // Import Chart.js module.
     const chartJS = await import('chart.js');
-    Chart = chartJS.Chart;
+    ChartJS = chartJS.Chart;
 
     // Register controllers, elements, scales and plugins.
-    Chart.register(chartJS.BarController);
-    Chart.register(chartJS.BarElement);
-    Chart.register(chartJS.CategoryScale);
-    Chart.register(chartJS.Legend);
-    Chart.register(chartJS.LineController);
-    Chart.register(chartJS.LineElement);
-    Chart.register(chartJS.LinearScale);
-    Chart.register(chartJS.PointElement);
-    Chart.register(chartJS.Title);
-    Chart.register(chartJS.Tooltip);
+    ChartJS.register(chartJS.BarController);
+    ChartJS.register(chartJS.BarElement);
+    ChartJS.register(chartJS.CategoryScale);
+    ChartJS.register(chartJS.Legend);
+    ChartJS.register(chartJS.LineController);
+    ChartJS.register(chartJS.LineElement);
+    ChartJS.register(chartJS.LinearScale);
+    ChartJS.register(chartJS.PointElement);
+    ChartJS.register(chartJS.Title);
+    ChartJS.register(chartJS.Tooltip);
 
     // Modify default options.
-    Chart.defaults.animation = false;
-    Chart.defaults.font.size = 16;
-    Chart.defaults.layout.padding = 2;
-    Chart.defaults.plugins.legend.position = 'bottom';
-    Chart.defaults.plugins.legend.labels.boxHeight = 15;
-    Chart.defaults.plugins.legend.labels.boxWidth = 30;
-    Chart.defaults.plugins.title.display = true;
-    Chart.defaults.plugins.title.font.size = 20;
-    Chart.defaults.plugins.title.font.weight = 'normal';
-    Chart.defaults.maintainAspectRatio = false;
-
-    return Chart;
+    ChartJS.defaults.animation = false;
+    ChartJS.defaults.font.size = 16;
+    ChartJS.defaults.layout.padding = 2;
+    ChartJS.defaults.plugins.legend.position = 'bottom';
+    ChartJS.defaults.plugins.legend.labels.boxHeight = 15;
+    ChartJS.defaults.plugins.legend.labels.boxWidth = 30;
+    ChartJS.defaults.plugins.title.display = true;
+    ChartJS.defaults.plugins.title.font.size = 20;
+    ChartJS.defaults.plugins.title.font.weight = 'normal';
+    ChartJS.defaults.maintainAspectRatio = false;
 };
