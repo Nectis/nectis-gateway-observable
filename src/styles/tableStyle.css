@@ -1,0 +1,19 @@
+.nectis table {
+    border-collapse: collapse;
+    margin: 0;
+    max-width: none;
+}
+.nectis tr:not(:last-child) {
+    border-bottom: solid 1px #eee;
+    line-height: normal;
+}
+.nectis th {
+    font-size: 16px;
+    font-weight: 400;
+    padding: 5px 16px;
+    vertical-align: bottom;
+}
+.nectis td {
+    font-size: 16px;
+    padding: 5px 16px;
+}

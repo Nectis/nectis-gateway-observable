@@ -1,0 +1,79 @@
+/**** Fonts */
+/* .nectis * { font-family: Arial, Helvetica, sans-serif; } */
+.nectis * {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans',
+        'Helvetica Neue', sans-serif;
+}
+
+/**** Chart Container */
+.nectis .chartContainer {
+    background: #fefefe;
+    border: 1px solid #f7f7f7;
+    height: 500px;
+    margin: 32px 0;
+    padding: 10px;
+}
+
+/**** Collection Reference */
+/* .nectis .collection {
+    color: #888;
+    font-size: 14px;
+    font-style: italic;
+    margin: auto;
+    margin-top: -3px;
+    max-width: 640px;
+} */
+
+/**** Tab Bar */
+.nectis .tabBar {
+    border-bottom: 1px solid #eee;
+    height: 48px;
+}
+
+/**** Tab Button */
+.nectis .tabButton {
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    display: flex;
+    font-size: 16px;
+    flex-direction: column;
+    justify-content: center;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+.nectis .tabButton:hover {
+    background: #f7f7f7;
+}
+.nectis .tabButton.selected {
+    border-bottom-color: #388e3c;
+}
+.nectis .tabButton.selected:hover {
+    background: #eef5ef;
+}
+
+/**** Table Container */
+.nectis .tableContainer {
+    background: #fefefe;
+    border: 1px solid #f7f7f7;
+    margin: 32px 0;
+}
+
+/**** Vendor Button */
+.nectis .vendorButton {
+    border-top: 2px solid transparent;
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    font-size: 16px;
+    flex-direction: row;
+    padding: 5px 10px 7px 10px;
+}
+.nectis .vendorButton:hover {
+    background: #f7f7f7;
+}
+.nectis .vendorButton.selected {
+    border-top-color: #388e3c;
+}
+.nectis .vendorButton.selected:hover {
+    background: #eef5ef;
+}
