@@ -375,14 +375,14 @@ class HighchartsVisualiser {
     }
 
     async show() {
-        let chartElement = this.element.querySelector('#chart');
-        if (chartElement) chartElement.remove();
-        const canvas = document.createElement('canvas');
-        canvas.setAttribute('id', 'chart');
-        chartElement = this.element.appendChild(canvas);
+        // let chartElement = this.element.querySelector('#chart');
+        // if (chartElement) chartElement.remove();
+        // const canvas = document.createElement('canvas');
+        // canvas.setAttribute('id', 'chart');
+        // chartElement = this.element.appendChild(canvas);
         // eslint-disable-next-line require-atomic-updates
-        await loadHighcharts();
-        //this.visual = new ChartJS(chartElement, this.options);
+        if (!Highcharts) await loadHighcharts();
+        // this.visual = new ChartJS(chartElement, this.options);
         console.log(2222, Highcharts);
         return this;
     }
@@ -404,8 +404,10 @@ var Highcharts$1 = { HighchartsVisualiser };
 
 const loadHighcharts = async () => {
     // Import Chart.js module.
-    const highcharts = await import('./nectis-observable-highcharts-bb3f57fd-es.js').then(function (n) { return n.h; });
-    console.log(1111, highcharts);
+    Highcharts = await import('./nectis-observable-highcharts-bb3f57fd-es.js').then(function (n) { return n.h; });
+    console.log(1111, Highcharts);
+    const more = await import('./nectis-observable-highcharts-more-b57e5fc4-es.js').then(function (n) { return n.h; });
+    console.log(2222, more);
     // Highcharts = chartJS.Chart;
 
     // const Highcharts = await require(`highcharts@${version}`);

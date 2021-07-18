@@ -22,14 +22,14 @@ class HighchartsVisualiser {
     }
 
     async show() {
-        let chartElement = this.element.querySelector('#chart');
-        if (chartElement) chartElement.remove();
-        const canvas = document.createElement('canvas');
-        canvas.setAttribute('id', 'chart');
-        chartElement = this.element.appendChild(canvas);
+        // let chartElement = this.element.querySelector('#chart');
+        // if (chartElement) chartElement.remove();
+        // const canvas = document.createElement('canvas');
+        // canvas.setAttribute('id', 'chart');
+        // chartElement = this.element.appendChild(canvas);
         // eslint-disable-next-line require-atomic-updates
         if (!Highcharts) await loadHighcharts();
-        //this.visual = new ChartJS(chartElement, this.options);
+        // this.visual = new ChartJS(chartElement, this.options);
         console.log(2222, Highcharts);
         return this;
     }
@@ -51,8 +51,10 @@ export default { HighchartsVisualiser };
 
 const loadHighcharts = async () => {
     // Import Chart.js module.
-    const highcharts = await import('highcharts');
-    console.log(1111, highcharts);
+    Highcharts = await import('highcharts');
+    console.log(1111, Highcharts);
+    const more = await import('highcharts/highcharts-more');
+    console.log(2222, more);
     // Highcharts = chartJS.Chart;
 
     // const Highcharts = await require(`highcharts@${version}`);
