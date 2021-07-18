@@ -119,10 +119,138 @@ const getLegendSymbol = (legendHitBoxes, legendIndex) => {
 };
 
 // -------------------------------------------------------------------------------------------------------------------------------
+// ? - Tooltip
+// -------------------------------------------------------------------------------------------------------------------------------
+
+const headcountTooltipHandler = (context, workforceData) => {
+    // Tooltip Element
+    const { chart, tooltip } = context;
+    const { caretElement, tooltipElement } = establishTooltip(chart, tooltip);
+
+    // Hide if no tooltip
+    if (tooltip.opacity === 0) {
+        caretElement.style.opacity = 0;
+        tooltipElement.style.opacity = 0;
+        return;
+    }
+
+    // Set Text
+    if (tooltip.body) {
+        const thead = document.createElement('thead');
+        for (const title of tooltip.title || []) {
+            const tr = document.createElement('tr');
+            const th = document.createElement('th');
+            th.style.cssText = 'color: white; font-weight: bold; padding: 0 0 5px 5px; text-align: left';
+            const text = document.createTextNode(title);
+            th.appendChild(text);
+            tr.appendChild(th);
+            thead.appendChild(tr);
+        }
+        const tbody = document.createElement('tbody');
+
+        const month = workforceData[tooltip.dataPoints[0].dataIndex];
+        tbody.appendChild(buildRow('Opening Headcount', month.openingHeadcount));
+        tbody.appendChild(buildRow('+ Starting Hires', month.startingHires));
+        tbody.appendChild(buildRow('= Starting Headcount', month.openingHeadcount + month.startingHires));
+        tbody.appendChild(buildRow('+ In Period Hires', month.hires - month.startingHires));
+        tbody.appendChild(buildRow('- In Period Terminations', month.terminations - month.endingTerminations));
+        tbody.appendChild(buildRow('= Ending Headcount', month.closingHeadcount + month.endingTerminations));
+        tbody.appendChild(buildRow('- Ending Terminations', month.endingTerminations));
+        tbody.appendChild(buildRow('= Closing Headcount', month.closingHeadcount));
+
+        const tableRoot = tooltipElement.querySelector('table');
+
+        // Remove old children
+        while (tableRoot.firstChild) {
+            tableRoot.firstChild.remove();
+        }
+
+        // Add new children
+        tableRoot.appendChild(thead);
+        tableRoot.appendChild(tbody);
+    }
+
+    const { offsetLeft: positionX, offsetTop: positionY } = chart.canvas;
+
+    const canvasBounds = chart.canvas.getBoundingClientRect();
+    const canvasBottom = positionY + canvasBounds.height;
+
+    const tooltipBounds = tooltipElement.getBoundingClientRect();
+    const tooltipHeight = tooltipBounds.height;
+    const tooltipWidth = tooltipBounds.width;
+
+    let top = positionY + tooltip.caretY - 12;
+
+    if (top + tooltipHeight > canvasBottom) top -= top + tooltipHeight - canvasBottom;
+
+    caretElement.className = `caret ${tooltip.xAlign}`;
+    caretElement.style.cssText = `left: ${positionX + tooltip.caretX - 6}px; top: ${positionY + tooltip.caretY}px`;
+
+    // Display, position, and set styles for font
+    tooltipElement.style.opacity = 1;
+    if (tooltip.xAlign === 'left') {
+        tooltipElement.style.left = `${positionX + tooltip.caretX + 6}px`;
+    } else {
+        tooltipElement.style.left = `${positionX + tooltip.caretX - tooltipWidth - 6}px`;
+    }
+    tooltipElement.style.top = `${top}px`;
+};
+
+const establishTooltip = (chart, tooltip) => {
+    const parentNode = chart.canvas.parentNode;
+
+    let caretElement = parentNode.querySelector('#nectisCaret');
+    if (!caretElement) {
+        caretElement = document.createElement('div');
+        caretElement.id = 'nectisCaret';
+        parentNode.appendChild(caretElement);
+    }
+
+    let tooltipElement = parentNode.querySelector('#nectisTooltip');
+    if (!tooltipElement) {
+        tooltipElement = document.createElement('div');
+        tooltipElement.id = 'nectisTooltip';
+        tooltipElement.style.background = 'rgba(0, 0, 0, 0.75)';
+        tooltipElement.style.borderRadius = '5px';
+        tooltipElement.style.color = 'white';
+        tooltipElement.style.opacity = 1;
+        tooltipElement.style.padding = `${tooltip.options.padding}px `;
+        tooltipElement.style.pointerEvents = 'none';
+        tooltipElement.style.position = 'absolute';
+        const table = document.createElement('table');
+        table.style['border-collapse'] = 'collapse';
+        tooltipElement.appendChild(table);
+        parentNode.appendChild(tooltipElement);
+    }
+
+    return { caretElement, tooltipElement };
+};
+
+const buildRow = (label, value) => {
+    const tr = document.createElement('tr');
+    tr.style.borderWidth = 0;
+
+    const tdLabel = document.createElement('td');
+    tdLabel.style.cssText = 'border-width: 0; border-style: solid; border-color: white; color: white; padding: 5px 5px';
+    tdLabel.appendChild(document.createTextNode((label || '').replaceAll(' ', '\xa0')));
+    tr.appendChild(tdLabel);
+
+    const tdValue = document.createElement('td');
+    const border = label.startsWith('=') ? 'border-top: 1px solid white; ' : '';
+    tdValue.style.cssText = `${border}color: white; padding: 5px 5px; text-align: right`;
+    tdValue.appendChild(document.createTextNode(headcountFormatter.format(value)));
+    tr.appendChild(tdValue);
+
+    return tr;
+};
+
+const headcountFormatter = () => new Intl.NumberFormat();
+
+// -------------------------------------------------------------------------------------------------------------------------------
 // Exports
 // -------------------------------------------------------------------------------------------------------------------------------
 
-export default { ChartJSVisualiser, drawConnectionLines, getLegendSymbol };
+export default { ChartJSVisualiser, drawConnectionLines, getLegendSymbol, headcountTooltipHandler };
 
 // -------------------------------------------------------------------------------------------------------------------------------
 // Procedures
