@@ -40,6 +40,61 @@ class ChartJSVisualiser {
     }
 }
 
+// -------------------------------------------------------------------------------------------------------------------------------
+// ? - Connection Lines
+// -------------------------------------------------------------------------------------------------------------------------------
+
+const drawConnectionLines = (chart, args, options) => {
+    const config = chart.config;
+    const configData = config.data;
+    const configOptions = config.options;
+
+    if (!configOptions.displayConnectionLines) return;
+
+    const scales = chart.scales;
+    const xAxis = scales.x;
+    const yAxis = scales.y;
+
+    const canvasRenderingContext2D = chart.ctx;
+
+    const dataset = configData.datasets[2];
+    const count = dataset.data.length - 1;
+    for (let index = 0; index < count; index++) {
+        const row = dataset.data[index];
+        drawConnectionLine(canvasRenderingContext2D, xAxis, yAxis, row[1], index);
+    }
+};
+
+const drawConnectionLine = (context, xAxis, yAxis, line, index) => {
+    const y1 = scaleLinear(line, yAxis.min, yAxis.max, yAxis.height, 0, yAxis.top);
+
+    context.save();
+
+    context.strokeStyle = '#aaa';
+    context.globalCompositeOperation = 'destination-over';
+    context.lineWidth = 1;
+
+    const bandWidth = xAxis.width / xAxis.ticks.length;
+    const left = xAxis.left + bandWidth * index + bandWidth * 0.14;
+    const right = left + bandWidth * 2 - bandWidth * 0.28;
+
+    context.beginPath();
+    context.moveTo(left + 1, y1);
+    context.lineTo(right - 1, y1);
+    context.stroke();
+
+    context.restore();
+};
+
+const scaleLinear = (value, domainStart, domainEnd, rangeStart, rangeEnd, rangeOffset) => {
+    const factor = (rangeEnd - rangeStart) / (domainEnd - domainStart);
+    return rangeStart + factor * (value - domainStart) + rangeOffset;
+};
+
+// -------------------------------------------------------------------------------------------------------------------------------
+// ? - Legend
+// -------------------------------------------------------------------------------------------------------------------------------
+
 const getLegendSymbol = (legendHitBoxes, legendIndex) => {
     const green = legendIndex === 0 ? Theme.getColour('paired', 2) : Theme.getColour('paired', 3);
     const orange = legendIndex === 0 ? Theme.getColour('paired', 6) : Theme.getColour('paired', 7);
@@ -67,7 +122,7 @@ const getLegendSymbol = (legendHitBoxes, legendIndex) => {
 // Exports
 // -------------------------------------------------------------------------------------------------------------------------------
 
-export default { ChartJSVisualiser, getLegendSymbol };
+export default { ChartJSVisualiser, drawConnectionLines, getLegendSymbol };
 
 // -------------------------------------------------------------------------------------------------------------------------------
 // Procedures
