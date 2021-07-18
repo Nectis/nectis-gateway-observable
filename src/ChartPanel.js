@@ -40,43 +40,43 @@ const buildEmptyTile = (tile) => `<div style="height: ${defaultVisualHeight}px">
 
 const buildSimpleTile = (tile) => `<div id="visual" style="height: ${defaultVisualHeight}px"></div>`;
 
-const buildTabbedTile = (tile, visuals) => `<div id="visual" style="height: ${defaultVisualHeight}px"></div>`;
-// html` <div style="display: flex; flex-direction: column">
-//     <div id="visual" style="height: ${defaultVisualHeight}px"></div>
-//     <div style="border-top: 1px solid #eee; color: #777; display: flex; font-size: 14px">
-//         ${visuals.map((visual) => {
-//             switch (visual.typeId) {
-//                 case 'chartJS':
-//                     return html` ${Object.assign(
-//                         html`<div id="vendorButton_${visual.index}" class="vendorButton">
-//                             <img height="24" src="https://nectis-content.web.app/chartjs-logo.svg" />
-//                             <div style="padding-left: 3px">Chart.js</div>
-//                         </div>`,
-//                         { onclick: (event) => selectItem(tile, visual) }
-//                     )}`;
-//                 case 'eCharts':
-//                     return html` ${Object.assign(
-//                         html`<div id="vendorButton_${visual.index}" class="vendorButton">
-//                             <img height="17" src="https://nectis-content.web.app/echarts-logo.png" />
-//                             <div style="padding-left: 5px">ECharts</div>
-//                         </div>`,
-//                         { onclick: (event) => selectItem(tile, visual) }
-//                     )}`;
-//                 case 'highcharts':
-//                     return html` ${Object.assign(
-//                         html`<div id="vendorButton_${visual.index}" class="vendorButton">
-//                             <img height="18" src="https://nectis-content.web.app/highcharts-logo.png" />
-//                             <div style="padding-left: 5px">Highcharts</div>
-//                         </div>`,
-//                         { onclick: (event) => selectItem(tile, visual) }
-//                     )}`;
-//                 default:
-//                     return '';
-//             }
-//         })}
-//         <div style="margin-left: auto">Options</div>
-//     </div>
-// </div>`;
+const buildTabbedTile = (tile, visuals) =>
+    ` <div style="display: flex; flex-direction: column">
+        <div id="visual" style="height: ${defaultVisualHeight}px"></div>
+        <div style="border-top: 1px solid #eee; color: #777; display: flex; font-size: 14px">
+            ${visuals.map((visual) => {
+                switch (visual.typeId) {
+                    case 'chartJS':
+                        return ` ${Object.assign(
+                            `<div id="vendorButton_${visual.index}" class="vendorButton">
+                                <img height="24" src="https://nectis-content.web.app/chartjs-logo.svg" />
+                                <div style="padding-left: 3px">Chart.js</div>
+                            </div>`,
+                            { onclick: (event) => selectItem(tile, visual) }
+                        )}`;
+                    case 'eCharts':
+                        return ` ${Object.assign(
+                            `<div id="vendorButton_${visual.index}" class="vendorButton">
+                                <img height="17" src="https://nectis-content.web.app/echarts-logo.png" />
+                                <div style="padding-left: 5px">ECharts</div>
+                            </div>`,
+                            { onclick: (event) => selectItem(tile, visual) }
+                        )}`;
+                    case 'highcharts':
+                        return ` ${Object.assign(
+                            `<div id="vendorButton_${visual.index}" class="vendorButton">
+                                <img height="18" src="https://nectis-content.web.app/highcharts-logo.png" />
+                                <div style="padding-left: 5px">Highcharts</div>
+                            </div>`,
+                            { onclick: (event) => selectItem(tile, visual) }
+                        )}`;
+                    default:
+                        return '';
+                }
+            })}
+            <div style="margin-left: auto">Options</div>
+        </div>
+    </div>`;
 
 const selectItem = (tile, visual) => {
     // Clear vendor button selection.
