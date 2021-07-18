@@ -376,10 +376,8 @@ class HighchartsVisualiser {
 
     async show() {
         if (!Highcharts) await loadHighcharts();
-        console.log(111, Highcharts);
 
         this.visual = Highcharts.chart(this.element, this.options, (chart) => {
-            console.log(2222, chart);
             // addBorderToLegendSymbols(chart);
         });
 
