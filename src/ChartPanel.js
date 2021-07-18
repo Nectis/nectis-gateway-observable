@@ -96,7 +96,7 @@ const showVisual = (tile, visual) => {
     if (visual.visualise) {
         console.log(1111, visual);
         tile.currentVisualiser = visual.visualise(panelElement);
-        tile.currentVisualiser.show();
+        //tile.currentVisualiser.show();
     } else {
         tile.currentVisualiser = undefined;
     }
