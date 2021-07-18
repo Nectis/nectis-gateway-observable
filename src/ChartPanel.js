@@ -40,7 +40,20 @@ const buildEmptyTile = (tile) => `<div style="height: ${defaultVisualHeight}px">
 
 const buildSimpleTile = (tile) => `<div id="visual" style="height: ${defaultVisualHeight}px"></div>`;
 
-const buildTabbedTile = (tile, visuals) =>
+const buildTabbedTile = (tile, visuals) => {
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'display: flex; flex-direction: column';
+    const visual = document.createElement('div');
+    visual.style.cssText = `height: ${defaultVisualHeight}px`;
+    visual.id = 'visual';
+    wrapper.appendChild(visual);
+    const tabs = document.createElement('div');
+    tabs.style.cssText = 'border-top: 1px solid #eee; color: #777; display: flex; font-size: 14px';
+    wrapper.appendChild(tabs);
+    return wrapper;
+};
+
+const buildTabbedTile2 = (tile, visuals) =>
     ` <div style="display: flex; flex-direction: column">
         <div id="visual" style="height: ${defaultVisualHeight}px"></div>
         <div style="border-top: 1px solid #eee; color: #777; display: flex; font-size: 14px">
