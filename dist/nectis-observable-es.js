@@ -375,7 +375,7 @@ class HighchartsVisualiser {
     }
 
     async show() {
-        if (!Highcharts) await loadHighcharts();
+        if (!Highcharts) await loadHighcharts2();
 
         this.visual = Highcharts.chart(this.element, this.options, (chart) => {
             addBorderToLegendSymbols(chart);
@@ -406,19 +406,12 @@ const addBorderToLegendSymbols = (chart) => {
 
 var Highcharts$1 = { HighchartsVisualiser };
 
-// -------------------------------------------------------------------------------------------------------------------------------
-// Procedures
-// -------------------------------------------------------------------------------------------------------------------------------
-
-const loadHighcharts = async () => {
-    // Import Highcharts modules.
-    Highcharts = await import('./nectis-observable-highcharts-bb3f57fd-es.js').then(function (n) { return n.h; });
-    const highchartsMore = await import('./nectis-observable-highcharts-more-b57e5fc4-es.js').then(function (n) { return n.h; }); // TODO: Use promiseAll to import more the one additional module.
-    console.log(highchartsMore);
-    highchartsMore.default(Highcharts);
-
-    // Modify default options.
-    Highcharts.setOptions({ lang: { thousandsSep: ',' } });
+const loadHighcharts2 = async () => {
+    const imports = await Promise.all([import('./nectis-observable-highcharts-bb3f57fd-es.js').then(function (n) { return n.h; }), import('./nectis-observable-highcharts-more-b57e5fc4-es.js').then(function (n) { return n.h; })]);
+    Highcharts = imports[0];
+    const highchartsMore = imports[1].default;
+    highchartsMore(Highcharts);
+    Highcharts.setOptions({ lang: { thousandsSep: ',' } }); // Modify default options.
 };
 
 /**
