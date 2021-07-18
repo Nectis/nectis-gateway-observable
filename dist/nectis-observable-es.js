@@ -378,7 +378,7 @@ class HighchartsVisualiser {
         if (!Highcharts) await loadHighcharts();
 
         this.visual = Highcharts.chart(this.element, this.options, (chart) => {
-            // addBorderToLegendSymbols(chart);
+            addBorderToLegendSymbols(chart);
         });
 
         return this;
@@ -388,6 +388,17 @@ class HighchartsVisualiser {
         return this;
     }
 }
+
+const addBorderToLegendSymbols = (chart) => {
+    for (const series of chart.series || []) {
+        const legendSymbol = series.legendSymbol;
+        if (!legendSymbol) continue;
+        const element = legendSymbol.element;
+        if (!element) continue;
+        element.setAttribute('stroke-width', '1');
+        element.setAttribute('stroke', series.options.borderColor);
+    }
+};
 
 // -------------------------------------------------------------------------------------------------------------------------------
 // Exports
