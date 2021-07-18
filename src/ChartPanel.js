@@ -41,16 +41,41 @@ const buildEmptyTile = (tile) => `<div style="height: ${defaultVisualHeight}px">
 const buildSimpleTile = (tile) => `<div id="visual" style="height: ${defaultVisualHeight}px"></div>`;
 
 const buildTabbedTile = (tile, visuals) => {
-    const wrapper = document.createElement('div');
-    wrapper.style.cssText = 'display: flex; flex-direction: column';
-    const visual = document.createElement('div');
-    visual.style.cssText = `height: ${defaultVisualHeight}px`;
-    visual.id = 'visual';
-    wrapper.appendChild(visual);
-    const tabs = document.createElement('div');
-    tabs.style.cssText = 'border-top: 1px solid #eee; color: #777; display: flex; font-size: 14px';
-    wrapper.appendChild(tabs);
-    return wrapper;
+    const wrapperElement = document.createElement('div');
+    wrapperElement.style.cssText = 'display: flex; flex-direction: column';
+
+    const visualElement = document.createElement('div');
+    visualElement.style.cssText = `height: ${defaultVisualHeight}px`;
+    visualElement.id = 'visual';
+    wrapperElement.appendChild(visualElement);
+
+    const tabsElement = document.createElement('div');
+    tabsElement.style.cssText = 'border-top: 1px solid #eee; color: #777; display: flex; font-size: 14px';
+    for (const visual of visuals) {
+        tabsElement.appendChild(buildTab(visual));
+    }
+    wrapperElement.appendChild(tabsElement);
+
+    return wrapperElement;
+};
+
+const buildTab = (visual) => {
+    const tabElement = document.createElement('div');
+    tabElement.className = 'vendorButton';
+    tabElement.onclick = () => {
+        console.log(1234);
+    };
+
+    const image = document.createElement('img');
+    image.height = 24;
+    image.src = 'https://nectis-content.web.app/chartjs-logo.svg';
+    tabElement.appendChild(image);
+
+    const labelElement = document.createElement('div');
+    labelElement.style.cssText = 'padding-left: 3px';
+    tabElement.appendChild(labelElement);
+
+    return tabElement;
 };
 
 const buildTabbedTile2 = (tile, visuals) =>
