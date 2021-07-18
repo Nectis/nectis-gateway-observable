@@ -21,7 +21,7 @@ class ChartPanel {
                     visualise: item.visualise
                 };
             });
-            this.element.innerHTML = buildTabbedTile(this, visuals);
+            this.element.appendChild(buildTabbedTile(this, visuals));
             selectItem(this, visuals[0]);
         } else if (typeof this.items === 'object' && this.items !== null) {
             this.element.innerHTML = buildSimpleTile(this);

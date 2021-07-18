@@ -382,7 +382,7 @@ class ChartPanel {
                     visualise: item.visualise
                 };
             });
-            this.element.innerHTML = buildTabbedTile();
+            this.element.appendChild(buildTabbedTile());
             selectItem(this, visuals[0]);
         } else if (typeof this.items === 'object' && this.items !== null) {
             this.element.innerHTML = buildSimpleTile();
