@@ -413,27 +413,36 @@ const buildTabbedTile = (tile, visuals) => {
     const tabsElement = document.createElement('div');
     tabsElement.style.cssText = 'border-top: 1px solid #eee; color: #777; display: flex; font-size: 14px';
     for (const visual of visuals) {
-        tabsElement.appendChild(buildTab());
+        tabsElement.appendChild(buildTab(visual));
     }
     wrapperElement.appendChild(tabsElement);
 
     return wrapperElement;
 };
 
+const visualTypes = new Map([
+    ['chartJS', { imageSource: 'https://nectis-content.web.app/chartjs-logo.svg', label: 'Chart.js' }],
+    ['highcharts', { imageSource: 'https://nectis-content.web.app/highcharts-logo.svg', label: 'Highcharts' }]
+]);
+
 const buildTab = (visual) => {
+    const visualType = visualTypes[visual.typeId];
+
     const tabElement = document.createElement('div');
     tabElement.className = 'vendorButton';
     tabElement.onclick = () => {
-        console.log(1234);
+        console.log(visualType.typeId);
     };
 
     const image = document.createElement('img');
     image.height = 24;
-    image.src = 'https://nectis-content.web.app/chartjs-logo.svg';
+    image.src = visualType.imageSource;
     tabElement.appendChild(image);
 
     const labelElement = document.createElement('div');
     labelElement.style.cssText = 'padding-left: 3px';
+    const labelTextNode = document.createTextNode(visualType.label);
+    labelElement.appendChild(labelTextNode);
     tabElement.appendChild(labelElement);
 
     return tabElement;
