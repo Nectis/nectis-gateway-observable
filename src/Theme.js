@@ -4,6 +4,7 @@
  * @license "Apache-2.0"
  */
 
+import chartJSStyle from './chartJSStyle.css';
 import narrativeStyle from './narrativeStyle.css';
 import themeStyle from './themeStyle.css';
 
@@ -50,6 +51,8 @@ const colours = {
     /* eslint-enable sort-keys */
 };
 
+const getChartJSStyle = () => chartJSStyle;
+
 const getNarrativeStyle = () => narrativeStyle;
 
 const getStyle = () => themeStyle;
@@ -58,4 +61,4 @@ const getStyle = () => themeStyle;
 // Exports
 // -------------------------------------------------------------------------------------------------------------------------------
 
-export default { colours, getColour, getNarrativeStyle, getStyle };
+export default { colours, getChartJSStyle, getColour, getNarrativeStyle, getStyle };
