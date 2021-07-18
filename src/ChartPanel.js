@@ -94,6 +94,7 @@ const showVisual = (tile, visual) => {
     const panelElement = tile.element.querySelector('#visual');
     removeContent(panelElement);
     if (visual.visualise) {
+        console.log(1111, visual);
         tile.currentVisualiser = visual.visualise(panelElement);
         tile.currentVisualiser.show();
     } else {
