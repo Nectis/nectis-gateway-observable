@@ -299,7 +299,7 @@ const buildRow = (label, value) => {
     const tdValue = document.createElement('td');
     const border = label.startsWith('=') ? 'border-top: 1px solid white; ' : '';
     tdValue.style.cssText = `${border}color: white; padding: 5px 5px; text-align: right`;
-    tdValue.appendChild(document.createTextNode(headcountFormatter.format(value)));
+    tdValue.appendChild(document.createTextNode(headcountFormatter().format(value)));
     tr.appendChild(tdValue);
 
     return tr;
