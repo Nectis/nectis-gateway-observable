@@ -708,7 +708,7 @@ const showVisual = (tile, visual) => {
     removeContent(panelElement);
     if (visual.visualise) {
         tile.currentVisualiser = visual.visualise(panelElement);
-        tile.currentVisualiser.show();
+        //tile.currentVisualiser.show();
     } else {
         tile.currentVisualiser = undefined;
     }
