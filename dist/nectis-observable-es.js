@@ -366,9 +366,9 @@ const loadChartJS = async () => {
  */
 
 const visualTypes = new Map([
-    ['chartJS', { imageSource: 'https://nectis-content.web.app/chartjs-logo.svg', label: 'Chart.js' }],
-    ['eCharts', { imageSource: 'https://nectis-content.web.app/echarts-logo.png', label: 'ECharts' }],
-    ['highcharts', { imageSource: 'https://nectis-content.web.app/highcharts-logo.png', label: 'Highcharts' }]
+    ['chartJS', { height: 24, imageSource: 'chartjs-logo.svg', label: 'Chart.js', labelPadding: 3 }],
+    ['eCharts', { height: 17, imageSource: 'echarts-logo.png', label: 'ECharts', labelPadding: 5 }],
+    ['highcharts', { height: 18, imageSource: 'highcharts-logo.png', label: 'Highcharts', labelPadding: 5 }]
 ]);
 
 class ChartPanel {
@@ -435,8 +435,8 @@ const buildTab = (tile, visualIndex, visual) => {
     tabElement.onclick = () => selectItem(tile, visual);
 
     const image = document.createElement('img');
-    image.height = 24;
-    image.src = visualType.imageSource;
+    image.height = visual.image.height;
+    image.src = `https://nectis-content.web.app/${visualType.imageSource}`;
     tabElement.appendChild(image);
 
     const labelElement = document.createElement('div');
