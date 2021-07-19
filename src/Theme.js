@@ -5,8 +5,8 @@
  */
 
 import chartJSStyle from './styles/chartJSStyle.css';
-import chartPanelStyle from './styles/chartPanelStyle.css';
 import narrativeStyle from './styles/narrativeStyle.css';
+import panelStyle from './styles/panelStyle.css';
 import tableStyle from './styles/tableStyle.css';
 import themeStyle from './styles/themeStyle.css';
 
@@ -54,17 +54,13 @@ const colours = {
 };
 
 const getChartJSStyle = () => chartJSStyle;
-
-const getChartPanelStyle = () => chartPanelStyle;
-
 const getNarrativeStyle = () => narrativeStyle;
-
+const getPanelStyle = () => panelStyle;
 const getStyle = () => themeStyle;
-
 const getTableStyle = () => tableStyle;
 
 // -------------------------------------------------------------------------------------------------------------------------------
 // Exports
 // -------------------------------------------------------------------------------------------------------------------------------
 
-export default { colours, getChartJSStyle, getChartPanelStyle, getColour, getNarrativeStyle, getStyle, getTableStyle };
+export default { colours, getChartJSStyle, getColour, getNarrativeStyle, getPanelStyle, getStyle, getTableStyle };
