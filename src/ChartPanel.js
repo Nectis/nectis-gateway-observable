@@ -73,7 +73,9 @@ const buildTabbedTile = (tile, visuals) => {
 
     const optionsButtonElement = document.createElement('div');
     optionsButtonElement.className = 'optionsButton';
-    optionsButtonElement.onclick = () => console.log('Options button clicked...');
+    optionsButtonElement.onclick = () => {
+        /* console.log('Options button clicked...'); */
+    };
     optionsButtonElement.style.cssText = 'margin-left: auto';
     const labelTextNode = document.createTextNode('Options');
     optionsButtonElement.appendChild(labelTextNode);
