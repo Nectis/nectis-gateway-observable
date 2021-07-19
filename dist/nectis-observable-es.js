@@ -366,8 +366,8 @@ const loadChartJS = async () => {
  */
 
 const visualTypes = new Map([
-    ['chartJS', { imageHeight: 24, imageSource: 'chartjs-logo.svg', label: 'Chart.js', labelPadding: 3 }],
-    ['eCharts', { imageHeight: 17, imageSource: 'echarts-logo.png', label: 'ECharts', labelPadding: 5 }],
+    ['chartJS', { imageHeight: 24, imageSource: 'chartJS-logo.svg', label: 'Chart.js', labelPadding: 3 }],
+    ['eCharts', { imageHeight: 17, imageSource: 'eCharts-logo.png', label: 'ECharts', labelPadding: 5 }],
     ['highcharts', { imageHeight: 18, imageSource: 'highcharts-logo.png', label: 'Highcharts', labelPadding: 5 }]
 ]);
 
@@ -417,36 +417,47 @@ const buildTabbedTile = (tile, visuals) => {
     wrapperElement.appendChild(visualElement);
 
     const tabsElement = document.createElement('div');
+
     tabsElement.style.cssText = 'border-top: 1px solid #eee; color: #777; display: flex; font-size: 14px';
     for (const [index, visual] of visuals.entries()) {
-        tabsElement.appendChild(buildTab(tile, index, visual));
+        tabsElement.appendChild(buildVendorButton(tile, index, visual));
     }
+
+    const optionsButtonElement = document.createElement('div');
+    optionsButtonElement.className = 'optionsButton';
+    optionsButtonElement.onclick = () => console.log('Options button clicked...');
+    optionsButtonElement.style.cssText = 'margin-left: auto';
+    const labelTextNode = document.createTextNode('Options');
+    optionsButtonElement.appendChild(labelTextNode);
+
+    tabsElement.appendChild(optionsButtonElement);
+
     wrapperElement.appendChild(tabsElement);
 
     return wrapperElement;
 };
 
-const buildTab = (tile, visualIndex, visual) => {
+const buildVendorButton = (tile, visualIndex, visual) => {
     const visualType = visualTypes.get(visual.typeId);
 
-    const tabElement = document.createElement('div');
-    tabElement.className = 'vendorButton';
-    tabElement.id = `vendorButton_${visualIndex}`;
-    tabElement.onclick = () => selectItem(tile, visual);
+    const vendorButtonElement = document.createElement('div');
+    vendorButtonElement.className = 'vendorButton';
+    vendorButtonElement.id = `vendorButton_${visualIndex}`;
+    vendorButtonElement.onclick = () => selectItem(tile, visual);
 
     const image = document.createElement('img');
     image.height = visualType.imageHeight;
     image.style.cssText = 'margin: 0';
     image.src = `https://nectis-content.web.app/${visualType.imageSource}`;
-    tabElement.appendChild(image);
+    vendorButtonElement.appendChild(image);
 
     const labelElement = document.createElement('div');
     labelElement.style.cssText = `padding-left: ${visualType.labelPadding}px`;
     const labelTextNode = document.createTextNode(visualType.label);
     labelElement.appendChild(labelTextNode);
-    tabElement.appendChild(labelElement);
+    vendorButtonElement.appendChild(labelElement);
 
-    return tabElement;
+    return vendorButtonElement;
 };
 
 // const buildTabbedTile2 = (tile, visuals) =>
