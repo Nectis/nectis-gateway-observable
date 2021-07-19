@@ -27,13 +27,13 @@ class ChartPanel {
                     visualise: item.visualise
                 };
             });
-            replaceContent(buildTabbedTile(this, visuals));
+            replaceContent(this.element, buildTabbedTile(this, visuals));
             selectItem(this, visuals[0]);
         } else if (typeof this.items === 'object' && this.items !== null) {
-            this.element.innerHTML = buildSimpleTile();
+            replaceContent(this.element, buildSimpleTile());
             showVisual(this, this.items);
         } else {
-            this.element.innerHTML = buildEmptyTile();
+            replaceContent(this.element, buildEmptyTile());
             this.currentVisualiser = undefined;
         }
         return this;

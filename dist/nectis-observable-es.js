@@ -384,13 +384,13 @@ class ChartPanel {
                     visualise: item.visualise
                 };
             });
-            replaceContent$1(buildTabbedTile$1(this, visuals));
+            replaceContent$1(this.element, buildTabbedTile$1(this, visuals));
             selectItem$1(this, visuals[0]);
         } else if (typeof this.items === 'object' && this.items !== null) {
-            this.element.innerHTML = buildSimpleTile$1();
+            replaceContent$1(this.element, buildSimpleTile$1());
             showVisual$1(this, this.items);
         } else {
-            this.element.innerHTML = buildEmptyTile$1();
+            replaceContent$1(this.element, buildEmptyTile$1());
             this.currentVisualiser = undefined;
         }
         return this;
