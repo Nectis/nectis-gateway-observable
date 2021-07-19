@@ -173,10 +173,6 @@ const removeContent = (element) => {
     while (element.firstChild) element.firstChild.remove();
 };
 
-const replaceContent = (element, content) => {
-    element.replaceChildren(content);
-};
-
 class ChartPanelVisualiser {
     constructor(element, options) {
         this.element = element;
