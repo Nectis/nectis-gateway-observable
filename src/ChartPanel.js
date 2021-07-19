@@ -5,9 +5,9 @@
  */
 
 const visualTypes = new Map([
-    ['chartJS', { height: 24, imageSource: 'chartjs-logo.svg', label: 'Chart.js', labelPadding: 3 }],
-    ['eCharts', { height: 17, imageSource: 'echarts-logo.png', label: 'ECharts', labelPadding: 5 }],
-    ['highcharts', { height: 18, imageSource: 'highcharts-logo.png', label: 'Highcharts', labelPadding: 5 }]
+    ['chartJS', { imageHeight: 24, imageSource: 'chartjs-logo.svg', label: 'Chart.js', labelPadding: 3 }],
+    ['eCharts', { imageHeight: 17, imageSource: 'echarts-logo.png', label: 'ECharts', labelPadding: 5 }],
+    ['highcharts', { imageHeight: 18, imageSource: 'highcharts-logo.png', label: 'Highcharts', labelPadding: 5 }]
 ]);
 
 class ChartPanel {
