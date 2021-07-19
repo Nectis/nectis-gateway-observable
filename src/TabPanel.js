@@ -8,10 +8,12 @@ class TabPanel {
     constructor(element, items) {
         this.element = element;
         this.items = items;
+    }
 
-        if (Array.isArray(items)) {
+    show() {
+        if (Array.isArray(this.items)) {
             let itemCount = -1;
-            const visuals = items.map((item) => {
+            const visuals = this.items.map((item) => {
                 itemCount++;
                 return {
                     index: itemCount,
@@ -19,21 +21,18 @@ class TabPanel {
                     visualise: item.visualise
                 };
             });
-            replaceContent(element, buildTabbedTile(this, visuals));
+            replaceContent(this.element, buildTabbedTile(this, visuals));
             const visual = document.createElement('div');
             visual.id = 'visual';
-            element.appendChild(visual);
+            this.element.appendChild(visual);
             selectItem(this, visuals[0]);
-        } else if (typeof items === 'object' && items !== null) {
-            replaceContent(element, buildSimpleTile());
-            showVisual(this, items);
+        } else if (typeof items === 'object' && this.items !== null) {
+            replaceContent(this.element, buildSimpleTile());
+            showVisual(this, this.items);
         } else {
-            replaceContent(element, buildEmptyTile());
+            replaceContent(this.element, buildEmptyTile());
             this.currentVisualiser = undefined;
         }
-    }
-
-    show() {
         return this;
     }
 }

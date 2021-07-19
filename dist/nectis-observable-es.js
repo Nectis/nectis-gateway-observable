@@ -2,11 +2,11 @@ var chartJSStyle = ".nectis .caret {\n    background: transparent;\n    border: 
 
 var narrativeStyle = ".nectis * {\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans',\n        'Helvetica Neue', sans-serif;\n}\n\n.nectis h1 {\n    font-weight: 400;\n    font-size: 26px;\n    margin-left: auto;\n    margin-right: auto;\n    max-width: 640px;\n}\n\n.nectis h2 {\n    border-bottom: 1px solid #eee;\n    font-weight: 400;\n    font-size: 22px;\n    margin-left: auto;\n    margin-right: auto;\n    max-width: 640px;\n    padding-bottom: 5px;\n}\n.nectis h2::before {\n    background-image: url('https://nectis-content.web.app/analytics-light.svg');\n    background-size: 27px 24px;\n    content: '';\n    display: inline-block;\n    height: 24px;\n    margin-right: 10px;\n    width: 27px;\n}\n\n.nectis p {\n    font-size: 16px;\n    margin-left: auto;\n    margin-right: auto;\n    max-width: 640px;\n}\n\n.nectis ul {\n    font-size: 16px;\n    margin-left: auto;\n    margin-right: auto;\n    max-width: 640px;\n}\n\n.nectis div.warning {\n    background-color: rgba(255, 229, 100, 0.3);\n    border-left: 0.5rem #e7c000 solid;\n    color: #6b5900;\n    font-size: 16px;\n    margin: 16px auto;\n    max-width: 640px;\n}\n.nectis div.warning > div {\n    font-weight: 600;\n    padding: 8px 24px;\n}\n.nectis div.warning > div > div {\n    font-weight: 400;\n}\n";
 
-var panelStyle = ".nectis .optionsButton {\n    border-top: 2px solid transparent;\n    cursor: pointer;\n    font-size: 16px;\n    padding: 5px 10px 7px 10px;\n}\n.nectis .optionsButton:hover {\n    background: #f7f7f7;\n}\n\n.nectis .vendorButton {\n    border-top: 2px solid transparent;\n    align-items: center;\n    cursor: pointer;\n    display: flex;\n    font-size: 16px;\n    flex-direction: row;\n    padding: 5px 10px 7px 10px;\n}\n.nectis .vendorButton:hover {\n    background: #f7f7f7;\n}\n.nectis .vendorButton.selected {\n    border-top-color: #388e3c;\n}\n.nectis .vendorButton.selected:hover {\n    background: #eef5ef;\n}\n";
+var panelStyle = ".nectis .tabBar {\n    border-bottom: 1px solid #eee;\n    height: 48px;\n}\n\n.nectis .tabButton {\n    border-bottom: 2px solid transparent;\n    cursor: pointer;\n    display: flex;\n    font-size: 16px;\n    flex-direction: column;\n    justify-content: center;\n    padding-left: 15px;\n    padding-right: 15px;\n}\n.nectis .tabButton:hover {\n    background: #f7f7f7;\n}\n.nectis .tabButton.selected {\n    border-bottom-color: #388e3c;\n}\n.nectis .tabButton.selected:hover {\n    background: #eef5ef;\n}\n\n.nectis .optionsButton {\n    border-top: 2px solid transparent;\n    cursor: pointer;\n    font-size: 16px;\n    padding: 5px 10px 7px 10px;\n}\n.nectis .optionsButton:hover {\n    background: #f7f7f7;\n}\n\n.nectis .vendorButton {\n    border-top: 2px solid transparent;\n    align-items: center;\n    cursor: pointer;\n    display: flex;\n    font-size: 16px;\n    flex-direction: row;\n    padding: 5px 10px 7px 10px;\n}\n.nectis .vendorButton:hover {\n    background: #f7f7f7;\n}\n.nectis .vendorButton.selected {\n    border-top-color: #388e3c;\n}\n.nectis .vendorButton.selected:hover {\n    background: #eef5ef;\n}\n";
 
 var tableStyle = ".nectis table {\n    border-collapse: collapse;\n    margin: 0;\n    max-width: none;\n}\n.nectis tr:not(:last-child) {\n    border-bottom: solid 1px #eee;\n    line-height: normal;\n}\n.nectis th {\n    font-size: 16px;\n    font-weight: 400;\n    padding: 5px 16px;\n    vertical-align: bottom;\n}\n.nectis td {\n    font-size: 16px;\n    padding: 5px 16px;\n}\n";
 
-var themeStyle = "/**** Fonts */\n/* .nectis * { font-family: Arial, Helvetica, sans-serif; } */\n.nectis * {\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans',\n        'Helvetica Neue', sans-serif;\n}\n\n/**** Chart Container */\n.nectis .chartContainer {\n    background: #fefefe;\n    border: 1px solid #f7f7f7;\n    height: 500px;\n    margin: 32px 0;\n    padding: 10px;\n}\n\n/**** Collection Reference */\n/* .nectis .collection {\n    color: #888;\n    font-size: 14px;\n    font-style: italic;\n    margin: auto;\n    margin-top: -3px;\n    max-width: 640px;\n} */\n\n/**** Tab Bar */\n.nectis .tabBar {\n    border-bottom: 1px solid #eee;\n    height: 48px;\n}\n\n/**** Tab Button */\n.nectis .tabButton {\n    border-bottom: 2px solid transparent;\n    cursor: pointer;\n    display: flex;\n    font-size: 16px;\n    flex-direction: column;\n    justify-content: center;\n    padding-left: 15px;\n    padding-right: 15px;\n}\n.nectis .tabButton:hover {\n    background: #f7f7f7;\n}\n.nectis .tabButton.selected {\n    border-bottom-color: #388e3c;\n}\n.nectis .tabButton.selected:hover {\n    background: #eef5ef;\n}\n\n/**** Table Container */\n.nectis .tableContainer {\n    background: #fefefe;\n    border: 1px solid #f7f7f7;\n    margin: 32px 0;\n}\n";
+var themeStyle = "/**** Fonts */\n/* .nectis * { font-family: Arial, Helvetica, sans-serif; } */\n.nectis * {\n    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans',\n        'Helvetica Neue', sans-serif;\n}\n\n/**** Chart Container */\n.nectis .chartContainer {\n    background: #fefefe;\n    border: 1px solid #f7f7f7;\n    height: 500px;\n    margin: 32px 0;\n    padding: 10px;\n}\n\n/**** Collection Reference */\n/* .nectis .collection {\n    color: #888;\n    font-size: 14px;\n    font-style: italic;\n    margin: auto;\n    margin-top: -3px;\n    max-width: 640px;\n} */\n\n/**** Table Container */\n.nectis .tableContainer {\n    background: #fefefe;\n    border: 1px solid #f7f7f7;\n    margin: 32px 0;\n}\n";
 
 /**
  * @author Jonathan Terrell <jonathan.terrell@springbrook.es>
@@ -619,10 +619,12 @@ class TabPanel {
     constructor(element, items) {
         this.element = element;
         this.items = items;
+    }
 
-        if (Array.isArray(items)) {
+    show() {
+        if (Array.isArray(this.items)) {
             let itemCount = -1;
-            const visuals = items.map((item) => {
+            const visuals = this.items.map((item) => {
                 itemCount++;
                 return {
                     index: itemCount,
@@ -630,21 +632,18 @@ class TabPanel {
                     visualise: item.visualise
                 };
             });
-            replaceContent(element, buildTabbedTile(this, visuals));
+            replaceContent(this.element, buildTabbedTile(this, visuals));
             const visual = document.createElement('div');
             visual.id = 'visual';
-            element.appendChild(visual);
+            this.element.appendChild(visual);
             selectItem(this, visuals[0]);
-        } else if (typeof items === 'object' && items !== null) {
-            replaceContent(element, buildSimpleTile());
-            showVisual(this, items);
+        } else if (typeof items === 'object' && this.items !== null) {
+            replaceContent(this.element, buildSimpleTile());
+            showVisual(this, this.items);
         } else {
-            replaceContent(element, buildEmptyTile());
+            replaceContent(this.element, buildEmptyTile());
             this.currentVisualiser = undefined;
         }
-    }
-
-    show() {
         return this;
     }
 }
