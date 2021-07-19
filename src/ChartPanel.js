@@ -74,12 +74,12 @@ const buildTab = (tile, visualIndex, visual) => {
     tabElement.onclick = () => selectItem(tile, visual);
 
     const image = document.createElement('img');
-    image.height = visual.imageHeight;
+    image.height = visualType.imageHeight;
     image.src = `https://nectis-content.web.app/${visualType.imageSource}`;
     tabElement.appendChild(image);
 
     const labelElement = document.createElement('div');
-    labelElement.style.cssText = `padding-left: ${visual.labelPadding}px`;
+    labelElement.style.cssText = `padding-left: ${visualType.labelPadding}px`;
     const labelTextNode = document.createTextNode(visualType.label);
     labelElement.appendChild(labelTextNode);
     tabElement.appendChild(labelElement);
