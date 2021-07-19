@@ -20,12 +20,15 @@ class TabPanel {
                 };
             });
             replaceContent(element, buildTabbedTile(this, visuals));
+            const visual = document.createElement('div');
+            visual.id = 'visual';
+            element.appendChild(visual);
             selectItem(this, visuals[0]);
         } else if (typeof items === 'object' && items !== null) {
-            replaceContent(element, buildSimpleTile(this));
+            replaceContent(element, buildSimpleTile());
             showVisual(this, items);
         } else {
-            replaceContent(element, buildEmptyTile(this));
+            replaceContent(element, buildEmptyTile());
             this.currentVisualiser = undefined;
         }
     }
@@ -37,19 +40,48 @@ class TabPanel {
 
 const defaultVisualHeight = 500;
 
-const buildEmptyTile = (tile) => html`<div style="height: ${defaultVisualHeight}px"></div>`;
+const buildEmptyTile = () => {
+    const element = document.createElement('div');
+    element.style.cssText = `height: ${defaultVisualHeight}px`;
+    return element;
+};
 
-const buildSimpleTile = (tile) => html`<div id="visual" style="height: ${defaultVisualHeight}px"></div>`;
+const buildSimpleTile = () => {
+    const element = document.createElement('div');
+    element.id = 'visual';
+    element.style.cssText = `height: ${defaultVisualHeight}px`;
+    return element;
+};
 
-const buildTabbedTile = (tile, visuals) => html` <div class="tabBar" style="display: flex">
-        ${visuals.map(
-            (visual) =>
-                html` ${Object.assign(html`<div id="tabButton_${visual.index}" class="tabButton">${visual.label}</div>`, {
-                    onclick: (event) => selectItem(tile, visual)
-                })}`
-        )}
-    </div>
-    <div id="visual"></div>`;
+// const buildTabbedTile1 = (tile, visuals) => html` <div class="tabBar" style="display: flex">
+//         ${visuals.map(
+//             (visual) =>
+//                 html` ${Object.assign(html`<div id="tabButton_${visual.index}" class="tabButton">${visual.label}</div>`, {
+//                     onclick: (event) => selectItem(tile, visual)
+//                 })}`
+//         )}
+//     </div>
+//     <div id="visual"></div>`;
+
+const buildTabbedTile = (tile, visuals) => {
+    const tabsElement = document.createElement('div');
+    tabsElement.className = 'tabBar';
+    tabsElement.style.cssText = 'display: flex';
+    for (const [index, visual] of visuals.entries()) {
+        tabsElement.appendChild(buildTabButton(tile, index, visual));
+    }
+    return tabsElement;
+};
+
+const buildTabButton = (tile, visualIndex, visual) => {
+    const tabButtonElement = document.createElement('div');
+    tabButtonElement.className = 'tabButton';
+    tabButtonElement.id = `tabButton_${visualIndex}`;
+    tabButtonElement.onclick = () => selectItem(tile, visual);
+    const labelTextNode = document.createTextNode(visual.label);
+    tabButtonElement.appendChild(labelTextNode);
+    return tabButtonElement;
+};
 
 const selectItem = (tile, visual) => {
     // Clear tab button selection.

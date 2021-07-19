@@ -384,31 +384,40 @@ class ChartPanel {
                     visualise: item.visualise
                 };
             });
-            this.element.appendChild(buildTabbedTile(this, visuals));
-            selectItem(this, visuals[0]);
+            replaceContent$1(buildTabbedTile$1(this, visuals));
+            selectItem$1(this, visuals[0]);
         } else if (typeof this.items === 'object' && this.items !== null) {
-            this.element.innerHTML = buildSimpleTile();
-            showVisual(this, this.items);
+            this.element.innerHTML = buildSimpleTile$1();
+            showVisual$1(this, this.items);
         } else {
-            this.element.innerHTML = buildEmptyTile();
+            this.element.innerHTML = buildEmptyTile$1();
             this.currentVisualiser = undefined;
         }
         return this;
     }
 }
 
-const defaultVisualHeight = 500;
+const defaultVisualHeight$1 = 500;
 
-const buildEmptyTile = (tile) => `<div style="height: ${defaultVisualHeight}px"></div>`;
+const buildEmptyTile$1 = () => {
+    const element = document.createElement('div');
+    element.style.cssText = `height: ${defaultVisualHeight$1}px`;
+    return element;
+};
 
-const buildSimpleTile = (tile) => `<div id="visual" style="height: ${defaultVisualHeight}px"></div>`;
+const buildSimpleTile$1 = () => {
+    const element = document.createElement('div');
+    element.id = 'visual';
+    element.style.cssText = `height: ${defaultVisualHeight$1}px`;
+    return element;
+};
 
-const buildTabbedTile = (tile, visuals) => {
+const buildTabbedTile$1 = (tile, visuals) => {
     const wrapperElement = document.createElement('div');
     wrapperElement.style.cssText = 'display: flex; flex-direction: column';
 
     const visualElement = document.createElement('div');
-    visualElement.style.cssText = `height: ${defaultVisualHeight}px`;
+    visualElement.style.cssText = `height: ${defaultVisualHeight$1}px`;
     visualElement.id = 'visual';
     wrapperElement.appendChild(visualElement);
 
@@ -439,7 +448,7 @@ const buildVendorButton = (tile, visualIndex, visual) => {
     const vendorButtonElement = document.createElement('div');
     vendorButtonElement.className = 'vendorButton';
     vendorButtonElement.id = `vendorButton_${visualIndex}`;
-    vendorButtonElement.onclick = () => selectItem(tile, visual);
+    vendorButtonElement.onclick = () => selectItem$1(tile, visual);
 
     const image = document.createElement('img');
     image.height = visualType.imageHeight;
@@ -456,55 +465,7 @@ const buildVendorButton = (tile, visualIndex, visual) => {
     return vendorButtonElement;
 };
 
-// const buildTabbedTile2 = (tile, visuals) =>
-//     ` <div style="display: flex; flex-direction: column">
-//         <div id="visual" style="height: ${defaultVisualHeight}px"></div>
-//         <div style="border-top: 1px solid #eee; color: #777; display: flex; font-size: 14px">
-//             ${visuals.map((visual) => {
-//                 switch (visual.typeId) {
-//                     case 'chartJS':
-//                         return ` ${Object.assign(
-//                             `<div id="vendorButton_${visual.index}" class="vendorButton">
-//                                 <img height="24" src="https://nectis-content.web.app/chartjs-logo.svg" />
-//                                 <div style="padding-left: 3px">Chart.js</div>
-//                             </div>`,
-//                             {
-//                                 onclick: (event) => {
-//                                     console.log(1234);
-//                                     selectItem(tile, visual);
-//                                 }
-//                             }
-//                         )}`;
-//                     case 'eCharts':
-//                         return ` ${Object.assign(
-//                             `<div id="vendorButton_${visual.index}" class="vendorButton">
-//                                 <img height="17" src="https://nectis-content.web.app/echarts-logo.png" />
-//                                 <div style="padding-left: 5px">ECharts</div>
-//                             </div>`,
-//                             { onclick: (event) => selectItem(tile, visual) }
-//                         )}`;
-//                     case 'highcharts':
-//                         return ` ${Object.assign(
-//                             `<div id="vendorButton_${visual.index}" class="vendorButton">
-//                                 <img height="18" src="https://nectis-content.web.app/highcharts-logo.png" />
-//                                 <div style="padding-left: 5px">Highcharts</div>
-//                             </div>`,
-//                             {
-//                                 onclick: (event) => {
-//                                     console.log(5678);
-//                                     selectItem(tile, visual);
-//                                 }
-//                             }
-//                         )}`;
-//                     default:
-//                         return '';
-//                 }
-//             })}
-//             <div style="margin-left: auto">Options</div>
-//         </div>
-//     </div>`;
-
-const selectItem = (tile, visual) => {
+const selectItem$1 = (tile, visual) => {
     // Clear vendor button selection.
     const vendorButtons = tile.element.getElementsByClassName('vendorButton');
     for (let i1 = 0; i1 < vendorButtons.length; i1++) {
@@ -513,12 +474,12 @@ const selectItem = (tile, visual) => {
 
     tile.element.querySelector(`#vendorButton_${visual.index}`).className = 'vendorButton selected';
 
-    showVisual(tile, visual);
+    showVisual$1(tile, visual);
 };
 
-const showVisual = (tile, visual) => {
+const showVisual$1 = (tile, visual) => {
     const panelElement = tile.element.querySelector('#visual');
-    removeContent(panelElement);
+    removeContent$1(panelElement);
     if (visual.visualise) {
         tile.currentVisualiser = visual.visualise(panelElement);
     } else {
@@ -526,8 +487,12 @@ const showVisual = (tile, visual) => {
     }
 };
 
-const removeContent = (element) => {
+const removeContent$1 = (element) => {
     while (element.firstChild) element.firstChild.remove();
+};
+
+const replaceContent$1 = (element, content) => {
+    element.replaceChildren(content);
 };
 
 class ChartPanelVisualiser {
@@ -650,11 +615,136 @@ const loadHighcharts = async () => {
  * @license "Apache-2.0"
  */
 
+class TabPanel {
+    constructor(element, items) {
+        this.element = element;
+        this.items = items;
+
+        if (Array.isArray(items)) {
+            let itemCount = -1;
+            const visuals = items.map((item) => {
+                itemCount++;
+                return {
+                    index: itemCount,
+                    label: item.label,
+                    visualise: item.visualise
+                };
+            });
+            replaceContent(element, buildTabbedTile(this, visuals));
+            const visual = document.createElement('div');
+            visual.id = 'visual';
+            element.appendChild(visual);
+            selectItem(this, visuals[0]);
+        } else if (typeof items === 'object' && items !== null) {
+            replaceContent(element, buildSimpleTile());
+            showVisual(this, items);
+        } else {
+            replaceContent(element, buildEmptyTile());
+            this.currentVisualiser = undefined;
+        }
+    }
+
+    show() {
+        return this;
+    }
+}
+
+const defaultVisualHeight = 500;
+
+const buildEmptyTile = () => {
+    const element = document.createElement('div');
+    element.style.cssText = `height: ${defaultVisualHeight}px`;
+    return element;
+};
+
+const buildSimpleTile = () => {
+    const element = document.createElement('div');
+    element.id = 'visual';
+    element.style.cssText = `height: ${defaultVisualHeight}px`;
+    return element;
+};
+
+// const buildTabbedTile1 = (tile, visuals) => html` <div class="tabBar" style="display: flex">
+//         ${visuals.map(
+//             (visual) =>
+//                 html` ${Object.assign(html`<div id="tabButton_${visual.index}" class="tabButton">${visual.label}</div>`, {
+//                     onclick: (event) => selectItem(tile, visual)
+//                 })}`
+//         )}
+//     </div>
+//     <div id="visual"></div>`;
+
+const buildTabbedTile = (tile, visuals) => {
+    const tabsElement = document.createElement('div');
+    tabsElement.className = 'tabBar';
+    tabsElement.style.cssText = 'display: flex';
+    for (const [index, visual] of visuals.entries()) {
+        tabsElement.appendChild(buildTabButton(tile, index, visual));
+    }
+    return tabsElement;
+};
+
+const buildTabButton = (tile, visualIndex, visual) => {
+    const tabButtonElement = document.createElement('div');
+    tabButtonElement.className = 'tabButton';
+    tabButtonElement.id = `tabButton_${visualIndex}`;
+    tabButtonElement.onclick = () => selectItem(tile, visual);
+    const labelTextNode = document.createTextNode(visual.label);
+    tabButtonElement.appendChild(labelTextNode);
+    return tabButtonElement;
+};
+
+const selectItem = (tile, visual) => {
+    // Clear tab button selection.
+    const tabButtons = tile.element.getElementsByClassName('tabButton');
+    for (let i1 = 0; i1 < tabButtons.length; i1++) {
+        tabButtons[i1].className = 'tabButton';
+    }
+    tile.element.querySelector(`#tabButton_${visual.index}`).className = 'tabButton selected';
+    showVisual(tile, visual);
+};
+
+const showVisual = (tile, visual) => {
+    const panelElement = tile.element.querySelector('#visual');
+    removeContent(panelElement);
+    if (visual.visualise) {
+        tile.currentVisualiser = visual.visualise(panelElement);
+        tile.currentVisualiser.show();
+    } else {
+        tile.currentVisualiser = undefined;
+    }
+};
+
+const removeContent = (element) => {
+    while (element.firstChild) element.firstChild.remove();
+};
+
+const replaceContent = (element, content) => {
+    element.replaceChildren(content);
+};
+
+class TabPanelVisualiser {
+    constructor(element, options) {
+        this.element = element;
+        this.options = options;
+        this.visual = undefined;
+    }
+
+    show() {
+        this.visual = new TabPanel(this.element, this.options).show();
+        return this;
+    }
+
+    resize(items) {
+        return this;
+    }
+}
+
 // -------------------------------------------------------------------------------------------------------------------------------
 // Exports
 // -------------------------------------------------------------------------------------------------------------------------------
 
-var TabPanel = {};
+var TabPanel$1 = { TabPanelVisualiser };
 
 /**
  * @author Jonathan Terrell <jonathan.terrell@springbrook.es>
@@ -1068,4 +1158,4 @@ const workforceSizeYear = 2020;
 
 var WorkforceSize = { getWorkforceSizeForYear, getWorkforceSizeForYear2, monthAbbreviations, workforceSizeYear };
 
-export { ChartJS$1 as ChartJS, ChartPanel$1 as ChartPanel, D3XYChart as D3XYCharts, ECharts, Highcharts$1 as Highcharts, TabPanel, Table$1 as Table, Theme, WorkforceSize };
+export { ChartJS$1 as ChartJS, ChartPanel$1 as ChartPanel, D3XYChart as D3XYCharts, ECharts, Highcharts$1 as Highcharts, TabPanel$1 as TabPanel, Table$1 as Table, Theme, WorkforceSize };
