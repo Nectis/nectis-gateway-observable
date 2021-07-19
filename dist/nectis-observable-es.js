@@ -634,7 +634,7 @@ class TabPanel {
             });
             replaceContent(this.element, buildTabbedTile(this, visuals));
             const visualElement = document.createElement('div');
-            visualElement.style.cssText = `height: ${defaultVisualHeight}px`;
+            // visualElement.style.cssText = `height: ${defaultVisualHeight}px`;
             visualElement.id = 'visual';
             this.element.appendChild(visualElement);
             selectItem(this, visuals[0]);
