@@ -633,9 +633,10 @@ class TabPanel {
                 };
             });
             replaceContent(this.element, buildTabbedTile(this, visuals));
-            const visual = document.createElement('div');
-            visual.id = 'visual';
-            this.element.appendChild(visual);
+            const visualElement = document.createElement('div');
+            visualElement.style.cssText = `height: ${defaultVisualHeight}px`;
+            visualElement.id = 'visual';
+            this.element.appendChild(visualElement);
             selectItem(this, visuals[0]);
         } else if (typeof items === 'object' && this.items !== null) {
             replaceContent(this.element, buildSimpleTile());
@@ -662,16 +663,6 @@ const buildSimpleTile = () => {
     element.style.cssText = `height: ${defaultVisualHeight}px`;
     return element;
 };
-
-// const buildTabbedTile1 = (tile, visuals) => html` <div class="tabBar" style="display: flex">
-//         ${visuals.map(
-//             (visual) =>
-//                 html` ${Object.assign(html`<div id="tabButton_${visual.index}" class="tabButton">${visual.label}</div>`, {
-//                     onclick: (event) => selectItem(tile, visual)
-//                 })}`
-//         )}
-//     </div>
-//     <div id="visual"></div>`;
 
 const buildTabbedTile = (tile, visuals) => {
     const tabsElement = document.createElement('div');
@@ -708,7 +699,6 @@ const showVisual = (tile, visual) => {
     removeContent(panelElement);
     if (visual.visualise) {
         tile.currentVisualiser = visual.visualise(panelElement);
-        //tile.currentVisualiser.show();
     } else {
         tile.currentVisualiser = undefined;
     }

@@ -22,9 +22,10 @@ class TabPanel {
                 };
             });
             replaceContent(this.element, buildTabbedTile(this, visuals));
-            const visual = document.createElement('div');
-            visual.id = 'visual';
-            this.element.appendChild(visual);
+            const visualElement = document.createElement('div');
+            visualElement.style.cssText = `height: ${defaultVisualHeight}px`;
+            visualElement.id = 'visual';
+            this.element.appendChild(visualElement);
             selectItem(this, visuals[0]);
         } else if (typeof items === 'object' && this.items !== null) {
             replaceContent(this.element, buildSimpleTile());
