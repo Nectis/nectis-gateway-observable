@@ -436,6 +436,7 @@ const buildTab = (tile, visualIndex, visual) => {
 
     const image = document.createElement('img');
     image.height = visualType.imageHeight;
+    image.style.cssText = 'margin: 0';
     image.src = `https://nectis-content.web.app/${visualType.imageSource}`;
     tabElement.appendChild(image);
 
