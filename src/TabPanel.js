@@ -52,16 +52,6 @@ const buildSimpleTile = () => {
     return element;
 };
 
-// const buildTabbedTile1 = (tile, visuals) => html` <div class="tabBar" style="display: flex">
-//         ${visuals.map(
-//             (visual) =>
-//                 html` ${Object.assign(html`<div id="tabButton_${visual.index}" class="tabButton">${visual.label}</div>`, {
-//                     onclick: (event) => selectItem(tile, visual)
-//                 })}`
-//         )}
-//     </div>
-//     <div id="visual"></div>`;
-
 const buildTabbedTile = (tile, visuals) => {
     const tabsElement = document.createElement('div');
     tabsElement.className = 'tabBar';
@@ -97,7 +87,6 @@ const showVisual = (tile, visual) => {
     removeContent(panelElement);
     if (visual.visualise) {
         tile.currentVisualiser = visual.visualise(panelElement);
-        //tile.currentVisualiser.show();
     } else {
         tile.currentVisualiser = undefined;
     }

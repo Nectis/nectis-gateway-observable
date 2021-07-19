@@ -1,0 +1,53 @@
+.nectis .tabBar {
+    border-bottom: 1px solid #eee;
+    height: 48px;
+}
+
+.nectis .tabButton {
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    display: flex;
+    font-size: 16px;
+    flex-direction: column;
+    justify-content: center;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+.nectis .tabButton:hover {
+    background: #f7f7f7;
+}
+.nectis .tabButton.selected {
+    border-bottom-color: #388e3c;
+}
+.nectis .tabButton.selected:hover {
+    background: #eef5ef;
+}
+
+.nectis .optionsButton {
+    border-top: 2px solid transparent;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 5px 10px 7px 10px;
+}
+.nectis .optionsButton:hover {
+    background: #f7f7f7;
+}
+
+.nectis .vendorButton {
+    border-top: 2px solid transparent;
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    font-size: 16px;
+    flex-direction: row;
+    padding: 5px 10px 7px 10px;
+}
+.nectis .vendorButton:hover {
+    background: #f7f7f7;
+}
+.nectis .vendorButton.selected {
+    border-top-color: #388e3c;
+}
+.nectis .vendorButton.selected:hover {
+    background: #eef5ef;
+}
