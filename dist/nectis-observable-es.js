@@ -1096,6 +1096,7 @@ const getWorkforceSizeForYear = (year) => {
     const inPeriodTerminations = [];
     const endingHeadcounts = [];
     const averageHeadcount = [];
+    const fte = [];
     const endingTerminations = [];
     const closingHeadcounts = [];
 
@@ -1115,6 +1116,7 @@ const getWorkforceSizeForYear = (year) => {
         inPeriodTerminations.push(month.terminations - month.endingTerminations);
         endingHeadcounts.push(endingHeadcount);
         averageHeadcount.push(month.averageHeadcount);
+        fte.push(month.fte);
         endingTerminations.push(month.endingTerminations);
         closingHeadcounts.push(month.closingHeadcount);
 
@@ -1132,6 +1134,7 @@ const getWorkforceSizeForYear = (year) => {
         terminations,
         inPeriodTerminations,
         averageHeadcount,
+        fte,
         endingHeadcounts,
         endingTerminations,
         closingHeadcounts,
