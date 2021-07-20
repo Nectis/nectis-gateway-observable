@@ -376,6 +376,7 @@ class ChartPanel {
     show() {
         console.log(1111, this.items);
         if (Array.isArray(this.items)) {
+            console.log(2222);
             let itemCount = -1;
             const visuals = this.items.map((item) => {
                 itemCount++;
@@ -385,7 +386,9 @@ class ChartPanel {
                     visualise: item.visualise
                 };
             });
+            console.log(3333);
             replaceContent$1(this.element, buildTabbedTile$1(this, visuals));
+            console.log(4444);
             selectItem$1(this, visuals[0]);
         } else if (typeof this.items === 'object' && this.items !== null) {
             replaceContent$1(this.element, buildSimpleTile$1());
