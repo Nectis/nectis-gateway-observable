@@ -430,7 +430,9 @@ const buildTabbedTile$1 = (tile, visuals) => {
 
     const optionsButtonElement = document.createElement('div');
     optionsButtonElement.className = 'optionsButton';
-    optionsButtonElement.onclick = () => console.log('Options button clicked...');
+    optionsButtonElement.onclick = () => {
+        /* console.log('Options button clicked...'); */
+    };
     optionsButtonElement.style.cssText = 'margin-left: auto';
     const labelTextNode = document.createTextNode('Options');
     optionsButtonElement.appendChild(labelTextNode);
@@ -634,7 +636,6 @@ class TabPanel {
             });
             replaceContent(this.element, buildTabbedTile(this, visuals));
             const visualElement = document.createElement('div');
-            // visualElement.style.cssText = `height: ${defaultVisualHeight}px`;
             visualElement.id = 'visual';
             this.element.appendChild(visualElement);
             selectItem(this, visuals[0]);
@@ -1094,6 +1095,7 @@ const getWorkforceSizeForYear = (year) => {
     const terminations = [];
     const inPeriodTerminations = [];
     const endingHeadcounts = [];
+    const averageHeadcount = [];
     const endingTerminations = [];
     const closingHeadcounts = [];
 
@@ -1112,6 +1114,7 @@ const getWorkforceSizeForYear = (year) => {
         terminations.push(month.terminations);
         inPeriodTerminations.push(month.terminations - month.endingTerminations);
         endingHeadcounts.push(endingHeadcount);
+        averageHeadcount.push(month.averageHeadcount);
         endingTerminations.push(month.endingTerminations);
         closingHeadcounts.push(month.closingHeadcount);
 
@@ -1128,6 +1131,7 @@ const getWorkforceSizeForYear = (year) => {
         hires,
         terminations,
         inPeriodTerminations,
+        averageHeadcount,
         endingHeadcounts,
         endingTerminations,
         closingHeadcounts,
