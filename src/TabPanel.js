@@ -10,15 +10,13 @@ class TabPanel {
     constructor(element, items) {
         this.element = element;
         this.items = items;
-        // const xxxx = element.dataset.tabs;
-        // console.log('xxxx', JSON.parse(xxxx));
     }
 
     show() {
         if (Array.isArray(this.items)) {
             let itemCount = -1;
             const visuals = this.items.map((item) => {
-                console.log('tab items', item);
+                console.log('Tab item', item);
                 itemCount++;
                 return {
                     index: itemCount,

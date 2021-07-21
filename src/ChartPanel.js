@@ -20,11 +20,12 @@ class ChartPanel {
         if (Array.isArray(this.items)) {
             let itemCount = -1;
             const visuals = this.items.map((item) => {
-                console.log('item', item);
+                console.log('Vendor item', item);
                 itemCount++;
                 return {
                     index: itemCount,
-                    typeId: item.typeId,
+                    notebookId: item.notebookIdId,
+                    typeId: item.type,
                     visualise: item.visualise
                 };
             });
@@ -124,7 +125,7 @@ const selectItem = (tile, visual) => {
 };
 
 const showVisual = (tile, visual) => {
-    console.log('show visual', visual);
+    console.log('Show visual', visual);
     const panelElement = tile.element.querySelector('#visual');
     removeContent(panelElement);
     if (visual.visualise) {

@@ -377,11 +377,12 @@ class ChartPanel {
         if (Array.isArray(this.items)) {
             let itemCount = -1;
             const visuals = this.items.map((item) => {
-                console.log('item', item);
+                console.log('Vendor item', item);
                 itemCount++;
                 return {
                     index: itemCount,
-                    typeId: item.typeId,
+                    notebookId: item.notebookIdId,
+                    typeId: item.type,
                     visualise: item.visualise
                 };
             });
@@ -481,7 +482,7 @@ const selectItem$1 = (tile, visual) => {
 };
 
 const showVisual$1 = (tile, visual) => {
-    console.log('show visual', visual);
+    console.log('Show visual', visual);
     const panelElement = tile.element.querySelector('#visual');
     removeContent$1(panelElement);
     if (visual.visualise) {
@@ -623,15 +624,13 @@ class TabPanel {
     constructor(element, items) {
         this.element = element;
         this.items = items;
-        // const xxxx = element.dataset.tabs;
-        // console.log('xxxx', JSON.parse(xxxx));
     }
 
     show() {
         if (Array.isArray(this.items)) {
             let itemCount = -1;
             const visuals = this.items.map((item) => {
-                console.log('tab items', item);
+                console.log('Tab item', item);
                 itemCount++;
                 return {
                     index: itemCount,
