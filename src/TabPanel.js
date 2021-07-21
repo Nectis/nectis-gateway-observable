@@ -18,10 +18,12 @@ class TabPanel {
         if (Array.isArray(this.items)) {
             let itemCount = -1;
             const visuals = this.items.map((item) => {
+                console.log('tab items', item);
                 itemCount++;
                 return {
                     index: itemCount,
                     label: item.label,
+                    notebookId: item.notebookId,
                     vendors: item.vendors,
                     visualise: item.visualise
                 };
