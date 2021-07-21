@@ -10,8 +10,8 @@ class TabPanel {
     constructor(element, items) {
         this.element = element;
         this.items = items;
-        const xxxx = element.dataset.tabs;
-        console.log('xxxx', JSON.parse(xxxx));
+        // const xxxx = element.dataset.tabs;
+        // console.log('xxxx', JSON.parse(xxxx));
     }
 
     show() {

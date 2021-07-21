@@ -621,8 +621,8 @@ class TabPanel {
     constructor(element, items) {
         this.element = element;
         this.items = items;
-        const xxxx = element.dataset.tabs;
-        console.log('xxxx', JSON.parse(xxxx));
+        // const xxxx = element.dataset.tabs;
+        // console.log('xxxx', JSON.parse(xxxx));
     }
 
     show() {
@@ -909,6 +909,15 @@ class TileVisualiser {
 
 const define = (options) => {
     console.log('Tile define', options);
+    const tileElement = document.createElement('div');
+    tileElement.className = 'nectis';
+    const styleElement = document.createElement('style');
+    tileElement.appendChild(styleElement);
+    const visualElement = document.createElement('div');
+    visualElement.id = 'visual';
+    visualElement.dataset.options = JSON.stringify(options);
+    tileElement.appendChild(visualElement);
+    return tileElement;
 };
 
 // -------------------------------------------------------------------------------------------------------------------------------
