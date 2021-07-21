@@ -680,6 +680,8 @@ const buildTabButton = (tile, visualIndex, visual) => {
     console.log(1111, visual);
     const tabButtonElement = document.createElement('div');
     tabButtonElement.className = 'tabButton';
+    console.log('VENDORS', visual.vendors);
+    console.log('VENDORS', JSON.stringify(visual.vendors));
     tabButtonElement.dataset.vendors = visual.vendors ? JSON.stringify(visual.vendors) : '';
     tabButtonElement.id = `tabButton_${visualIndex}`;
     tabButtonElement.onclick = () => selectItem(tile, visual);
