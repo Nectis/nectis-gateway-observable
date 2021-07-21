@@ -729,13 +729,10 @@ const buildVendors = (element, vendors) => {
             buildVisual();
         }
     } else {
-        // eslint-disable-next-line no-new
-        const xxxx = new ChartPanel$1.ChartPanelVisualiser(
+        new ChartPanel$1.ChartPanelVisualiser(
             element,
             vendors.map((vendor) => buildVendor(vendor))
-        );
-        console.log('xxxx', xxxx);
-        xxxx.show();
+        ).show();
     }
 };
 
