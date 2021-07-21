@@ -20,6 +20,7 @@ class ChartPanel {
         if (Array.isArray(this.items)) {
             let itemCount = -1;
             const visuals = this.items.map((item) => {
+                console.log('item', item);
                 itemCount++;
                 return {
                     index: itemCount,
