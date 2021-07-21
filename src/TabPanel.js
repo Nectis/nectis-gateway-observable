@@ -96,6 +96,8 @@ const showVisual = (tile, visual, selectedButton) => {
     //     tile.currentVisualiser = undefined;
     // }
 
+    const xxxx = selectedButton.dataset.vendors;
+    console.log('xxxx', xxxx);
     const vendorsString = selectedButton.dataset.vendors;
     if (vendorsString) {
         const vendors = JSON.parse(vendorsString);
