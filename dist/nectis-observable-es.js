@@ -676,8 +676,10 @@ const buildTabbedTile = (tile, visuals) => {
 };
 
 const buildTabButton = (tile, visualIndex, visual) => {
+    console.log(1111, visual);
     const tabButtonElement = document.createElement('div');
     tabButtonElement.className = 'tabButton';
+    tabButtonElement.dataset.vendors = visual.vendors;
     tabButtonElement.id = `tabButton_${visualIndex}`;
     tabButtonElement.onclick = () => selectItem(tile, visual);
     const labelTextNode = document.createTextNode(visual.label);
@@ -691,7 +693,9 @@ const selectItem = (tile, visual) => {
     for (let i1 = 0; i1 < tabButtons.length; i1++) {
         tabButtons[i1].className = 'tabButton';
     }
-    tile.element.querySelector(`#tabButton_${visual.index}`).className = 'tabButton selected';
+    const selectedButton = tile.element.querySelector(`#tabButton_${visual.index}`);
+    selectedButton.className = 'tabButton selected';
+    console.log(2222, selectedButton.dataset);
     showVisual(tile, visual);
 };
 
