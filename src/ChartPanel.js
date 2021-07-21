@@ -138,8 +138,9 @@ const showVisual = async (tile, visual) => {
 };
 
 const loadNotebook = async (notebookId) => {
-    const module = await import(`https://api.observablehq.com/@jonathan-terrell/${notebookId}.js`);
-    return module;
+    return 123;
+    //const module = await import(`https://api.observablehq.com/@jonathan-terrell/${notebookId}.js`);
+    //return module;
 
     //const variables = {};
     //for (const variable of module.default.modules[0].variables) {
