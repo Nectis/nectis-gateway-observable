@@ -67,7 +67,7 @@ const buildTabButton = (tile, visualIndex, visual) => {
     console.log(1111, visual);
     const tabButtonElement = document.createElement('div');
     tabButtonElement.className = 'tabButton';
-    tabButtonElement.dataset.vendors = JSON.stringify(visual.vendors);
+    tabButtonElement.dataset.vendors = visual.vendors ? JSON.stringify(visual.vendors) : '';
     tabButtonElement.id = `tabButton_${visualIndex}`;
     tabButtonElement.onclick = () => selectItem(tile, visual);
     const labelTextNode = document.createTextNode(visual.label);
@@ -83,7 +83,7 @@ const selectItem = (tile, visual) => {
     }
     const selectedButton = tile.element.querySelector(`#tabButton_${visual.index}`);
     selectedButton.className = 'tabButton selected';
-    console.log(2222, JSON.parse(selectedButton.dataset));
+    console.log(2222, JSON.parse(selectedButton.dataset.vendors));
     showVisual(tile, visual);
 };
 
