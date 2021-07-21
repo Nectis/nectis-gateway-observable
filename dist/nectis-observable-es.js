@@ -926,9 +926,7 @@ const define = (options) => {
 };
 
 const show = (element) => {
-    console.log(element);
-    console.log(element.dataset);
-    console.log('Show tile', element.dataset.options);
+    console.log('Show tile', JSON.parse(element.dataset.options));
 };
 
 // -------------------------------------------------------------------------------------------------------------------------------
