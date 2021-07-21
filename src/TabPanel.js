@@ -96,7 +96,7 @@ const showVisual = (tile, visual, selectedButton) => {
     //     tile.currentVisualiser = undefined;
     // }
 
-    const xxxx = selectedButton.dataset.tabs;
+    const xxxx = panelElement.dataset.tabs;
     console.log('xxxx', xxxx);
     const vendorsString = selectedButton.dataset.vendors;
     if (vendorsString) {
