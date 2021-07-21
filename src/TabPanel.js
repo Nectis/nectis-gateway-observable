@@ -23,7 +23,6 @@ class TabPanel {
                 return {
                     index: itemCount,
                     label: item.label,
-                    notebookId: item.notebookId,
                     vendors: item.vendors,
                     visualise: item.visualise
                 };
@@ -136,7 +135,7 @@ const buildVendors = (element, vendors) => {
     }
 };
 
-const buildVendor = (vendor) => ({ typeId: vendor.id });
+const buildVendor = (vendor) => ({ notebookId: vendor.notebookId, typeId: vendor.id });
 
 const buildVisual = () => {
     console.log('BUILD VISUAL');
