@@ -101,6 +101,7 @@ const showVisual = (tile, visual, selectedButton) => {
     if (vendorsString) {
         const vendors = JSON.parse(vendorsString);
         console.log('VENDORS', vendors);
+        buildVendors(tile.element, vendors);
     } else {
         console.log('NO VENDORS');
     }
@@ -115,8 +116,8 @@ const showVisual1 = (tile, visual) => {
         tile.currentVisualiser = undefined;
     }
 };
-const buildVendors = (element, tab) => {
-    const vendors = tab.vendors || [];
+const buildVendors = (element, vendors) => {
+    //const vendors = tab.vendors || [];
     const vendorCount = vendors.length;
     if (vendorCount === 0) [];
     if (vendorCount === 1) {

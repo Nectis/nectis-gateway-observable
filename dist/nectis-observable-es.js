@@ -712,9 +712,37 @@ const showVisual = (tile, visual, selectedButton) => {
     if (vendorsString) {
         const vendors = JSON.parse(vendorsString);
         console.log('VENDORS', vendors);
+        buildVendors(tile.element, vendors);
     } else {
         console.log('NO VENDORS');
     }
+};
+const buildVendors = (element, vendors) => {
+    //const vendors = tab.vendors || [];
+    const vendorCount = vendors.length;
+    if (vendorCount === 1) {
+        const vendor = vendors[0];
+        if (vendor.vendorId) {
+            buildVendor(vendor);
+        } else {
+            buildVisual();
+        }
+    } else {
+        // eslint-disable-next-line no-new
+        new ChartPanel$1.ChartPanelVisualiser(
+            element,
+            vendors.map((vendor) => buildVendor(vendor))
+        );
+    }
+};
+
+const buildVendor = (vendor) => {
+    console.log('BUILD VENDOR');
+    return { typeId: vendor.id };
+};
+
+const buildVisual = () => {
+    console.log('BUILD VISUAL');
 };
 
 const removeContent = (element) => {
