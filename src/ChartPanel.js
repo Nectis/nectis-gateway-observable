@@ -128,11 +128,36 @@ const showVisual = (tile, visual) => {
     console.log('Show visual', visual);
     const panelElement = tile.element.querySelector('#visual');
     removeContent(panelElement);
-    if (visual.visualise) {
-        tile.currentVisualiser = visual.visualise(panelElement);
-    } else {
-        tile.currentVisualiser = undefined;
+    // if (visual.visualise) {
+    //     tile.currentVisualiser = visual.visualise(panelElement);
+    // } else {
+    //     tile.currentVisualiser = undefined;
+    // }
+    const notebook = loadNotebook(visual.notebookId);
+    console.log('notebook', notebook);
+};
+
+const loadNotebook = async (notebookId) => {
+    const module = await import(`https://api.observablehq.com/@jonathan-terrell/${notebookId}.js`);
+
+    const variables = {};
+    for (const variable of module.default.modules[0].variables) {
+        const name = variable.name;
+        variables[name] = { inputs: variable.inputs, value: variable.value };
     }
+
+    const buildArgs = async (variables2, inputs) => {
+        const args = [];
+        for (const name of inputs) {
+            const variable = variables2[name];
+            const inputArgs = await buildArgs(variables2, variable.inputs || []);
+            args.push(await variable.value(...inputArgs));
+        }
+        return args;
+    };
+
+    const args = await buildArgs(variables, variables.visualise.inputs || []);
+    return await variables.visualise.value(...args);
 };
 
 const removeContent = (element) => {
