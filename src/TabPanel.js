@@ -4,6 +4,8 @@
  * @license "Apache-2.0"
  */
 
+import ChartPanel from './ChartPanel';
+
 class TabPanel {
     constructor(element, items) {
         this.element = element;
@@ -67,9 +69,7 @@ const buildTabButton = (tile, visualIndex, visual) => {
     console.log(1111, visual);
     const tabButtonElement = document.createElement('div');
     tabButtonElement.className = 'tabButton';
-    console.log('VENDORS', visual.vendors);
-    console.log('VENDORS', JSON.stringify(visual.vendors));
-    tabButtonElement.dataset.vendors = visual.vendors ? JSON.stringify(visual.vendors) : '';
+    if (visual.vendors) tabButtonElement.dataset.vendors = JSON.stringify(visual.vendors);
     tabButtonElement.id = `tabButton_${visualIndex}`;
     tabButtonElement.onclick = () => selectItem(tile, visual);
     const labelTextNode = document.createTextNode(visual.label);
@@ -100,8 +100,9 @@ const showVisual = (tile, visual, selectedButton) => {
     const vendorsString = selectedButton.dataset.vendors;
     if (vendorsString) {
         const vendors = JSON.parse(vendorsString);
-        console.log(vendors);
+        console.log('VENDORS', vendors);
     } else {
+        console.log('NO VENDORS');
     }
 };
 
@@ -113,6 +114,34 @@ const showVisual1 = (tile, visual) => {
     } else {
         tile.currentVisualiser = undefined;
     }
+};
+const buildVendors = (element, tab) => {
+    const vendors = tab.vendors || [];
+    const vendorCount = vendors.length;
+    if (vendorCount === 0) [];
+    if (vendorCount === 1) {
+        const vendor = vendors[0];
+        if (vendor.vendorId) {
+            buildVendor(vendor);
+        } else {
+            buildVisual(vendor);
+        }
+    } else {
+        // eslint-disable-next-line no-new
+        new ChartPanel.ChartPanelVisualiser(
+            element,
+            vendors.map((vendor) => buildVendor(vendor))
+        );
+    }
+};
+
+const buildVendor = (vendor) => {
+    console.log('BUILD VENDOR');
+    return { typeId: vendor.id };
+};
+
+const buildVisual = () => {
+    console.log('BUILD VISUAL');
 };
 
 const removeContent = (element) => {
