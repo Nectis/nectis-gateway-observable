@@ -893,22 +893,7 @@ const formatCellValue = (column, value) => {
  * @license "Apache-2.0"
  */
 
-// -------------------------------------------------------------------------------------------------------------------------------
-// Declarations - Classes
-// -------------------------------------------------------------------------------------------------------------------------------
-
-class TileVisualiser {
-    constructor(element, options) {
-        const tabs = (options || {}).tabs || [];
-        new TabPanel$1.TabPanelVisualiser(
-            element.querySelector('#content'),
-            tabs.map((tab) => ({ label: tab.label, vendors: tab.vendors }))
-        ).show();
-    }
-}
-
 const define = (options) => {
-    console.log('Define tile', options);
     const tileElement = document.createElement('div');
     tileElement.className = 'nectis';
     tileElement.dataset.options = JSON.stringify(options);
@@ -925,16 +910,20 @@ const define = (options) => {
 };
 
 const show = (element) => {
-    console.log('Show tile', JSON.parse(element.dataset.options));
     const options = JSON.parse(element.dataset.options);
-    new TileVisualiser(element, options);
+    const tabs = (options || {}).tabs || [];
+    const tabPanelVisualiser = new TabPanel$1.TabPanelVisualiser(
+        element.querySelector('#content'),
+        tabs // tabs.map((tab) => ({ label: tab.label, vendors: tab.vendors }))
+    );
+    tabPanelVisualiser.show();
 };
 
 // -------------------------------------------------------------------------------------------------------------------------------
 // Exports
 // -------------------------------------------------------------------------------------------------------------------------------
 
-var Tile = { TileVisualiser, define, show };
+var Tile = { define, show };
 
 // -------------------------------------------------------------------------------------------------------------------------------
 // Procedures
