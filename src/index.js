@@ -12,10 +12,11 @@ import Highcharts from './Highcharts';
 import TabPanel from './TabPanel';
 import Table from './Table';
 import Theme from './Theme';
+import Tile from './Tile';
 import WorkforceSize from './WorkforceSize';
 
 // -------------------------------------------------------------------------------------------------------------------------------
 // Exports
 // -------------------------------------------------------------------------------------------------------------------------------
 
-export { ChartJS, ChartPanel, D3XYCharts, ECharts, Highcharts, TabPanel, Table, Theme, WorkforceSize };
+export { ChartJS, ChartPanel, D3XYCharts, ECharts, Highcharts, TabPanel, Table, Theme, Tile, WorkforceSize };

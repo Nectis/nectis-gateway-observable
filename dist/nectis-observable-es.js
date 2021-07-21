@@ -893,6 +893,36 @@ const formatCellValue = (column, value) => {
  */
 
 // -------------------------------------------------------------------------------------------------------------------------------
+// Declarations - Classes
+// -------------------------------------------------------------------------------------------------------------------------------
+
+class TileVisualiser {
+    constructor(element, options) {
+      const tabs = (options || {}).tabs || [];
+      new TabPanel$1.TabPanelVisualiser(
+        element.querySelector('#visual'),
+        tabs.map((tab) => ({ label: tab.label, vendors: tab.vendors }))
+      ).show();
+    }
+  }
+
+// -------------------------------------------------------------------------------------------------------------------------------
+// Exports
+// -------------------------------------------------------------------------------------------------------------------------------
+
+var Tile = { TileVisualiser };
+
+// -------------------------------------------------------------------------------------------------------------------------------
+// Procedures
+// -------------------------------------------------------------------------------------------------------------------------------
+
+/**
+ * @author Jonathan Terrell <jonathan.terrell@springbrook.es>
+ * @copyright Copyright (c) 2019-2021 Springbrook S.L.
+ * @license "Apache-2.0"
+ */
+
+// -------------------------------------------------------------------------------------------------------------------------------
 // Declarations - Variables
 // -------------------------------------------------------------------------------------------------------------------------------
 
@@ -1199,4 +1229,4 @@ const workforceSizeYear = 2020;
 
 var WorkforceSize = { getWorkforceSizeForYear, getWorkforceSizeForYear2, monthAbbreviations, workforceSizeYear };
 
-export { ChartJS$1 as ChartJS, ChartPanel$1 as ChartPanel, D3XYChart as D3XYCharts, ECharts, Highcharts$1 as Highcharts, TabPanel$1 as TabPanel, Table$1 as Table, Theme, WorkforceSize };
+export { ChartJS$1 as ChartJS, ChartPanel$1 as ChartPanel, D3XYChart as D3XYCharts, ECharts, Highcharts$1 as Highcharts, TabPanel$1 as TabPanel, Table$1 as Table, Theme, Tile, WorkforceSize };
