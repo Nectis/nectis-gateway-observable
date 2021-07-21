@@ -24,8 +24,8 @@ class ChartPanel {
                 itemCount++;
                 return {
                     index: itemCount,
-                    notebookId: item.notebookIdId,
-                    typeId: item.type,
+                    notebookId: item.notebookId,
+                    typeId: item.typeId,
                     visualise: item.visualise
                 };
             });
@@ -90,8 +90,7 @@ const buildTabbedTile = (tile, visuals) => {
 };
 
 const buildVendorButton = (tile, visualIndex, visual) => {
-    console.log('visual', visual);
-    const visualType = visualTypes.get(visual.id);
+    const visualType = visualTypes.get(visual.typeId);
 
     const vendorButtonElement = document.createElement('div');
     vendorButtonElement.className = 'vendorButton';
