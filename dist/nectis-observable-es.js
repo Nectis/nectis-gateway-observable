@@ -901,7 +901,7 @@ class TileVisualiser {
     constructor(element, options) {
         const tabs = (options || {}).tabs || [];
         new TabPanel$1.TabPanelVisualiser(
-            element.querySelector('#visual'),
+            element.querySelector('#content'),
             tabs.map((tab) => ({ label: tab.label, vendors: tab.vendors }))
         ).show();
     }
