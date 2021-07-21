@@ -908,10 +908,11 @@ class TileVisualiser {
 }
 
 const define = (options) => {
-    console.log('Tile define', options);
     const tileElement = document.createElement('div');
     tileElement.className = 'nectis';
     const styleElement = document.createElement('style');
+    //styleElement.type = 'text/css';
+    styleElement.appendChild(document.createTextNode(panelStyle));
     tileElement.appendChild(styleElement);
     const visualElement = document.createElement('div');
     visualElement.id = 'visual';
