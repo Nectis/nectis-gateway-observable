@@ -899,19 +899,23 @@ const formatCellValue = (column, value) => {
 
 class TileVisualiser {
     constructor(element, options) {
-      const tabs = (options || {}).tabs || [];
-      new TabPanel$1.TabPanelVisualiser(
-        element.querySelector('#visual'),
-        tabs.map((tab) => ({ label: tab.label, vendors: tab.vendors }))
-      ).show();
+        const tabs = (options || {}).tabs || [];
+        new TabPanel$1.TabPanelVisualiser(
+            element.querySelector('#visual'),
+            tabs.map((tab) => ({ label: tab.label, vendors: tab.vendors }))
+        ).show();
     }
-  }
+}
+
+const define = (options) => {
+    console.log('Tile define', options);
+};
 
 // -------------------------------------------------------------------------------------------------------------------------------
 // Exports
 // -------------------------------------------------------------------------------------------------------------------------------
 
-var Tile = { TileVisualiser };
+var Tile = { TileVisualiser, define };
 
 // -------------------------------------------------------------------------------------------------------------------------------
 // Procedures
