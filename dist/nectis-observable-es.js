@@ -910,7 +910,7 @@ class TileVisualiser {
 const define = (options) => {
     console.log('Define tile', options);
     const tileElement = document.createElement('div');
-    tileElement.className = 'nectis-tile';
+    tileElement.className = 'nectis';
     tileElement.dataset.options = JSON.stringify(options);
 
     const styleElement = document.createElement('style');
