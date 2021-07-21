@@ -917,6 +917,7 @@ const define = (options) => {
     const visualElement = document.createElement('div');
     visualElement.id = 'visual';
     visualElement.dataset.options = JSON.stringify(options);
+    visualElement.appendChild(document.createTextNode('Stuff goes here...'));
     tileElement.appendChild(visualElement);
     return tileElement;
 };
