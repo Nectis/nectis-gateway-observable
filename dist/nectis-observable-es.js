@@ -919,7 +919,6 @@ const define = (options) => {
 
     const visualElement = document.createElement('div');
     visualElement.id = 'content';
-    visualElement.appendChild(document.createTextNode('Stuff goes here...'));
     tileElement.appendChild(visualElement);
 
     return tileElement;
@@ -927,6 +926,8 @@ const define = (options) => {
 
 const show = (element) => {
     console.log('Show tile', JSON.parse(element.dataset.options));
+    const options = JSON.parse(element.dataset.options);
+    new TileVisualiser(element, options);
 };
 
 // -------------------------------------------------------------------------------------------------------------------------------
