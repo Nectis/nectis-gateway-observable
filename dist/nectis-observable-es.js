@@ -730,7 +730,11 @@ const buildVendors = (element, vendors) => {
         }
     } else {
         // eslint-disable-next-line no-new
-        new ChartPanel$1.ChartPanelVisualiser(element, vendors.map((vendor) => buildVendor(vendor)).show());
+        const xxxx = new ChartPanel$1.ChartPanelVisualiser(
+            element,
+            vendors.map((vendor) => buildVendor(vendor))
+        );
+        console.log('xxxx', xxxx), xxxx.show();
     }
 };
 
