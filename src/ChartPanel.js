@@ -90,7 +90,8 @@ const buildTabbedTile = (tile, visuals) => {
 };
 
 const buildVendorButton = (tile, visualIndex, visual) => {
-    const visualType = visualTypes.get(visual.typeId);
+    console.log('visual', visual);
+    const visualType = visualTypes.get(visual.id);
 
     const vendorButtonElement = document.createElement('div');
     vendorButtonElement.className = 'vendorButton';
