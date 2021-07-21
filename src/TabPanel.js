@@ -137,7 +137,7 @@ const buildVendors = (element, vendors) => {
 };
 
 const buildVendor = (vendor) => {
-    console.log('BUILD VENDOR');
+    console.log('BUILD VENDOR', vendor);
     return { typeId: vendor.id };
 };
 
