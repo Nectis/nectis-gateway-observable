@@ -23,6 +23,7 @@ class ChartPanel {
                 console.log('Vendor item', item);
                 itemCount++;
                 return {
+                    callback: item.callback,
                     index: itemCount,
                     notebookId: item.notebookId,
                     typeId: item.typeId,
@@ -133,8 +134,9 @@ const showVisual = async (tile, visual) => {
     // } else {
     //     tile.currentVisualiser = undefined;
     // }
-    const notebook = await loadNotebook(visual.notebookId);
-    console.log('notebook', notebook);
+    // const notebook = await loadNotebook(visual.notebookId);
+    // console.log('notebook', notebook);
+    visual.callback(visual.notebookId);
 };
 
 const loadNotebook = async (notebookId) => {
