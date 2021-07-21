@@ -18,6 +18,7 @@ class TabPanel {
                 return {
                     index: itemCount,
                     label: item.label,
+                    vendors: item.vendors,
                     visualise: item.visualise
                 };
             });
