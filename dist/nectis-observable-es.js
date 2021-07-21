@@ -445,6 +445,7 @@ const buildTabbedTile$1 = (tile, visuals) => {
 };
 
 const buildVendorButton = (tile, visualIndex, visual) => {
+    console.log('BUILD VENDOR BUTTON');
     const visualType = visualTypes.get(visual.typeId);
 
     const vendorButtonElement = document.createElement('div');
@@ -702,11 +703,11 @@ const selectItem = (tile, visual) => {
 const showVisual = (tile, visual, selectedButton) => {
     const panelElement = tile.element.querySelector('#visual');
     removeContent(panelElement);
-    if (visual.visualise) {
-        tile.currentVisualiser = visual.visualise(panelElement);
-    } else {
-        tile.currentVisualiser = undefined;
-    }
+    //if (visual.visualise) {
+    //    tile.currentVisualiser = visual.visualise(panelElement);
+    //} else {
+    //    tile.currentVisualiser = undefined;
+    //}
 
     const vendorsString = selectedButton.dataset.vendors;
     if (vendorsString) {

@@ -91,11 +91,11 @@ const selectItem = (tile, visual) => {
 const showVisual = (tile, visual, selectedButton) => {
     const panelElement = tile.element.querySelector('#visual');
     removeContent(panelElement);
-    if (visual.visualise) {
-        tile.currentVisualiser = visual.visualise(panelElement);
-    } else {
-        tile.currentVisualiser = undefined;
-    }
+    //if (visual.visualise) {
+    //    tile.currentVisualiser = visual.visualise(panelElement);
+    //} else {
+    //    tile.currentVisualiser = undefined;
+    //}
 
     const vendorsString = selectedButton.dataset.vendors;
     if (vendorsString) {
