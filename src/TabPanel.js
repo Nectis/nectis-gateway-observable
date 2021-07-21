@@ -10,6 +10,8 @@ class TabPanel {
     constructor(element, items) {
         this.element = element;
         this.items = items;
+        const xxxx = element.dataset.tabs;
+        console.log('xxxx', xxxx);
     }
 
     show() {
@@ -95,9 +97,6 @@ const showVisual = (tile, visual, selectedButton) => {
     // } else {
     //     tile.currentVisualiser = undefined;
     // }
-
-    const xxxx = panelElement.dataset.tabs;
-    console.log('xxxx', xxxx);
     const vendorsString = selectedButton.dataset.vendors;
     if (vendorsString) {
         const vendors = JSON.parse(vendorsString);
