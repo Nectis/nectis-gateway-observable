@@ -11,7 +11,7 @@ class TabPanel {
         this.element = element;
         this.items = items;
         const xxxx = element.dataset.tabs;
-        console.log('xxxx', xxxx);
+        console.log('xxxx', JSON.parse(xxxx));
     }
 
     show() {
