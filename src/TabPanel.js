@@ -101,7 +101,7 @@ const showVisual = (tile, visual, selectedButton) => {
     if (vendorsString) {
         const vendors = JSON.parse(vendorsString);
         console.log('VENDORS', vendors);
-        buildVendors(tile.element, vendors);
+        buildVendors(panelElement, vendors);
     } else {
         console.log('NO VENDORS');
     }
