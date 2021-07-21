@@ -74,7 +74,7 @@ const buildTabbedTile = (tile, visuals) => {
     const optionsButtonElement = document.createElement('div');
     optionsButtonElement.className = 'optionsButton';
     optionsButtonElement.onclick = () => {
-        /* console.log('Options button clicked...'); */
+        console.log('Options button clicked...');
     };
     optionsButtonElement.style.cssText = 'margin-left: auto';
     const labelTextNode = document.createTextNode('Options');
@@ -88,7 +88,6 @@ const buildTabbedTile = (tile, visuals) => {
 };
 
 const buildVendorButton = (tile, visualIndex, visual) => {
-    console.log('BUILD VENDOR BUTTON');
     const visualType = visualTypes.get(visual.typeId);
 
     const vendorButtonElement = document.createElement('div');
