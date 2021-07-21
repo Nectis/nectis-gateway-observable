@@ -11,9 +11,10 @@ const visualTypes = new Map([
 ]);
 
 class ChartPanel {
-    constructor(element, items) {
+    constructor(element, items, callback) {
         this.element = element;
         this.items = items;
+        this.callback = callback;
     }
 
     show() {
@@ -23,7 +24,7 @@ class ChartPanel {
                 console.log('Vendor item', item);
                 itemCount++;
                 return {
-                    callback: item.callback,
+                    callback: this.callback,
                     index: itemCount,
                     notebookId: item.notebookId,
                     typeId: item.typeId,
@@ -125,7 +126,7 @@ const selectItem = (tile, visual) => {
     showVisual(tile, visual);
 };
 
-const showVisual = async (tile, visual) => {
+const showVisual = (tile, visual) => {
     console.log('Show visual', visual);
     const panelElement = tile.element.querySelector('#visual');
     removeContent(panelElement);
@@ -136,7 +137,7 @@ const showVisual = async (tile, visual) => {
     // }
     // const notebook = await loadNotebook(visual.notebookId);
     // console.log('notebook', notebook);
-    visual.callback(visual.notebookId);
+    if (visual.callback) visual.callback(visual.notebookId);
 };
 
 const loadNotebook = async (notebookId) => {
@@ -173,14 +174,15 @@ const replaceContent = (element, content) => {
 };
 
 class ChartPanelVisualiser {
-    constructor(element, options) {
+    constructor(element, options, callback) {
         this.element = element;
         this.options = options;
+        this.callback = callback;
         this.visual = undefined;
     }
 
     show() {
-        this.visual = new ChartPanel(this.element, this.options).show();
+        this.visual = new ChartPanel(this.element, this.options, this.callback).show();
         return this;
     }
 

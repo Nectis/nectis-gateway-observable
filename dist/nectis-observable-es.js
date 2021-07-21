@@ -368,9 +368,10 @@ const visualTypes = new Map([
 ]);
 
 class ChartPanel {
-    constructor(element, items) {
+    constructor(element, items, callback) {
         this.element = element;
         this.items = items;
+        this.callback = callback;
     }
 
     show() {
@@ -380,7 +381,7 @@ class ChartPanel {
                 console.log('Vendor item', item);
                 itemCount++;
                 return {
-                    callback: item.callback,
+                    callback: this.callback,
                     index: itemCount,
                     notebookId: item.notebookId,
                     typeId: item.typeId,
@@ -482,7 +483,7 @@ const selectItem$1 = (tile, visual) => {
     showVisual$1(tile, visual);
 };
 
-const showVisual$1 = async (tile, visual) => {
+const showVisual$1 = (tile, visual) => {
     console.log('Show visual', visual);
     const panelElement = tile.element.querySelector('#visual');
     removeContent$1(panelElement);
@@ -493,7 +494,7 @@ const showVisual$1 = async (tile, visual) => {
     // }
     // const notebook = await loadNotebook(visual.notebookId);
     // console.log('notebook', notebook);
-    visual.callback(visual.notebookId);
+    if (visual.callback) visual.callback(visual.notebookId);
 };
 
 const removeContent$1 = (element) => {
@@ -505,14 +506,15 @@ const replaceContent$1 = (element, content) => {
 };
 
 class ChartPanelVisualiser {
-    constructor(element, options) {
+    constructor(element, options, callback) {
         this.element = element;
         this.options = options;
+        this.callback = callback;
         this.visual = undefined;
     }
 
     show() {
-        this.visual = new ChartPanel(this.element, this.options).show();
+        this.visual = new ChartPanel(this.element, this.options, this.callback).show();
         return this;
     }
 
@@ -625,9 +627,10 @@ const loadHighcharts = async () => {
  */
 
 class TabPanel {
-    constructor(element, items) {
+    constructor(element, items, callback) {
         this.element = element;
         this.items = items;
+        this.callback = callback;
     }
 
     show() {
@@ -643,14 +646,14 @@ class TabPanel {
                     visualise: item.visualise
                 };
             });
-            replaceContent(this.element, buildTabbedTile(this, visuals));
+            replaceContent(this.element, buildTabbedTile(this, visuals), this.callback);
             const visualElement = document.createElement('div');
             visualElement.id = 'visual';
             this.element.appendChild(visualElement);
-            selectItem(this, visuals[0]);
+            selectItem(this, visuals[0], this.callback);
         } else if (typeof items === 'object' && this.items !== null) {
             replaceContent(this.element, buildSimpleTile());
-            showVisual(this, this.items);
+            showVisual(this, this.items, this.callback);
         } else {
             replaceContent(this.element, buildEmptyTile());
             this.currentVisualiser = undefined;
@@ -674,28 +677,28 @@ const buildSimpleTile = () => {
     return element;
 };
 
-const buildTabbedTile = (tile, visuals) => {
+const buildTabbedTile = (tile, visuals, callback) => {
     const tabsElement = document.createElement('div');
     tabsElement.className = 'tabBar';
     tabsElement.style.cssText = 'display: flex';
     for (const [index, visual] of visuals.entries()) {
-        tabsElement.appendChild(buildTabButton(tile, index, visual));
+        tabsElement.appendChild(buildTabButton(tile, index, visual, callback));
     }
     return tabsElement;
 };
 
-const buildTabButton = (tile, visualIndex, visual) => {
+const buildTabButton = (tile, visualIndex, visual, callback) => {
     const tabButtonElement = document.createElement('div');
     tabButtonElement.className = 'tabButton';
     if (visual.vendors) tabButtonElement.dataset.vendors = JSON.stringify(visual.vendors);
     tabButtonElement.id = `tabButton_${visualIndex}`;
-    tabButtonElement.onclick = () => selectItem(tile, visual);
+    tabButtonElement.onclick = () => selectItem(tile, visual, callback);
     const labelTextNode = document.createTextNode(visual.label);
     tabButtonElement.appendChild(labelTextNode);
     return tabButtonElement;
 };
 
-const selectItem = (tile, visual) => {
+const selectItem = (tile, visual, callback) => {
     // Clear tab button selection.
     const tabButtons = tile.element.getElementsByClassName('tabButton');
     for (let i1 = 0; i1 < tabButtons.length; i1++) {
@@ -703,10 +706,10 @@ const selectItem = (tile, visual) => {
     }
     const selectedButton = tile.element.querySelector(`#tabButton_${visual.index}`);
     selectedButton.className = 'tabButton selected';
-    showVisual(tile, visual, selectedButton);
+    showVisual(tile, visual, selectedButton, callback);
 };
 
-const showVisual = (tile, visual, selectedButton) => {
+const showVisual = (tile, visual, selectedButton, callback) => {
     const panelElement = tile.element.querySelector('#visual');
     removeContent(panelElement);
     // if (visual.visualise) {
@@ -717,7 +720,7 @@ const showVisual = (tile, visual, selectedButton) => {
     const vendorsString = selectedButton.dataset.vendors;
     if (vendorsString) {
         const vendors = JSON.parse(vendorsString);
-        buildVendors(panelElement, vendors);
+        buildVendors(panelElement, vendors, callback);
     } else {
         console.log('NO VENDORS');
     }
@@ -733,7 +736,7 @@ const showVisual = (tile, visual, selectedButton) => {
 //     }
 // };
 
-const buildVendors = (element, vendors) => {
+const buildVendors = (element, vendors, callback) => {
     const vendorCount = vendors.length;
     if (vendorCount === 0) return;
     if (vendorCount === 1) {
@@ -746,7 +749,8 @@ const buildVendors = (element, vendors) => {
     } else {
         new ChartPanel$1.ChartPanelVisualiser(
             element,
-            vendors.map((vendor) => buildVendor(vendor))
+            vendors.map((vendor) => buildVendor(vendor)),
+            callback
         ).show();
     }
 };
@@ -766,14 +770,15 @@ const replaceContent = (element, content) => {
 };
 
 class TabPanelVisualiser {
-    constructor(element, options) {
+    constructor(element, options, callback) {
         this.element = element;
         this.options = options;
+        this.ccallback = callback;
         this.visual = undefined;
     }
 
     show() {
-        this.visual = new TabPanel(this.element, this.options).show();
+        this.visual = new TabPanel(this.element, this.options, this.callback).show();
         return this;
     }
 
@@ -919,10 +924,10 @@ const define = (options) => {
     return tileElement;
 };
 
-const show = (element) => {
+const show = (element, callback) => {
     const options = JSON.parse(element.dataset.options);
     const tabs = (options || {}).tabs || [];
-    const tabPanelVisualiser = new TabPanel$1.TabPanelVisualiser(element.querySelector('#content'), tabs);
+    const tabPanelVisualiser = new TabPanel$1.TabPanelVisualiser(element.querySelector('#content'), tabs, callback);
     tabPanelVisualiser.show();
 };
 
