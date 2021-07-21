@@ -698,17 +698,22 @@ const selectItem = (tile, visual) => {
     }
     const selectedButton = tile.element.querySelector(`#tabButton_${visual.index}`);
     selectedButton.className = 'tabButton selected';
-    console.log(2222, JSON.parse(selectedButton.dataset.vendors));
-    showVisual(tile, visual);
+    showVisual(tile, visual, selectedButton);
 };
 
-const showVisual = (tile, visual) => {
+const showVisual = (tile, visual, selectedButton) => {
     const panelElement = tile.element.querySelector('#visual');
     removeContent(panelElement);
     if (visual.visualise) {
         tile.currentVisualiser = visual.visualise(panelElement);
     } else {
         tile.currentVisualiser = undefined;
+    }
+
+    const vendorsString = selectedButton.dataset.vendors;
+    if (vendorsString) {
+        const vendors = JSON.parse(vendorsString);
+        console.log(vendors);
     }
 };
 
