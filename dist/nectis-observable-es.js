@@ -908,17 +908,20 @@ class TileVisualiser {
 }
 
 const define = (options) => {
+    console.log('Define tile', options);
     const tileElement = document.createElement('div');
-    tileElement.className = 'nectis';
+    tileElement.className = 'nectis-tile';
+    tileElement.dataset.options = JSON.stringify(options);
+
     const styleElement = document.createElement('style');
-    //styleElement.type = 'text/css';
     styleElement.appendChild(document.createTextNode(panelStyle));
     tileElement.appendChild(styleElement);
+
     const visualElement = document.createElement('div');
-    visualElement.id = 'visual';
-    visualElement.dataset.options = JSON.stringify(options);
+    visualElement.id = 'content';
     visualElement.appendChild(document.createTextNode('Stuff goes here...'));
     tileElement.appendChild(visualElement);
+
     return tileElement;
 };
 
