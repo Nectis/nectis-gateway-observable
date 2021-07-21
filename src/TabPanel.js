@@ -133,7 +133,8 @@ const buildVendors = (element, vendors) => {
             element,
             vendors.map((vendor) => buildVendor(vendor))
         );
-        console.log('xxxx', xxxx), xxxx.show();
+        console.log('xxxx', xxxx);
+        xxxx.show();
     }
 };
 
