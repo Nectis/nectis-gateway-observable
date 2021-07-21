@@ -678,7 +678,6 @@ const buildTabbedTile = (tile, visuals) => {
 };
 
 const buildTabButton = (tile, visualIndex, visual) => {
-    console.log(1111, visual);
     const tabButtonElement = document.createElement('div');
     tabButtonElement.className = 'tabButton';
     if (visual.vendors) tabButtonElement.dataset.vendors = JSON.stringify(visual.vendors);
@@ -703,24 +702,34 @@ const selectItem = (tile, visual) => {
 const showVisual = (tile, visual, selectedButton) => {
     const panelElement = tile.element.querySelector('#visual');
     removeContent(panelElement);
-    //if (visual.visualise) {
-    //    tile.currentVisualiser = visual.visualise(panelElement);
-    //} else {
-    //    tile.currentVisualiser = undefined;
-    //}
+    // if (visual.visualise) {
+    //     tile.currentVisualiser = visual.visualise(panelElement);
+    // } else {
+    //     tile.currentVisualiser = undefined;
+    // }
 
     const vendorsString = selectedButton.dataset.vendors;
     if (vendorsString) {
         const vendors = JSON.parse(vendorsString);
-        console.log('VENDORS', vendors);
         buildVendors(panelElement, vendors);
     } else {
         console.log('NO VENDORS');
     }
 };
+
+// const showVisual1 = (tile, visual) => {
+//     const panelElement = tile.element.querySelector('#visual');
+//     removeContent(panelElement);
+//     if (visual.visualise) {
+//         tile.currentVisualiser = visual.visualise(panelElement);
+//     } else {
+//         tile.currentVisualiser = undefined;
+//     }
+// };
+
 const buildVendors = (element, vendors) => {
-    //const vendors = tab.vendors || [];
     const vendorCount = vendors.length;
+    if (vendorCount === 0) return;
     if (vendorCount === 1) {
         const vendor = vendors[0];
         if (vendor.vendorId) {
@@ -736,10 +745,7 @@ const buildVendors = (element, vendors) => {
     }
 };
 
-const buildVendor = (vendor) => {
-    console.log('BUILD VENDOR', vendor);
-    return { typeId: vendor.id };
-};
+const buildVendor = (vendor) => ({ typeId: vendor.id });
 
 const buildVisual = () => {
     console.log('BUILD VISUAL');
