@@ -123,6 +123,7 @@ const selectItem = (tile, visual) => {
 };
 
 const showVisual = (tile, visual) => {
+    console.log('show visual', visual);
     const panelElement = tile.element.querySelector('#visual');
     removeContent(panelElement);
     if (visual.visualise) {

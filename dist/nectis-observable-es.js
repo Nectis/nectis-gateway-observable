@@ -480,6 +480,7 @@ const selectItem$1 = (tile, visual) => {
 };
 
 const showVisual$1 = (tile, visual) => {
+    console.log('show visual', visual);
     const panelElement = tile.element.querySelector('#visual');
     removeContent$1(panelElement);
     if (visual.visualise) {
@@ -893,6 +894,10 @@ const formatCellValue = (column, value) => {
  * @license "Apache-2.0"
  */
 
+// -------------------------------------------------------------------------------------------------------------------------------
+// Declarations - Classes
+// -------------------------------------------------------------------------------------------------------------------------------
+
 const define = (options) => {
     const tileElement = document.createElement('div');
     tileElement.className = 'nectis';
@@ -912,10 +917,7 @@ const define = (options) => {
 const show = (element) => {
     const options = JSON.parse(element.dataset.options);
     const tabs = (options || {}).tabs || [];
-    const tabPanelVisualiser = new TabPanel$1.TabPanelVisualiser(
-        element.querySelector('#content'),
-        tabs // tabs.map((tab) => ({ label: tab.label, vendors: tab.vendors }))
-    );
+    const tabPanelVisualiser = new TabPanel$1.TabPanelVisualiser(element.querySelector('#content'), tabs);
     tabPanelVisualiser.show();
 };
 
