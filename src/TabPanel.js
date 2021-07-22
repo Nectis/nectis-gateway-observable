@@ -8,7 +8,6 @@ import ChartPanel from './ChartPanel';
 
 class TabPanel {
     constructor(element, items, callback) {
-        console.log(1111, element, items, callback);
         this.element = element;
         this.items = items;
         this.callback = callback;
@@ -18,7 +17,6 @@ class TabPanel {
         if (Array.isArray(this.items)) {
             let itemCount = -1;
             const visuals = this.items.map((item) => {
-                console.log('Tab item', item);
                 itemCount++;
                 return {
                     index: itemCount,

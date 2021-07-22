@@ -355,6 +355,1689 @@ const loadChartJS = async () => {
     ChartJS.defaults.maintainAspectRatio = false;
 };
 
+const {getPrototypeOf, getOwnPropertyDescriptors} = Object;
+getPrototypeOf({});
+
+const metas = new Map;
+const queue$1 = [];
+const map$2 = queue$1.map;
+const some = queue$1.some;
+const hasOwnProperty = queue$1.hasOwnProperty;
+const origin = "https://cdn.jsdelivr.net/npm/";
+const identifierRe = /^((?:@[^/@]+\/)?[^/@]+)(?:@([^/]+))?(?:\/(.*))?$/;
+const versionRe = /^\d+\.\d+\.\d+(-[\w-.+]+)?$/;
+const extensionRe = /\.[^/]*$/;
+const mains = ["unpkg", "jsdelivr", "browser", "main"];
+
+class RequireError extends Error {
+  constructor(message) {
+    super(message);
+  }
+}
+
+RequireError.prototype.name = RequireError.name;
+
+function main(meta) {
+  for (const key of mains) {
+    const value = meta[key];
+    if (typeof value === "string") {
+      return extensionRe.test(value) ? value : `${value}.js`;
+    }
+  }
+}
+
+function parseIdentifier(identifier) {
+  const match = identifierRe.exec(identifier);
+  return match && {
+    name: match[1],
+    version: match[2],
+    path: match[3]
+  };
+}
+
+function resolveMeta(target) {
+  const url = `${origin}${target.name}${target.version ? `@${target.version}` : ""}/package.json`;
+  let meta = metas.get(url);
+  if (!meta) metas.set(url, meta = fetch(url).then(response => {
+    if (!response.ok) throw new RequireError("unable to load package.json");
+    if (response.redirected && !metas.has(response.url)) metas.set(response.url, meta);
+    return response.json();
+  }));
+  return meta;
+}
+
+async function resolve$1(name, base) {
+  if (name.startsWith(origin)) name = name.substring(origin.length);
+  if (/^(\w+:)|\/\//i.test(name)) return name;
+  if (/^[.]{0,2}\//i.test(name)) return new URL(name, base == null ? location : base).href;
+  if (!name.length || /^[\s._]/.test(name) || /\s$/.test(name)) throw new RequireError("illegal name");
+  const target = parseIdentifier(name);
+  if (!target) return `${origin}${name}`;
+  if (!target.version && base != null && base.startsWith(origin)) {
+    const meta = await resolveMeta(parseIdentifier(base.substring(origin.length)));
+    target.version = meta.dependencies && meta.dependencies[target.name] || meta.peerDependencies && meta.peerDependencies[target.name];
+  }
+  if (target.path && !extensionRe.test(target.path)) target.path += ".js";
+  if (target.path && target.version && versionRe.test(target.version)) return `${origin}${target.name}@${target.version}/${target.path}`;
+  const meta = await resolveMeta(target);
+  return `${origin}${meta.name}@${meta.version}/${target.path || main(meta) || "index.js"}`;
+}
+
+var require = requireFrom(resolve$1);
+
+function requireFrom(resolver) {
+  const cache = new Map;
+  const requireBase = requireRelative(null);
+
+  function requireAbsolute(url) {
+    if (typeof url !== "string") return url;
+    let module = cache.get(url);
+    if (!module) cache.set(url, module = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.onload = () => {
+        try { resolve(queue$1.pop()(requireRelative(url))); }
+        catch (error) { reject(new RequireError("invalid module")); }
+        script.remove();
+      };
+      script.onerror = () => {
+        reject(new RequireError("unable to load module"));
+        script.remove();
+      };
+      script.async = true;
+      script.src = url;
+      window.define = define$1;
+      document.head.appendChild(script);
+    }));
+    return module;
+  }
+
+  function requireRelative(base) {
+    return name => Promise.resolve(resolver(name, base)).then(requireAbsolute);
+  }
+
+  function requireAlias(aliases) {
+    return requireFrom((name, base) => {
+      if (name in aliases) {
+        name = aliases[name], base = null;
+        if (typeof name !== "string") return name;
+      }
+      return resolver(name, base);
+    });
+  }
+
+  function require(name) {
+    return arguments.length > 1
+        ? Promise.all(map$2.call(arguments, requireBase)).then(merge)
+        : requireBase(name);
+  }
+
+  require.alias = requireAlias;
+  require.resolve = resolver;
+
+  return require;
+}
+
+function merge(modules) {
+  const o = {};
+  for (const m of modules) {
+    for (const k in m) {
+      if (hasOwnProperty.call(m, k)) {
+        if (m[k] == null) Object.defineProperty(o, k, {get: getter(m, k)});
+        else o[k] = m[k];
+      }
+    }
+  }
+  return o;
+}
+
+function getter(object, name) {
+  return () => object[name];
+}
+
+function isbuiltin(name) {
+  name = name + "";
+  return name === "exports" || name === "module";
+}
+
+function define$1(name, dependencies, factory) {
+  const n = arguments.length;
+  if (n < 2) factory = name, dependencies = [];
+  else if (n < 3) factory = dependencies, dependencies = typeof name === "string" ? [] : name;
+  queue$1.push(some.call(dependencies, isbuiltin) ? require => {
+    const exports = {};
+    const module = {exports};
+    return Promise.all(map$2.call(dependencies, name => {
+      name = name + "";
+      return name === "exports" ? exports : name === "module" ? module : require(name);
+    })).then(dependencies => {
+      factory.apply(null, dependencies);
+      return module.exports;
+    });
+  } : require => {
+    return Promise.all(map$2.call(dependencies, require)).then(dependencies => {
+      return typeof factory === "function" ? factory.apply(null, dependencies) : factory;
+    });
+  });
+}
+
+define$1.amd = {};
+
+async function sqlite(require) {
+  const sql = await require("sql.js@1.5.0/dist/sql-wasm.js");
+  return sql({locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@1.5.0/dist/${file}`});
+}
+
+class SQLiteDatabaseClient {
+  constructor(db) {
+    Object.defineProperties(this, {
+      _db: {value: db}
+    });
+  }
+  async query(query, params) {
+    return await exec(this._db, query, params);
+  }
+  async queryRow(query, params) {
+    return (await this.query(query, params))[0] || null;
+  }
+  async explain(query, params) {
+    const rows = await this.query(`EXPLAIN QUERY PLAN ${query}`, params);
+    return element$1("pre", {className: "observablehq--inspect"}, [
+      text$2(rows.map(row => row.detail).join("\n"))
+    ]);
+  }
+  async describe(object) {
+    const rows = await (object === undefined
+      ? this.query(`SELECT name FROM sqlite_master WHERE type = 'table'`)
+      : this.query(`SELECT * FROM pragma_table_info(?)`, [object]));
+    if (!rows.length) throw new Error("Not found");
+    const {columns} = rows;
+    return element$1("table", {value: rows}, [
+      element$1("thead", [element$1("tr", columns.map(c => element$1("th", [text$2(c)])))]),
+      element$1("tbody", rows.map(r => element$1("tr", columns.map(c => element$1("td", [text$2(r[c])])))))
+    ]);
+  }
+}
+
+async function exec(db, query, params) {
+  const [result] = await db.exec(query, params);
+  if (!result) return [];
+  const {columns, values} = result;
+  const rows = values.map(row => Object.fromEntries(row.map((value, i) => [columns[i], value])));
+  rows.columns = columns;
+  return rows;
+}
+
+function element$1(name, props, children) {
+  if (arguments.length === 2) children = props, props = undefined;
+  const element = document.createElement(name);
+  if (props !== undefined) for (const p in props) element[p] = props[p];
+  if (children !== undefined) for (const c of children) element.appendChild(c);
+  return element;
+}
+
+function text$2(value) {
+  return document.createTextNode(value);
+}
+
+async function jszip(require) {
+  return await require("jszip@3.6.0/dist/jszip.min.js");
+}
+
+async function remote_fetch(file) {
+  const response = await fetch(await file.url());
+  if (!response.ok) throw new Error(`Unable to load file: ${file.name}`);
+  return response;
+}
+
+async function dsv(file, delimiter, {array = false, typed = false} = {}) {
+  const [text, d3] = await Promise.all([file.text(), require("d3-dsv@2.0.0/dist/d3-dsv.min.js")]);
+  return (delimiter === "\t"
+      ? (array ? d3.tsvParseRows : d3.tsvParse)
+      : (array ? d3.csvParseRows : d3.csvParse))(text, typed && d3.autoType);
+}
+
+class AbstractFile {
+  constructor(name) {
+    Object.defineProperty(this, "name", {value: name, enumerable: true});
+  }
+  async blob() {
+    return (await remote_fetch(this)).blob();
+  }
+  async arrayBuffer() {
+    return (await remote_fetch(this)).arrayBuffer();
+  }
+  async text() {
+    return (await remote_fetch(this)).text();
+  }
+  async json() {
+    return (await remote_fetch(this)).json();
+  }
+  async stream() {
+    return (await remote_fetch(this)).body;
+  }
+  async csv(options) {
+    return dsv(this, ",", options);
+  }
+  async tsv(options) {
+    return dsv(this, "\t", options);
+  }
+  async image() {
+    const url = await this.url();
+    return new Promise((resolve, reject) => {
+      const i = new Image;
+      if (new URL(url, document.baseURI).origin !== new URL(location).origin) {
+        i.crossOrigin = "anonymous";
+      }
+      i.onload = () => resolve(i);
+      i.onerror = () => reject(new Error(`Unable to load file: ${this.name}`));
+      i.src = url;
+    });
+  }
+  async sqlite() {
+    const [SQL, buffer] = await Promise.all([sqlite(require), this.arrayBuffer()]);
+    const db = new SQL.Database(new Uint8Array(buffer));
+    return new SQLiteDatabaseClient(db);
+  }
+  async zip() {
+    const [JSZip, buffer] = await Promise.all([jszip(require), this.arrayBuffer()]);
+    return new ZipArchive(await JSZip.loadAsync(buffer));
+  }
+}
+
+class FileAttachment extends AbstractFile {
+  constructor(url, name) {
+    super(name);
+    Object.defineProperty(this, "_url", {value: url});
+  }
+  async url() {
+    return (await this._url) + "";
+  }
+}
+
+function NoFileAttachments(name) {
+  throw new Error(`File not found: ${name}`);
+}
+
+function FileAttachments(resolve) {
+  return Object.assign(
+    name => {
+      const url = resolve(name += ""); // Returns a Promise, string, or null.
+      if (url == null) throw new Error(`File not found: ${name}`);
+      return new FileAttachment(url, name);
+    },
+    {prototype: FileAttachment.prototype} // instanceof
+  );
+}
+
+class ZipArchive {
+  constructor(archive) {
+    Object.defineProperty(this, "_", {value: archive});
+    this.filenames = Object.keys(archive.files).filter(name => !archive.files[name].dir);
+  }
+  file(path) {
+    const object = this._.file(path += "");
+    if (!object || object.dir) throw new Error(`file not found: ${path}`);
+    return new ZipArchiveEntry(object);
+  }
+}
+
+class ZipArchiveEntry extends AbstractFile {
+  constructor(object) {
+    super(object.name);
+    Object.defineProperty(this, "_", {value: object});
+    Object.defineProperty(this, "_url", {writable: true});
+  }
+  async url() {
+    return this._url || (this._url = this.blob().then(URL.createObjectURL));
+  }
+  async blob() {
+    return this._.async("blob");
+  }
+  async arrayBuffer() {
+    return this._.async("arraybuffer");
+  }
+  async text() {
+    return this._.async("text");
+  }
+  async json() {
+    return JSON.parse(await this.text());
+  }
+}
+
+function canvas(width, height) {
+  var canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  return canvas;
+}
+
+function context2d(width, height, dpi) {
+  if (dpi == null) dpi = devicePixelRatio;
+  var canvas = document.createElement("canvas");
+  canvas.width = width * dpi;
+  canvas.height = height * dpi;
+  canvas.style.width = width + "px";
+  var context = canvas.getContext("2d");
+  context.scale(dpi, dpi);
+  return context;
+}
+
+function download(value, name = "untitled", label = "Save") {
+  const a = document.createElement("a");
+  const b = a.appendChild(document.createElement("button"));
+  b.textContent = label;
+  a.download = name;
+
+  async function reset() {
+    await new Promise(requestAnimationFrame);
+    URL.revokeObjectURL(a.href);
+    a.removeAttribute("href");
+    b.textContent = label;
+    b.disabled = false;
+  }
+
+  a.onclick = async event => {
+    b.disabled = true;
+    if (a.href) return reset(); // Already saved.
+    b.textContent = "Saving…";
+    try {
+      const object = await (typeof value === "function" ? value() : value);
+      b.textContent = "Download";
+      a.href = URL.createObjectURL(object); // eslint-disable-line require-atomic-updates
+    } catch (ignore) {
+      b.textContent = label;
+    }
+    if (event.eventPhase) return reset(); // Already downloaded.
+    b.disabled = false;
+  };
+
+  return a;
+}
+
+var namespaces = {
+  math: "http://www.w3.org/1998/Math/MathML",
+  svg: "http://www.w3.org/2000/svg",
+  xhtml: "http://www.w3.org/1999/xhtml",
+  xlink: "http://www.w3.org/1999/xlink",
+  xml: "http://www.w3.org/XML/1998/namespace",
+  xmlns: "http://www.w3.org/2000/xmlns/"
+};
+
+function element(name, attributes) {
+  var prefix = name += "", i = prefix.indexOf(":"), value;
+  if (i >= 0 && (prefix = name.slice(0, i)) !== "xmlns") name = name.slice(i + 1);
+  var element = namespaces.hasOwnProperty(prefix) // eslint-disable-line no-prototype-builtins
+      ? document.createElementNS(namespaces[prefix], name)
+      : document.createElement(name);
+  if (attributes) for (var key in attributes) {
+    prefix = key, i = prefix.indexOf(":"), value = attributes[key];
+    if (i >= 0 && (prefix = key.slice(0, i)) !== "xmlns") key = key.slice(i + 1);
+    if (namespaces.hasOwnProperty(prefix)) element.setAttributeNS(namespaces[prefix], key, value); // eslint-disable-line no-prototype-builtins
+    else element.setAttribute(key, value);
+  }
+  return element;
+}
+
+function input$1(type) {
+  var input = document.createElement("input");
+  if (type != null) input.type = type;
+  return input;
+}
+
+function range$1(min, max, step) {
+  if (arguments.length === 1) max = min, min = null;
+  var input = document.createElement("input");
+  input.min = min = min == null ? 0 : +min;
+  input.max = max = max == null ? 1 : +max;
+  input.step = step == null ? "any" : step = +step;
+  input.type = "range";
+  return input;
+}
+
+function select(values) {
+  var select = document.createElement("select");
+  Array.prototype.forEach.call(values, function(value) {
+    var option = document.createElement("option");
+    option.value = option.textContent = value;
+    select.appendChild(option);
+  });
+  return select;
+}
+
+function svg$1(width, height) {
+  var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", [0, 0, width, height]);
+  svg.setAttribute("width", width);
+  svg.setAttribute("height", height);
+  return svg;
+}
+
+function text$1(value) {
+  return document.createTextNode(value);
+}
+
+var count = 0;
+
+function uid(name) {
+  return new Id("O-" + (name == null ? "" : name + "-") + ++count);
+}
+
+function Id(id) {
+  this.id = id;
+  this.href = new URL(`#${id}`, location) + "";
+}
+
+Id.prototype.toString = function() {
+  return "url(" + this.href + ")";
+};
+
+var DOM = {
+  canvas: canvas,
+  context2d: context2d,
+  download: download,
+  element: element,
+  input: input$1,
+  range: range$1,
+  select: select,
+  svg: svg$1,
+  text: text$1,
+  uid: uid
+};
+
+function buffer(file) {
+  return new Promise(function(resolve, reject) {
+    var reader = new FileReader;
+    reader.onload = function() { resolve(reader.result); };
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function text(file) {
+  return new Promise(function(resolve, reject) {
+    var reader = new FileReader;
+    reader.onload = function() { resolve(reader.result); };
+    reader.onerror = reject;
+    reader.readAsText(file);
+  });
+}
+
+function url(file) {
+  return new Promise(function(resolve, reject) {
+    var reader = new FileReader;
+    reader.onload = function() { resolve(reader.result); };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+var Files = {
+  buffer: buffer,
+  text: text,
+  url: url
+};
+
+function that() {
+  return this;
+}
+
+function disposable(value, dispose) {
+  let done = false;
+  if (typeof dispose !== "function") {
+    throw new Error("dispose is not a function");
+  }
+  return {
+    [Symbol.iterator]: that,
+    next: () => done ? {done: true} : (done = true, {done: false, value}),
+    return: () => (done = true, dispose(value), {done: true}),
+    throw: () => ({done: done = true})
+  };
+}
+
+function* filter(iterator, test) {
+  var result, index = -1;
+  while (!(result = iterator.next()).done) {
+    if (test(result.value, ++index)) {
+      yield result.value;
+    }
+  }
+}
+
+function observe(initialize) {
+  let stale = false;
+  let value;
+  let resolve;
+  const dispose = initialize(change);
+
+  if (dispose != null && typeof dispose !== "function") {
+    throw new Error(typeof dispose.then === "function"
+        ? "async initializers are not supported"
+        : "initializer returned something, but not a dispose function");
+  }
+
+  function change(x) {
+    if (resolve) resolve(x), resolve = null;
+    else stale = true;
+    return value = x;
+  }
+
+  function next() {
+    return {done: false, value: stale
+        ? (stale = false, Promise.resolve(value))
+        : new Promise(_ => (resolve = _))};
+  }
+
+  return {
+    [Symbol.iterator]: that,
+    throw: () => ({done: true}),
+    return: () => (dispose != null && dispose(), {done: true}),
+    next
+  };
+}
+
+function input(input) {
+  return observe(function(change) {
+    var event = eventof(input), value = valueof(input);
+    function inputted() { change(valueof(input)); }
+    input.addEventListener(event, inputted);
+    if (value !== undefined) change(value);
+    return function() { input.removeEventListener(event, inputted); };
+  });
+}
+
+function valueof(input) {
+  switch (input.type) {
+    case "range":
+    case "number": return input.valueAsNumber;
+    case "date": return input.valueAsDate;
+    case "checkbox": return input.checked;
+    case "file": return input.multiple ? input.files : input.files[0];
+    case "select-multiple": return Array.from(input.selectedOptions, o => o.value);
+    default: return input.value;
+  }
+}
+
+function eventof(input) {
+  switch (input.type) {
+    case "button":
+    case "submit":
+    case "checkbox": return "click";
+    case "file": return "change";
+    default: return "input";
+  }
+}
+
+function* map$1(iterator, transform) {
+  var result, index = -1;
+  while (!(result = iterator.next()).done) {
+    yield transform(result.value, ++index);
+  }
+}
+
+function queue(initialize) {
+  let resolve;
+  const queue = [];
+  const dispose = initialize(push);
+
+  if (dispose != null && typeof dispose !== "function") {
+    throw new Error(typeof dispose.then === "function"
+        ? "async initializers are not supported"
+        : "initializer returned something, but not a dispose function");
+  }
+
+  function push(x) {
+    queue.push(x);
+    if (resolve) resolve(queue.shift()), resolve = null;
+    return x;
+  }
+
+  function next() {
+    return {done: false, value: queue.length
+        ? Promise.resolve(queue.shift())
+        : new Promise(_ => (resolve = _))};
+  }
+
+  return {
+    [Symbol.iterator]: that,
+    throw: () => ({done: true}),
+    return: () => (dispose != null && dispose(), {done: true}),
+    next
+  };
+}
+
+function* range(start, stop, step) {
+  start = +start;
+  stop = +stop;
+  step = (n = arguments.length) < 2 ? (stop = start, start = 0, 1) : n < 3 ? 1 : +step;
+  var i = -1, n = Math.max(0, Math.ceil((stop - start) / step)) | 0;
+  while (++i < n) {
+    yield start + i * step;
+  }
+}
+
+function valueAt(iterator, i) {
+  if (!isFinite(i = +i) || i < 0 || i !== i | 0) return;
+  var result, index = -1;
+  while (!(result = iterator.next()).done) {
+    if (++index === i) {
+      return result.value;
+    }
+  }
+}
+
+function worker(source) {
+  const url = URL.createObjectURL(new Blob([source], {type: "text/javascript"}));
+  const worker = new Worker(url);
+  return disposable(worker, () => {
+    worker.terminate();
+    URL.revokeObjectURL(url);
+  });
+}
+
+var Generators = {
+  disposable: disposable,
+  filter: filter,
+  input: input,
+  map: map$1,
+  observe: observe,
+  queue: queue,
+  range: range,
+  valueAt: valueAt,
+  worker: worker
+};
+
+function template(render, wrapper) {
+  return function(strings) {
+    var string = strings[0],
+        parts = [], part,
+        root = null,
+        node, nodes,
+        walker,
+        i, n, j, m, k = -1;
+
+    // Concatenate the text using comments as placeholders.
+    for (i = 1, n = arguments.length; i < n; ++i) {
+      part = arguments[i];
+      if (part instanceof Node) {
+        parts[++k] = part;
+        string += "<!--o:" + k + "-->";
+      } else if (Array.isArray(part)) {
+        for (j = 0, m = part.length; j < m; ++j) {
+          node = part[j];
+          if (node instanceof Node) {
+            if (root === null) {
+              parts[++k] = root = document.createDocumentFragment();
+              string += "<!--o:" + k + "-->";
+            }
+            root.appendChild(node);
+          } else {
+            root = null;
+            string += node;
+          }
+        }
+        root = null;
+      } else {
+        string += part;
+      }
+      string += strings[i];
+    }
+
+    // Render the text.
+    root = render(string);
+
+    // Walk the rendered content to replace comment placeholders.
+    if (++k > 0) {
+      nodes = new Array(k);
+      walker = document.createTreeWalker(root, NodeFilter.SHOW_COMMENT, null, false);
+      while (walker.nextNode()) {
+        node = walker.currentNode;
+        if (/^o:/.test(node.nodeValue)) {
+          nodes[+node.nodeValue.slice(2)] = node;
+        }
+      }
+      for (i = 0; i < k; ++i) {
+        if (node = nodes[i]) {
+          node.parentNode.replaceChild(parts[i], node);
+        }
+      }
+    }
+
+    // Is the rendered content
+    // … a parent of a single child? Detach and return the child.
+    // … a document fragment? Replace the fragment with an element.
+    // … some other node? Return it.
+    return root.childNodes.length === 1 ? root.removeChild(root.firstChild)
+        : root.nodeType === 11 ? ((node = wrapper()).appendChild(root), node)
+        : root;
+  };
+}
+
+var html = template(function(string) {
+  var template = document.createElement("template");
+  template.innerHTML = string.trim();
+  return document.importNode(template.content, true);
+}, function() {
+  return document.createElement("span");
+});
+
+const HL_ROOT = "https://cdn.jsdelivr.net/npm/@observablehq/highlight.js@2.0.0/";
+
+function md(require) {
+  return require("marked@0.3.12/marked.min.js").then(function(marked) {
+    return template(
+      function(string) {
+        var root = document.createElement("div");
+        root.innerHTML = marked(string, {langPrefix: ""}).trim();
+        var code = root.querySelectorAll("pre code[class]");
+        if (code.length > 0) {
+          require(HL_ROOT + "highlight.min.js").then(function(hl) {
+            code.forEach(function(block) {
+              function done() {
+                hl.highlightBlock(block);
+                block.parentNode.classList.add("observablehq--md-pre");
+              }
+              if (hl.getLanguage(block.className)) {
+                done();
+              } else {
+                require(HL_ROOT + "async-languages/index.js")
+                  .then(index => {
+                    if (index.has(block.className)) {
+                      return require(HL_ROOT +
+                        "async-languages/" +
+                        index.get(block.className)).then(language => {
+                        hl.registerLanguage(block.className, language);
+                      });
+                    }
+                  })
+                  .then(done, done);
+              }
+            });
+          });
+        }
+        return root;
+      },
+      function() {
+        return document.createElement("div");
+      }
+    );
+  });
+}
+
+function Mutable(value) {
+  let change;
+  Object.defineProperties(this, {
+    generator: {value: observe(_ => void (change = _))},
+    value: {get: () => value, set: x => change(value = x)} // eslint-disable-line no-setter-return
+  });
+  if (value !== undefined) change(value);
+}
+
+function* now() {
+  while (true) {
+    yield Date.now();
+  }
+}
+
+function delay(duration, value) {
+  return new Promise(function(resolve) {
+    setTimeout(function() {
+      resolve(value);
+    }, duration);
+  });
+}
+
+var timeouts = new Map;
+
+function timeout(now, time) {
+  var t = new Promise(function(resolve) {
+    timeouts.delete(time);
+    var delay = time - now;
+    if (!(delay > 0)) throw new Error("invalid time");
+    if (delay > 0x7fffffff) throw new Error("too long to wait");
+    setTimeout(resolve, delay);
+  });
+  timeouts.set(time, t);
+  return t;
+}
+
+function when(time, value) {
+  var now;
+  return (now = timeouts.get(time = +time)) ? now.then(() => value)
+      : (now = Date.now()) >= time ? Promise.resolve(value)
+      : timeout(now, time).then(() => value);
+}
+
+function tick(duration, value) {
+  return when(Math.ceil((Date.now() + 1) / duration) * duration, value);
+}
+
+var Promises = {
+  delay: delay,
+  tick: tick,
+  when: when
+};
+
+function resolve(name, base) {
+  if (/^(\w+:)|\/\//i.test(name)) return name;
+  if (/^[.]{0,2}\//i.test(name)) return new URL(name, base == null ? location : base).href;
+  if (!name.length || /^[\s._]/.test(name) || /\s$/.test(name)) throw new Error("illegal name");
+  return "https://unpkg.com/" + name;
+}
+
+function requirer(resolve) {
+  return resolve == null ? require : requireFrom(resolve);
+}
+
+var svg = template(function(string) {
+  var root = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  root.innerHTML = string.trim();
+  return root;
+}, function() {
+  return document.createElementNS("http://www.w3.org/2000/svg", "g");
+});
+
+var raw = String.raw;
+
+function style(href) {
+  return new Promise(function(resolve, reject) {
+    var link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    link.onerror = reject;
+    link.onload = resolve;
+    document.head.appendChild(link);
+  });
+}
+
+function tex(require) {
+  return Promise.all([
+    require("@observablehq/katex@0.11.1/dist/katex.min.js"),
+    require.resolve("@observablehq/katex@0.11.1/dist/katex.min.css").then(style)
+  ]).then(function(values) {
+    var katex = values[0], tex = renderer();
+
+    function renderer(options) {
+      return function() {
+        var root = document.createElement("div");
+        katex.render(raw.apply(String, arguments), root, options);
+        return root.removeChild(root.firstChild);
+      };
+    }
+
+    tex.options = renderer;
+    tex.block = renderer({displayMode: true});
+    return tex;
+  });
+}
+
+async function vl(require) {
+  const [vega, vegalite, api] = await Promise.all([
+    "vega@5.20.2/build/vega.min.js",
+    "vega-lite@5.1.0/build/vega-lite.min.js",
+    "vega-lite-api@5.0.0/build/vega-lite-api.min.js"
+  ].map(module => require(module)));
+  return api.register(vega, vegalite);
+}
+
+function width() {
+  return observe(function(change) {
+    var width = change(document.body.clientWidth);
+    function resized() {
+      var w = document.body.clientWidth;
+      if (w !== width) change(width = w);
+    }
+    window.addEventListener("resize", resized);
+    return function() {
+      window.removeEventListener("resize", resized);
+    };
+  });
+}
+
+var Library = Object.assign(function Library(resolver) {
+  const require = requirer(resolver);
+  Object.defineProperties(this, properties({
+    FileAttachment: () => NoFileAttachments,
+    Inputs: () => require("@observablehq/inputs@0.8.0/dist/inputs.umd.min.js"),
+    Mutable: () => Mutable,
+    Plot: () => require("@observablehq/plot@0.1.0/dist/plot.umd.min.js"),
+    SQLite: () => sqlite(require),
+    _: () => require("lodash@4.17.21/lodash.min.js"),
+    d3: () => require("d3@6.7.0/dist/d3.min.js"),
+    dot: () => require("@observablehq/graphviz@0.2.1/dist/graphviz.min.js"),
+    htl: () => require("htl@0.2.5/dist/htl.min.js"),
+    html: () => html,
+    md: () => md(require),
+    now,
+    require: () => require,
+    resolve: () => resolve,
+    svg: () => svg,
+    tex: () => tex(require),
+    vl: () => vl(require),
+    width,
+
+    // Note: these are namespace objects, and thus exposed directly rather than
+    // being wrapped in a function. This allows library.Generators to resolve,
+    // rather than needing module.value.
+    DOM,
+    Files,
+    Generators,
+    Promises
+  }));
+}, {resolve: require.resolve});
+
+function properties(values) {
+  return Object.fromEntries(Object.entries(values).map(property));
+}
+
+function property([key, value]) {
+  return [key, ({value, writable: true, enumerable: true})];
+}
+
+function RuntimeError(message, input) {
+  this.message = message + "";
+  this.input = input;
+}
+
+RuntimeError.prototype = Object.create(Error.prototype);
+RuntimeError.prototype.name = "RuntimeError";
+RuntimeError.prototype.constructor = RuntimeError;
+
+function generatorish(value) {
+  return value
+      && typeof value.next === "function"
+      && typeof value.return === "function";
+}
+
+function load(notebook, library, observer) {
+  if (typeof library == "function") observer = library, library = null;
+  if (typeof observer !== "function") throw new Error("invalid observer");
+  if (library == null) library = new Library();
+
+  const {modules, id} = notebook;
+  const map = new Map;
+  const runtime = new Runtime(library);
+  const main = runtime_module(id);
+
+  function runtime_module(id) {
+    let module = map.get(id);
+    if (!module) map.set(id, module = runtime.module());
+    return module;
+  }
+
+  for (const m of modules) {
+    const module = runtime_module(m.id);
+    let i = 0;
+    for (const v of m.variables) {
+      if (v.from) module.import(v.remote, v.name, runtime_module(v.from));
+      else if (module === main) module.variable(observer(v, i, m.variables)).define(v.name, v.inputs, v.value);
+      else module.define(v.name, v.inputs, v.value);
+      ++i;
+    }
+  }
+
+  return runtime;
+}
+
+var prototype = Array.prototype;
+var map = prototype.map;
+var forEach = prototype.forEach;
+
+function constant(x) {
+  return function() {
+    return x;
+  };
+}
+
+function identity(x) {
+  return x;
+}
+
+function rethrow(e) {
+  return function() {
+    throw e;
+  };
+}
+
+function noop() {}
+
+var TYPE_NORMAL = 1; // a normal variable
+var TYPE_IMPLICIT = 2; // created on reference
+var TYPE_DUPLICATE = 3; // created on duplicate definition
+
+var no_observer = {};
+
+function Variable(type, module, observer) {
+  if (!observer) observer = no_observer;
+  Object.defineProperties(this, {
+    _observer: {value: observer, writable: true},
+    _definition: {value: variable_undefined, writable: true},
+    _duplicate: {value: undefined, writable: true},
+    _duplicates: {value: undefined, writable: true},
+    _indegree: {value: NaN, writable: true}, // The number of computing inputs.
+    _inputs: {value: [], writable: true},
+    _invalidate: {value: noop, writable: true},
+    _module: {value: module},
+    _name: {value: null, writable: true},
+    _outputs: {value: new Set, writable: true},
+    _promise: {value: Promise.resolve(undefined), writable: true},
+    _reachable: {value: observer !== no_observer, writable: true}, // Is this variable transitively visible?
+    _rejector: {value: variable_rejector(this)},
+    _type: {value: type},
+    _value: {value: undefined, writable: true},
+    _version: {value: 0, writable: true}
+  });
+}
+
+Object.defineProperties(Variable.prototype, {
+  _pending: {value: variable_pending, writable: true, configurable: true},
+  _fulfilled: {value: variable_fulfilled, writable: true, configurable: true},
+  _rejected: {value: variable_rejected, writable: true, configurable: true},
+  define: {value: variable_define, writable: true, configurable: true},
+  delete: {value: variable_delete, writable: true, configurable: true},
+  import: {value: variable_import, writable: true, configurable: true}
+});
+
+function variable_attach(variable) {
+  variable._module._runtime._dirty.add(variable);
+  variable._outputs.add(this);
+}
+
+function variable_detach(variable) {
+  variable._module._runtime._dirty.add(variable);
+  variable._outputs.delete(this);
+}
+
+function variable_undefined() {
+  throw variable_undefined;
+}
+
+function variable_rejector(variable) {
+  return function(error) {
+    if (error === variable_undefined) throw new RuntimeError(variable._name + " is not defined", variable._name);
+    if (error instanceof Error && error.message) throw new RuntimeError(error.message, variable._name);
+    throw new RuntimeError(variable._name + " could not be resolved", variable._name);
+  };
+}
+
+function variable_duplicate(name) {
+  return function() {
+    throw new RuntimeError(name + " is defined more than once");
+  };
+}
+
+function variable_define(name, inputs, definition) {
+  switch (arguments.length) {
+    case 1: {
+      definition = name, name = inputs = null;
+      break;
+    }
+    case 2: {
+      definition = inputs;
+      if (typeof name === "string") inputs = null;
+      else inputs = name, name = null;
+      break;
+    }
+  }
+  return variable_defineImpl.call(this,
+    name == null ? null : name + "",
+    inputs == null ? [] : map.call(inputs, this._module._resolve, this._module),
+    typeof definition === "function" ? definition : constant(definition)
+  );
+}
+
+function variable_defineImpl(name, inputs, definition) {
+  var scope = this._module._scope, runtime = this._module._runtime;
+
+  this._inputs.forEach(variable_detach, this);
+  inputs.forEach(variable_attach, this);
+  this._inputs = inputs;
+  this._definition = definition;
+  this._value = undefined;
+
+  // Is this an active variable (that may require disposal)?
+  if (definition === noop) runtime._variables.delete(this);
+  else runtime._variables.add(this);
+
+  // Did the variable’s name change? Time to patch references!
+  if (name !== this._name || scope.get(name) !== this) {
+    var error, found;
+
+    if (this._name) { // Did this variable previously have a name?
+      if (this._outputs.size) { // And did other variables reference this variable?
+        scope.delete(this._name);
+        found = this._module._resolve(this._name);
+        found._outputs = this._outputs, this._outputs = new Set;
+        found._outputs.forEach(function(output) { output._inputs[output._inputs.indexOf(this)] = found; }, this);
+        found._outputs.forEach(runtime._updates.add, runtime._updates);
+        runtime._dirty.add(found).add(this);
+        scope.set(this._name, found);
+      } else if ((found = scope.get(this._name)) === this) { // Do no other variables reference this variable?
+        scope.delete(this._name); // It’s safe to delete!
+      } else if (found._type === TYPE_DUPLICATE) { // Do other variables assign this name?
+        found._duplicates.delete(this); // This variable no longer assigns this name.
+        this._duplicate = undefined;
+        if (found._duplicates.size === 1) { // Is there now only one variable assigning this name?
+          found = found._duplicates.keys().next().value; // Any references are now fixed!
+          error = scope.get(this._name);
+          found._outputs = error._outputs, error._outputs = new Set;
+          found._outputs.forEach(function(output) { output._inputs[output._inputs.indexOf(error)] = found; });
+          found._definition = found._duplicate, found._duplicate = undefined;
+          runtime._dirty.add(error).add(found);
+          runtime._updates.add(found);
+          scope.set(this._name, found);
+        }
+      } else {
+        throw new Error;
+      }
+    }
+
+    if (this._outputs.size) throw new Error;
+
+    if (name) { // Does this variable have a new name?
+      if (found = scope.get(name)) { // Do other variables reference or assign this name?
+        if (found._type === TYPE_DUPLICATE) { // Do multiple other variables already define this name?
+          this._definition = variable_duplicate(name), this._duplicate = definition;
+          found._duplicates.add(this);
+        } else if (found._type === TYPE_IMPLICIT) { // Are the variable references broken?
+          this._outputs = found._outputs, found._outputs = new Set; // Now they’re fixed!
+          this._outputs.forEach(function(output) { output._inputs[output._inputs.indexOf(found)] = this; }, this);
+          runtime._dirty.add(found).add(this);
+          scope.set(name, this);
+        } else { // Does another variable define this name?
+          found._duplicate = found._definition, this._duplicate = definition; // Now they’re duplicates.
+          error = new Variable(TYPE_DUPLICATE, this._module);
+          error._name = name;
+          error._definition = this._definition = found._definition = variable_duplicate(name);
+          error._outputs = found._outputs, found._outputs = new Set;
+          error._outputs.forEach(function(output) { output._inputs[output._inputs.indexOf(found)] = error; });
+          error._duplicates = new Set([this, found]);
+          runtime._dirty.add(found).add(error);
+          runtime._updates.add(found).add(error);
+          scope.set(name, error);
+        }
+      } else {
+        scope.set(name, this);
+      }
+    }
+
+    this._name = name;
+  }
+
+  runtime._updates.add(this);
+  runtime._compute();
+  return this;
+}
+
+function variable_import(remote, name, module) {
+  if (arguments.length < 3) module = name, name = remote;
+  return variable_defineImpl.call(this, name + "", [module._resolve(remote + "")], identity);
+}
+
+function variable_delete() {
+  return variable_defineImpl.call(this, null, [], noop);
+}
+
+function variable_pending() {
+  if (this._observer.pending) this._observer.pending();
+}
+
+function variable_fulfilled(value) {
+  if (this._observer.fulfilled) this._observer.fulfilled(value, this._name);
+}
+
+function variable_rejected(error) {
+  if (this._observer.rejected) this._observer.rejected(error, this._name);
+}
+
+function Module(runtime, builtins = []) {
+  Object.defineProperties(this, {
+    _runtime: {value: runtime},
+    _scope: {value: new Map},
+    _builtins: {value: new Map([
+      ["invalidation", variable_invalidation],
+      ["visibility", variable_visibility],
+      ...builtins
+    ])},
+    _source: {value: null, writable: true}
+  });
+}
+
+Object.defineProperties(Module.prototype, {
+  _copy: {value: module_copy, writable: true, configurable: true},
+  _resolve: {value: module_resolve, writable: true, configurable: true},
+  redefine: {value: module_redefine, writable: true, configurable: true},
+  define: {value: module_define, writable: true, configurable: true},
+  derive: {value: module_derive, writable: true, configurable: true},
+  import: {value: module_import, writable: true, configurable: true},
+  value: {value: module_value, writable: true, configurable: true},
+  variable: {value: module_variable, writable: true, configurable: true},
+  builtin: {value: module_builtin, writable: true, configurable: true}
+});
+
+function module_redefine(name) {
+  var v = this._scope.get(name);
+  if (!v) throw new RuntimeError(name + " is not defined");
+  if (v._type === TYPE_DUPLICATE) throw new RuntimeError(name + " is defined more than once");
+  return v.define.apply(v, arguments);
+}
+
+function module_define() {
+  var v = new Variable(TYPE_NORMAL, this);
+  return v.define.apply(v, arguments);
+}
+
+function module_import() {
+  var v = new Variable(TYPE_NORMAL, this);
+  return v.import.apply(v, arguments);
+}
+
+function module_variable(observer) {
+  return new Variable(TYPE_NORMAL, this, observer);
+}
+
+async function module_value(name) {
+  var v = this._scope.get(name);
+  if (!v) throw new RuntimeError(name + " is not defined");
+  if (v._observer === no_observer) {
+    v._observer = true;
+    this._runtime._dirty.add(v);
+  }
+  await this._runtime._compute();
+  return v._promise;
+}
+
+function module_derive(injects, injectModule) {
+  var copy = new Module(this._runtime, this._builtins);
+  copy._source = this;
+  forEach.call(injects, function(inject) {
+    if (typeof inject !== "object") inject = {name: inject + ""};
+    if (inject.alias == null) inject.alias = inject.name;
+    copy.import(inject.name, inject.alias, injectModule);
+  });
+  Promise.resolve().then(() => {
+    const modules = new Set([this]);
+    for (const module of modules) {
+      for (const variable of module._scope.values()) {
+        if (variable._definition === identity) { // import
+          const module = variable._inputs[0]._module;
+          const source = module._source || module;
+          if (source === this) { // circular import-with!
+            console.warn("circular module definition; ignoring"); // eslint-disable-line no-console
+            return;
+          }
+          modules.add(source);
+        }
+      }
+    }
+    this._copy(copy, new Map);
+  });
+  return copy;
+}
+
+function module_copy(copy, map) {
+  copy._source = this;
+  map.set(this, copy);
+  for (const [name, source] of this._scope) {
+    var target = copy._scope.get(name);
+    if (target && target._type === TYPE_NORMAL) continue; // injection
+    if (source._definition === identity) { // import
+      var sourceInput = source._inputs[0],
+          sourceModule = sourceInput._module;
+      copy.import(sourceInput._name, name, map.get(sourceModule)
+        || (sourceModule._source
+           ? sourceModule._copy(new Module(copy._runtime, copy._builtins), map) // import-with
+           : sourceModule));
+    } else {
+      copy.define(name, source._inputs.map(variable_name), source._definition);
+    }
+  }
+  return copy;
+}
+
+function module_resolve(name) {
+  var variable = this._scope.get(name), value;
+  if (!variable) {
+    variable = new Variable(TYPE_IMPLICIT, this);
+    if (this._builtins.has(name)) {
+      variable.define(name, constant(this._builtins.get(name)));
+    } else if (this._runtime._builtin._scope.has(name)) {
+      variable.import(name, this._runtime._builtin);
+    } else {
+      try {
+        value = this._runtime._global(name);
+      } catch (error) {
+        return variable.define(name, rethrow(error));
+      }
+      if (value === undefined) {
+        this._scope.set(variable._name = name, variable);
+      } else {
+        variable.define(name, constant(value));
+      }
+    }
+  }
+  return variable;
+}
+
+function module_builtin(name, value) {
+  this._builtins.set(name, value);
+}
+
+function variable_name(variable) {
+  return variable._name;
+}
+
+const frame = typeof requestAnimationFrame === "function" ? requestAnimationFrame : setImmediate;
+
+var variable_invalidation = {};
+var variable_visibility = {};
+
+function Runtime(builtins = new Library, global = window_global) {
+  var builtin = this.module();
+  Object.defineProperties(this, {
+    _dirty: {value: new Set},
+    _updates: {value: new Set},
+    _computing: {value: null, writable: true},
+    _init: {value: null, writable: true},
+    _modules: {value: new Map},
+    _variables: {value: new Set},
+    _disposed: {value: false, writable: true},
+    _builtin: {value: builtin},
+    _global: {value: global}
+  });
+  if (builtins) for (var name in builtins) {
+    (new Variable(TYPE_IMPLICIT, builtin)).define(name, [], builtins[name]);
+  }
+}
+
+Object.defineProperties(Runtime, {
+  load: {value: load, writable: true, configurable: true}
+});
+
+Object.defineProperties(Runtime.prototype, {
+  _compute: {value: runtime_compute, writable: true, configurable: true},
+  _computeSoon: {value: runtime_computeSoon, writable: true, configurable: true},
+  _computeNow: {value: runtime_computeNow, writable: true, configurable: true},
+  dispose: {value: runtime_dispose, writable: true, configurable: true},
+  module: {value: runtime_module, writable: true, configurable: true},
+  fileAttachments: {value: FileAttachments, writable: true, configurable: true}
+});
+
+function runtime_dispose() {
+  this._computing = Promise.resolve();
+  this._disposed = true;
+  this._variables.forEach(v => {
+    v._invalidate();
+    v._version = NaN;
+  });
+}
+
+function runtime_module(define, observer = noop) {
+  let module;
+  if (define === undefined) {
+    if (module = this._init) {
+      this._init = null;
+      return module;
+    }
+    return new Module(this);
+  }
+  module = this._modules.get(define);
+  if (module) return module;
+  this._init = module = new Module(this);
+  this._modules.set(define, module);
+  try {
+    define(this, observer);
+  } finally {
+    this._init = null;
+  }
+  return module;
+}
+
+function runtime_compute() {
+  return this._computing || (this._computing = this._computeSoon());
+}
+
+function runtime_computeSoon() {
+  var runtime = this;
+  return new Promise(function(resolve) {
+    frame(function() {
+      resolve();
+      runtime._disposed || runtime._computeNow();
+    });
+  });
+}
+
+function runtime_computeNow() {
+  var queue = [],
+      variables,
+      variable;
+
+  // Compute the reachability of the transitive closure of dirty variables.
+  // Any newly-reachable variable must also be recomputed.
+  // Any no-longer-reachable variable must be terminated.
+  variables = new Set(this._dirty);
+  variables.forEach(function(variable) {
+    variable._inputs.forEach(variables.add, variables);
+    const reachable = variable_reachable(variable);
+    if (reachable > variable._reachable) {
+      this._updates.add(variable);
+    } else if (reachable < variable._reachable) {
+      variable._invalidate();
+    }
+    variable._reachable = reachable;
+  }, this);
+
+  // Compute the transitive closure of updating, reachable variables.
+  variables = new Set(this._updates);
+  variables.forEach(function(variable) {
+    if (variable._reachable) {
+      variable._indegree = 0;
+      variable._outputs.forEach(variables.add, variables);
+    } else {
+      variable._indegree = NaN;
+      variables.delete(variable);
+    }
+  });
+
+  this._computing = null;
+  this._updates.clear();
+  this._dirty.clear();
+
+  // Compute the indegree of updating variables.
+  variables.forEach(function(variable) {
+    variable._outputs.forEach(variable_increment);
+  });
+
+  do {
+    // Identify the root variables (those with no updating inputs).
+    variables.forEach(function(variable) {
+      if (variable._indegree === 0) {
+        queue.push(variable);
+      }
+    });
+
+    // Compute the variables in topological order.
+    while (variable = queue.pop()) {
+      variable_compute(variable);
+      variable._outputs.forEach(postqueue);
+      variables.delete(variable);
+    }
+
+    // Any remaining variables are circular, or depend on them.
+    variables.forEach(function(variable) {
+      if (variable_circular(variable)) {
+        variable_error(variable, new RuntimeError("circular definition"));
+        variable._outputs.forEach(variable_decrement);
+        variables.delete(variable);
+      }
+    });
+  } while (variables.size);
+
+  function postqueue(variable) {
+    if (--variable._indegree === 0) {
+      queue.push(variable);
+    }
+  }
+}
+
+function variable_circular(variable) {
+  const inputs = new Set(variable._inputs);
+  for (const i of inputs) {
+    if (i === variable) return true;
+    i._inputs.forEach(inputs.add, inputs);
+  }
+  return false;
+}
+
+function variable_increment(variable) {
+  ++variable._indegree;
+}
+
+function variable_decrement(variable) {
+  --variable._indegree;
+}
+
+function variable_value(variable) {
+  return variable._promise.catch(variable._rejector);
+}
+
+function variable_invalidator(variable) {
+  return new Promise(function(resolve) {
+    variable._invalidate = resolve;
+  });
+}
+
+function variable_intersector(invalidation, variable) {
+  let node = typeof IntersectionObserver === "function" && variable._observer && variable._observer._node;
+  let visible = !node, resolve = noop, reject = noop, promise, observer;
+  if (node) {
+    observer = new IntersectionObserver(([entry]) => (visible = entry.isIntersecting) && (promise = null, resolve()));
+    observer.observe(node);
+    invalidation.then(() => (observer.disconnect(), observer = null, reject()));
+  }
+  return function(value) {
+    if (visible) return Promise.resolve(value);
+    if (!observer) return Promise.reject();
+    if (!promise) promise = new Promise((y, n) => (resolve = y, reject = n));
+    return promise.then(() => value);
+  };
+}
+
+function variable_compute(variable) {
+  variable._invalidate();
+  variable._invalidate = noop;
+  variable._pending();
+  var value0 = variable._value,
+      version = ++variable._version,
+      invalidation = null,
+      promise = variable._promise = Promise.all(variable._inputs.map(variable_value)).then(function(inputs) {
+    if (variable._version !== version) return;
+
+    // Replace any reference to invalidation with the promise, lazily.
+    for (var i = 0, n = inputs.length; i < n; ++i) {
+      switch (inputs[i]) {
+        case variable_invalidation: {
+          inputs[i] = invalidation = variable_invalidator(variable);
+          break;
+        }
+        case variable_visibility: {
+          if (!invalidation) invalidation = variable_invalidator(variable);
+          inputs[i] = variable_intersector(invalidation, variable);
+          break;
+        }
+      }
+    }
+
+    // Compute the initial value of the variable.
+    return variable._definition.apply(value0, inputs);
+  }).then(function(value) {
+    // If the value is a generator, then retrieve its first value,
+    // and dispose of the generator if the variable is invalidated.
+    // Note that the cell may already have been invalidated here,
+    // in which case we need to terminate the generator immediately!
+    if (generatorish(value)) {
+      if (variable._version !== version) return void value.return();
+      (invalidation || variable_invalidator(variable)).then(variable_return(value));
+      return variable_precompute(variable, version, promise, value);
+    }
+    return value;
+  });
+  promise.then(function(value) {
+    if (variable._version !== version) return;
+    variable._value = value;
+    variable._fulfilled(value);
+  }, function(error) {
+    if (variable._version !== version) return;
+    variable._value = undefined;
+    variable._rejected(error);
+  });
+}
+
+function variable_precompute(variable, version, promise, generator) {
+  function recompute() {
+    var promise = new Promise(function(resolve) {
+      resolve(generator.next());
+    }).then(function(next) {
+      return next.done ? undefined : Promise.resolve(next.value).then(function(value) {
+        if (variable._version !== version) return;
+        variable_postrecompute(variable, value, promise).then(recompute);
+        variable._fulfilled(value);
+        return value;
+      });
+    });
+    promise.catch(function(error) {
+      if (variable._version !== version) return;
+      variable_postrecompute(variable, undefined, promise);
+      variable._rejected(error);
+    });
+  }
+  return new Promise(function(resolve) {
+    resolve(generator.next());
+  }).then(function(next) {
+    if (next.done) return;
+    promise.then(recompute);
+    return next.value;
+  });
+}
+
+function variable_postrecompute(variable, value, promise) {
+  var runtime = variable._module._runtime;
+  variable._value = value;
+  variable._promise = promise;
+  variable._outputs.forEach(runtime._updates.add, runtime._updates); // TODO Cleaner?
+  return runtime._compute();
+}
+
+function variable_error(variable, error) {
+  variable._invalidate();
+  variable._invalidate = noop;
+  variable._pending();
+  ++variable._version;
+  variable._indegree = NaN;
+  (variable._promise = Promise.reject(error)).catch(noop);
+  variable._value = undefined;
+  variable._rejected(error);
+}
+
+function variable_return(generator) {
+  return function() {
+    generator.return();
+  };
+}
+
+function variable_reachable(variable) {
+  if (variable._observer !== no_observer) return true; // Directly reachable.
+  var outputs = new Set(variable._outputs);
+  for (const output of outputs) {
+    if (output._observer !== no_observer) return true;
+    output._outputs.forEach(outputs.add, outputs);
+  }
+  return false;
+}
+
+function window_global(name) {
+  return window[name];
+}
+
 /**
  * @author Jonathan Terrell <jonathan.terrell@springbrook.es>
  * @copyright Copyright (c) 2019-2021 Springbrook S.L.
@@ -369,7 +2052,6 @@ const visualTypes = new Map([
 
 class ChartPanel {
     constructor(element, items, callback) {
-        console.log(2222, element, items, callback);
         this.element = element;
         this.items = items;
         this.callback = callback;
@@ -379,7 +2061,6 @@ class ChartPanel {
         if (Array.isArray(this.items)) {
             let itemCount = -1;
             const visuals = this.items.map((item) => {
-                console.log('Vendor item', item);
                 itemCount++;
                 return {
                     callback: this.callback,
@@ -484,8 +2165,7 @@ const selectItem$1 = (tile, visual) => {
     showVisual$1(tile, visual);
 };
 
-const showVisual$1 = (tile, visual) => {
-    console.log('Show visual', visual);
+const showVisual$1 = async (tile, visual) => {
     const panelElement = tile.element.querySelector('#visual');
     removeContent$1(panelElement);
     // if (visual.visualise) {
@@ -493,9 +2173,36 @@ const showVisual$1 = (tile, visual) => {
     // } else {
     //     tile.currentVisualiser = undefined;
     // }
-    // const notebook = await loadNotebook(visual.notebookId);
-    // console.log('notebook', notebook);
+    const notebook = await loadNotebook(visual.notebookId);
+    console.log('notebook', notebook);
     if (visual.callback) visual.callback(visual.notebookId);
+};
+
+const loadNotebook = async (notebookId) => {
+    // const result = (await import(/* webpackIgnore: true */ `https://api.observablehq.com/@jonathan-terrell/point-in-time-headcount-chartjs.js?v=3`));
+    // return 123;
+
+    const module = await import(`https://api.observablehq.com/@jonathan-terrell/${notebookId}.js?v=3`);
+    return module;
+
+    // const variables = {};
+    // for (const variable of module.default.modules[0].variables) {
+    //     const name = variable.name;
+    //     variables[name] = { inputs: variable.inputs, value: variable.value };
+    // }
+
+    // const buildArgs = async (variables2, inputs) => {
+    //     const args = [];
+    //     for (const name of inputs) {
+    //         const variable = variables2[name];
+    //         const inputArgs = await buildArgs(variables2, variable.inputs || []);
+    //         args.push(await variable.value(...inputArgs));
+    //     }
+    //     return args;
+    // };
+
+    // const args = await buildArgs(variables, variables.visualise.inputs || []);
+    // return await variables.visualise.value(...args);
 };
 
 const removeContent$1 = (element) => {
@@ -629,7 +2336,6 @@ const loadHighcharts = async () => {
 
 class TabPanel {
     constructor(element, items, callback) {
-        console.log(1111, element, items, callback);
         this.element = element;
         this.items = items;
         this.callback = callback;
@@ -639,7 +2345,6 @@ class TabPanel {
         if (Array.isArray(this.items)) {
             let itemCount = -1;
             const visuals = this.items.map((item) => {
-                console.log('Tab item', item);
                 itemCount++;
                 return {
                     index: itemCount,

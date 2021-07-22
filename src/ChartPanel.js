@@ -4,6 +4,8 @@
  * @license "Apache-2.0"
  */
 
+import { Runtime, Inspector } from '@observablehq/runtime';
+
 const visualTypes = new Map([
     ['chartJS', { imageHeight: 24, imageSource: 'chartJS-logo.svg', label: 'Chart.js', labelPadding: 3 }],
     ['eCharts', { imageHeight: 17, imageSource: 'eCharts-logo.png', label: 'ECharts', labelPadding: 5 }],
@@ -12,7 +14,6 @@ const visualTypes = new Map([
 
 class ChartPanel {
     constructor(element, items, callback) {
-        console.log(2222, element, items, callback);
         this.element = element;
         this.items = items;
         this.callback = callback;
@@ -22,7 +23,6 @@ class ChartPanel {
         if (Array.isArray(this.items)) {
             let itemCount = -1;
             const visuals = this.items.map((item) => {
-                console.log('Vendor item', item);
                 itemCount++;
                 return {
                     callback: this.callback,
@@ -127,8 +127,7 @@ const selectItem = (tile, visual) => {
     showVisual(tile, visual);
 };
 
-const showVisual = (tile, visual) => {
-    console.log('Show visual', visual);
+const showVisual = async (tile, visual) => {
     const panelElement = tile.element.querySelector('#visual');
     removeContent(panelElement);
     // if (visual.visualise) {
@@ -136,34 +135,36 @@ const showVisual = (tile, visual) => {
     // } else {
     //     tile.currentVisualiser = undefined;
     // }
-    // const notebook = await loadNotebook(visual.notebookId);
-    // console.log('notebook', notebook);
+    const notebook = await loadNotebook(visual.notebookId);
+    console.log('notebook', notebook);
     if (visual.callback) visual.callback(visual.notebookId);
 };
 
 const loadNotebook = async (notebookId) => {
-    return 123;
-    //const module = await import(`https://api.observablehq.com/@jonathan-terrell/${notebookId}.js`);
-    //return module;
+    // const result = (await import(/* webpackIgnore: true */ `https://api.observablehq.com/@jonathan-terrell/point-in-time-headcount-chartjs.js?v=3`));
+    // return 123;
 
-    //const variables = {};
-    //for (const variable of module.default.modules[0].variables) {
-    //    const name = variable.name;
-    //    variables[name] = { inputs: variable.inputs, value: variable.value };
-    //}
+    const module = await import(`https://api.observablehq.com/@jonathan-terrell/${notebookId}.js?v=3`);
+    return module;
 
-    //const buildArgs = async (variables2, inputs) => {
-    //    const args = [];
-    //    for (const name of inputs) {
-    //        const variable = variables2[name];
-    //        const inputArgs = await buildArgs(variables2, variable.inputs || []);
-    //        args.push(await variable.value(...inputArgs));
-    //    }
-    //    return args;
-    //};
+    // const variables = {};
+    // for (const variable of module.default.modules[0].variables) {
+    //     const name = variable.name;
+    //     variables[name] = { inputs: variable.inputs, value: variable.value };
+    // }
 
-    //const args = await buildArgs(variables, variables.visualise.inputs || []);
-    //return await variables.visualise.value(...args);
+    // const buildArgs = async (variables2, inputs) => {
+    //     const args = [];
+    //     for (const name of inputs) {
+    //         const variable = variables2[name];
+    //         const inputArgs = await buildArgs(variables2, variable.inputs || []);
+    //         args.push(await variable.value(...inputArgs));
+    //     }
+    //     return args;
+    // };
+
+    // const args = await buildArgs(variables, variables.visualise.inputs || []);
+    // return await variables.visualise.value(...args);
 };
 
 const removeContent = (element) => {
