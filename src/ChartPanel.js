@@ -4,8 +4,6 @@
  * @license "Apache-2.0"
  */
 
-import { Runtime, Inspector } from '@observablehq/runtime';
-
 const visualTypes = new Map([
     ['chartJS', { imageHeight: 24, imageSource: 'chartJS-logo.svg', label: 'Chart.js', labelPadding: 3 }],
     ['eCharts', { imageHeight: 17, imageSource: 'eCharts-logo.png', label: 'ECharts', labelPadding: 5 }],
@@ -127,7 +125,7 @@ const selectItem = (tile, visual) => {
     showVisual(tile, visual);
 };
 
-const showVisual = async (tile, visual) => {
+const showVisual = (tile, visual) => {
     const panelElement = tile.element.querySelector('#visual');
     removeContent(panelElement);
     // if (visual.visualise) {
@@ -135,39 +133,7 @@ const showVisual = async (tile, visual) => {
     // } else {
     //     tile.currentVisualiser = undefined;
     // }
-    const notebook = await loadNotebook(visual.notebookId);
-    console.log('notebook', notebook);
     if (visual.callback) visual.callback(visual.notebookId);
-};
-
-const loadNotebook = async (notebookId) => {
-    // const result = (await import(/* webpackIgnore: true */ `https://api.observablehq.com/@jonathan-terrell/point-in-time-headcount-chartjs.js?v=3`));
-
-    console.log(1111, `https://api.observablehq.com/@jonathan-terrell/${notebookId}.js?v=3`);
-    // const module = await import(`https://api.observablehq.com/@jonathan-terrell/${notebookId}.js?v=3`);
-    console.log(2222);
-    // return module;
-
-    return 123;
-
-    // const variables = {};
-    // for (const variable of module.default.modules[0].variables) {
-    //     const name = variable.name;
-    //     variables[name] = { inputs: variable.inputs, value: variable.value };
-    // }
-
-    // const buildArgs = async (variables2, inputs) => {
-    //     const args = [];
-    //     for (const name of inputs) {
-    //         const variable = variables2[name];
-    //         const inputArgs = await buildArgs(variables2, variable.inputs || []);
-    //         args.push(await variable.value(...inputArgs));
-    //     }
-    //     return args;
-    // };
-
-    // const args = await buildArgs(variables, variables.visualise.inputs || []);
-    // return await variables.visualise.value(...args);
 };
 
 const removeContent = (element) => {
