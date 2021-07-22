@@ -154,7 +154,7 @@ class TabPanelVisualiser {
     constructor(element, options, callback) {
         this.element = element;
         this.options = options;
-        this.ccallback = callback;
+        this.callback = callback;
         this.visual = undefined;
     }
 
