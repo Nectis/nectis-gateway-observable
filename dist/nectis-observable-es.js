@@ -369,6 +369,7 @@ const visualTypes = new Map([
 
 class ChartPanel {
     constructor(element, items, callback) {
+        console.log(2222, element, items, callback);
         this.element = element;
         this.items = items;
         this.callback = callback;
@@ -628,6 +629,7 @@ const loadHighcharts = async () => {
 
 class TabPanel {
     constructor(element, items, callback) {
+        console.log(1111, element, items, callback);
         this.element = element;
         this.items = items;
         this.callback = callback;

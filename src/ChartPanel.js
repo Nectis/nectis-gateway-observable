@@ -12,6 +12,7 @@ const visualTypes = new Map([
 
 class ChartPanel {
     constructor(element, items, callback) {
+        console.log(2222, element, items, callback);
         this.element = element;
         this.items = items;
         this.callback = callback;
