@@ -2180,12 +2180,13 @@ const showVisual$1 = async (tile, visual) => {
 
 const loadNotebook = async (notebookId) => {
     // const result = (await import(/* webpackIgnore: true */ `https://api.observablehq.com/@jonathan-terrell/point-in-time-headcount-chartjs.js?v=3`));
-    // return 123;
 
     console.log(1111, `https://api.observablehq.com/@jonathan-terrell/${notebookId}.js?v=3`);
     // const module = await import(`https://api.observablehq.com/@jonathan-terrell/${notebookId}.js?v=3`);
     console.log(2222);
-    return module;
+    // return module;
+
+    return 123;
 
     // const variables = {};
     // for (const variable of module.default.modules[0].variables) {
