@@ -30,7 +30,7 @@ class TabPanel {
             visualElement.id = 'visual';
             this.element.appendChild(visualElement);
             selectItem(this, visuals[0], this.callback);
-        } else if (typeof items === 'object' && this.items !== null) {
+        } else if (typeof this.items === 'object' && this.items !== null) {
             replaceContent(this.element, buildSimpleTile());
             showVisual(this, this.items, this.callback);
         } else {
