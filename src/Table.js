@@ -4,6 +4,7 @@
  * @license "Apache-2.0"
  */
 
+import tableStyle from './styles/tableStyle.css';
 // -------------------------------------------------------------------------------------------------------------------------------
 // Declarations - Classes
 // -------------------------------------------------------------------------------------------------------------------------------
@@ -15,6 +16,11 @@ class Table {
 
         const wrapper = document.createElement('div');
         wrapper.style.cssText = 'overflow-x: scroll; padding: 10px 0 10px 10px';
+
+        const style = document.createElement('style');
+        style.appendChild(document.createTextNode(tableStyle));
+        wrapper.appendChild(style);
+
         const tableWrapper = document.createElement('div');
         tableWrapper.style.cssText = 'display: flex';
         const table = document.createElement('table');
