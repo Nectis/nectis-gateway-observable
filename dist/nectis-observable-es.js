@@ -24091,90 +24091,9 @@ react.exports.forwardRef(function ResponsiveBarCanvas(props, ref) {
 //import { BoxLegendSvg } from '@nivo/legends';
 
 // -------------------------------------------------------------------------------------------------------------------------------
-// Declarations - Classes
-// -------------------------------------------------------------------------------------------------------------------------------
-
-class NivoVisualiser {
-    constructor(element, options) {
-        this.element = element;
-        this.options = options;
-        this.visual = undefined;
-    }
-
-    async show() {
-
-        ReactDOM.render(React.createElement('div', null, `Hello world...`), this.element);
-
-        // render(
-        //     <div style={{ height: '500px' }}>
-        //         <ResponsiveBar
-        //             data={data}
-        //             keys={keys}
-        //             indexBy="id"
-        //             margin={{
-        //                 top: 50,
-        //                 right: 130,
-        //                 bottom: 185,
-        //                 left: 60
-        //             }}
-        //             colors={colors}
-        //             padding={0.3}
-        //             layout="horizontal"
-        //             borderColor="inherit:darker(1.6)"
-        //             enableLabel={false}
-        //             enableGridX={true}
-        //             enableGridY={false}
-        //             theme={{
-        //                 axis: {
-        //                     domain: {
-        //                         line: {
-        //                             stroke: '#a9acbe',
-        //                             strokeWidth: 2
-        //                         }
-        //                     }
-        //                 },
-        //                 grid: {
-        //                     line: {
-        //                         stroke: '#e7e8ec',
-        //                         strokeWidth: 2
-        //                     }
-        //                 }
-        //             }}
-        //             layers={['grid', 'axes', 'bars', 'markers', BarLegend]}
-        //             legends={[
-        //                 {
-        //                     dataFrom: 'keys',
-        //                     data: keys.map((id, index) => ({
-        //                         color: colors[index],
-        //                         id,
-        //                         label: id === 'one' ? 1 : 2
-        //                     })),
-        //                     anchor: 'bottom',
-        //                     direction: 'row',
-        //                     translateY: 63,
-        //                     itemWidth: 80,
-        //                     itemHeight: 20,
-        //                     itemDirection: 'left-to-right',
-        //                     symbolSize: 20
-        //                 }
-        //             ]}
-        //         />
-        //     </div>,
-        //     this.element
-        // );
-
-        return this;
-    }
-
-    resize(items) {
-        return this;
-    }
-}
-
-// -------------------------------------------------------------------------------------------------------------------------------
 // Exports
 // -------------------------------------------------------------------------------------------------------------------------------
 
-var Nivo = { NivoVisualiser, React, ReactDOM, ResponsiveBar };
+var Nivo = { React, ReactDOM, ResponsiveBar };
 
 export { Nivo };
