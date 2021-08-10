@@ -24173,6 +24173,6 @@ class NivoVisualiser {
 // Exports
 // -------------------------------------------------------------------------------------------------------------------------------
 
-var Nivo = { NivoVisualiser, ResponsiveBar };
+var Nivo = { NivoVisualiser, React, ResponsiveBar };
 
 export { Nivo };
