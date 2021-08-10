@@ -9,6 +9,7 @@ import ChartPanel from './ChartPanel';
 import D3XYCharts from './D3XYChart';
 import ECharts from './ECharts';
 import Highcharts from './Highcharts';
+import Nivo from './Nivo';
 import TabPanel from './TabPanel';
 import Table from './Table';
 import Theme from './Theme';
@@ -19,4 +20,4 @@ import WorkforceSize from './WorkforceSize';
 // Exports
 // -------------------------------------------------------------------------------------------------------------------------------
 
-export { ChartJS, ChartPanel, D3XYCharts, ECharts, Highcharts, TabPanel, Table, Theme, Tile, WorkforceSize };
+export { ChartJS, ChartPanel, D3XYCharts, ECharts, Highcharts, Nivo, TabPanel, Table, Theme, Tile, WorkforceSize };
