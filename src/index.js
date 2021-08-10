@@ -20,4 +20,5 @@ import WorkforceSize from './WorkforceSize';
 // Exports
 // -------------------------------------------------------------------------------------------------------------------------------
 
-export { ChartJS, ChartPanel, D3XYCharts, ECharts, Highcharts, Nivo, TabPanel, Table, Theme, Tile, WorkforceSize };
+//export { ChartJS, ChartPanel, D3XYCharts, ECharts, Highcharts, Nivo, TabPanel, Table, Theme, Tile, WorkforceSize };
+export { Nivo };
