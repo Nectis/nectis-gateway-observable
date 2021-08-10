@@ -12,12 +12,13 @@
         "observable"
     ],
     "main": "./src/index.js",
-    "version": "0.0.235",
+    "version": "0.0.236",
     "devDependencies": {
         "@nectis/eslint-config-nectis": "^0.1.71",
         "@rollup/plugin-commonjs": "^19.0.1",
         "@rollup/plugin-json": "^4.1.0",
         "@rollup/plugin-node-resolve": "^13.0.2",
+        "@rollup/plugin-replace": "^3.0.0",
         "eslint": "^7.30.0",
         "grunt": "^1.4.1",
         "grunt-bump": "^0.8.0",
