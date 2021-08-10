@@ -4,18 +4,18 @@
  * @license "Apache-2.0"
  */
 
+// "@nivo/core": "^0.73.0",
+
 // -------------------------------------------------------------------------------------------------------------------------------
 // Declarations - Variables
 // -------------------------------------------------------------------------------------------------------------------------------
 
-import React from 'react';
-//import { render } from 'react-dom';
-import ReactDOM from 'react-dom';
 import { ResponsiveBar } from '@nivo/bar';
+import { ResponsiveChord } from '@nivo/chord';
 //import { BoxLegendSvg } from '@nivo/legends';
 
 // -------------------------------------------------------------------------------------------------------------------------------
 // Exports
 // -------------------------------------------------------------------------------------------------------------------------------
 
-export default { React, ReactDOM, ResponsiveBar };
+export default { ResponsiveBar, ResponsiveChord };

@@ -80,37 +80,6 @@
     font-weight: 400;
 }
 
-.nectis .caret {
-    background: transparent;
-    border: 6px solid transparent;
-    display: inline-block;
-    height: 0;
-    pointer-events: none;
-    position: absolute;
-    width: 0;
-}
-.nectis .caret.right {
-    border-left-color: rgba(0, 0, 0, 0.75);
-}
-.nectis .caret.left {
-    border-right-color: rgba(0, 0, 0, 0.75);
-}
-
-.nectis .tooltip {
-    font-size: 14px;
-}
-.nectis .tooltip tr {
-    border: none;
-}
-.nectis .tooltip td {
-    border: none !important;
-    font-size: 14px;
-    padding: 0;
-}
-.nectis .tooltip td:last-child {
-    text-align: right;
-}
-
 .nectis .tabBar {
     border-bottom: 1px solid #eee;
     height: 48px;
@@ -163,6 +132,37 @@
 }
 .nectis .vendorButton.selected:hover {
     background: #eef5ef;
+}
+
+.nectis .caret {
+    background: transparent;
+    border: 6px solid transparent;
+    display: inline-block;
+    height: 0;
+    pointer-events: none;
+    position: absolute;
+    width: 0;
+}
+.nectis .caret.right {
+    border-left-color: rgba(0, 0, 0, 0.75);
+}
+.nectis .caret.left {
+    border-right-color: rgba(0, 0, 0, 0.75);
+}
+
+.nectis .tooltip {
+    font-size: 14px;
+}
+.nectis .tooltip tr {
+    border: none;
+}
+.nectis .tooltip td {
+    border: none !important;
+    font-size: 14px;
+    padding: 0;
+}
+.nectis .tooltip td:last-child {
+    text-align: right;
 }
 
 /**** Fonts */
