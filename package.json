@@ -12,7 +12,7 @@
         "observable"
     ],
     "main": "./src/index.js",
-    "version": "0.0.223",
+    "version": "0.0.224",
     "devDependencies": {
         "@nectis/eslint-config-nectis": "^0.1.71",
         "@rollup/plugin-commonjs": "^19.0.1",
@@ -28,6 +28,7 @@
     },
     "scripts": {},
     "dependencies": {
+        "@nivo/axes": "^0.73.0",
         "@nivo/bar": "^0.73.1",
         "chart.js": "^3.4.1",
         "highcharts": "^9.1.2"
