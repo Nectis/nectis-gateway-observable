@@ -133,6 +133,8 @@ var ReactPropTypesSecret_1 = ReactPropTypesSecret$1;
   react.exports = react_production_min;
 }
 
+var React$1 = react.exports;
+
 let updateQueue = makeQueue();
 const raf$2 = fn => schedule(fn, updateQueue);
 let writeQueue = makeQueue();
@@ -4102,6 +4104,8 @@ function checkDCE() {
   checkDCE();
   reactDom.exports = reactDom_production_min;
 }
+
+var ReactDOM = reactDom.exports;
 
 function _objectWithoutPropertiesLoose$2(source, excluded) {
   if (source == null) return {};
@@ -26410,4 +26414,16 @@ var ResponsiveChord = function ResponsiveChord(props) {
 
 var Nivo = { ResponsiveBar, ResponsiveChord };
 
-export { Nivo };
+/**
+ * @author Jonathan Terrell <jonathan.terrell@springbrook.es>
+ * @copyright Copyright (c) 2019-2021 Springbrook S.L.
+ * @license "Apache-2.0"
+ */
+
+// -------------------------------------------------------------------------------------------------------------------------------
+// Exports
+// -------------------------------------------------------------------------------------------------------------------------------
+
+var React = { React: React$1, ReactDOM };
+
+export { Nivo, React };

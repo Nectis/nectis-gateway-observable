@@ -22,4 +22,4 @@ import React from './React';
 // -------------------------------------------------------------------------------------------------------------------------------
 
 //export { ChartJS, ChartPanel, D3XYCharts, ECharts, Highcharts, TabPanel, Table, Theme, Tile, WorkforceSize };
-export { Nivo };
+export { Nivo, React };
