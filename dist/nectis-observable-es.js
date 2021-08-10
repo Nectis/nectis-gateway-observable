@@ -546,6 +546,8 @@ function checkDCE() {
   reactDom.exports = reactDom_production_min;
 }
 
+var ReactDOM = reactDom.exports;
+
 let updateQueue = makeQueue();
 const raf$2 = fn => schedule(fn, updateQueue);
 let writeQueue = makeQueue();
@@ -24101,7 +24103,7 @@ class NivoVisualiser {
 
     async show() {
 
-        reactDom.exports.render(React.createElement('div', null, `Hello world...`), this.element);
+        ReactDOM.render(React.createElement('div', null, `Hello world...`), this.element);
 
         // render(
         //     <div style={{ height: '500px' }}>
@@ -24173,6 +24175,6 @@ class NivoVisualiser {
 // Exports
 // -------------------------------------------------------------------------------------------------------------------------------
 
-var Nivo = { NivoVisualiser, React, ResponsiveBar };
+var Nivo = { NivoVisualiser, React, ReactDOM, ResponsiveBar };
 
 export { Nivo };
