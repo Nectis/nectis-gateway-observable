@@ -16,7 +16,7 @@ import pkg from './package.json';
 
 export default [
     {
-        external: ['react', 'react-dom'],
+        external: [],
         input: pkg.main,
         output: [
             {
