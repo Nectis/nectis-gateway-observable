@@ -30,7 +30,8 @@ export default [
         ],
         plugins: [
             css(),
-            /* json(), */ nodeResolve(),
+            /* json(), */
+            nodeResolve(),
             commonjs(),
             replace({
                 'process.env.NODE_ENV': JSON.stringify('production')
