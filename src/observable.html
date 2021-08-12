@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<meta charset="utf-8" />
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@observablehq/inspector@3/dist/inspector.css" />
+<body>
+    <div id="presentation" class="observablehq-root"></div>
+
+    <script type="module">
+        import { Runtime, Inspector } from 'https://cdn.jsdelivr.net/npm/@observablehq/runtime@4/dist/runtime.js';
+        import define from 'https://api.observablehq.com/@jonathan-terrell/point-in-time-headcount-chartjs.js?v=3';
+
+        const presentationElement = document.querySelector('#presentation');
+        const runtime = new Runtime();
+        const main = runtime.module(define, (name) => {
+            if (!name) return true;
+            if (name.startsWith('narrative_') || name.startsWith('visual_')) {
+                const element = document.createElement('div');
+                presentationElement.appendChild(element);
+                const inspector = new Inspector(element);
+                return inspector;
+            }
+            // return true;
+        });
+    </script>
+</body>

@@ -32,6 +32,7 @@
         "@nivo/bar": "^0.73.1",
         "@nivo/chord": "^0.73.0",
         "@nivo/sankey": "^0.73.0",
+        "@observablehq/runtime": "^4.13.0",
         "chart.js": "^3.4.1",
         "highcharts": "^9.1.2",
         "react": "^16.14.0",

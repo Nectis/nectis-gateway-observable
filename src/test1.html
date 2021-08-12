@@ -1,0 +1,17 @@
+<div id="nectisPresentation"></div>
+
+<script type="module">
+    import * as NectisGateway from 'https://unpkg.com/@nectis/nectis-observable@0.0.253/dist/nectis-observable-es.js';
+    NectisGateway.Notebook.render({
+        data: {
+            apiKey: '',
+            depot: '',
+            narratives: true,
+            query: '',
+            show: [],
+            visuals: true
+        },
+        element: document.getElementById('nectisPresentation'),
+        notebook: '@jonathan-terrell/point-in-time-headcount-chartjs'
+    });
+</script>
