@@ -1,0 +1,33 @@
+<!-- <div id="xxxx" style="background: orange; height: 500px; width: 100%">abcde</div> -->
+
+<div>
+    <canvas id="myChart"></canvas>
+</div>
+
+<!-- <script type="module">
+    (async () => {
+        const xxxx = await import('https://api.observablehq.com/@jonathan-terrell/nectis-factory.js?v=3');
+        console.log(xxxx.default);
+    })();
+
+    document.querySelector('#xxxx').style.background = 'green';
+</script> -->
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    var myChart = new Chart(document.getElementById('myChart'), {
+        type: 'line',
+        data: {
+            labels: ['January', 'February', 'March', 'April', 'May', 'June'],
+            datasets: [
+                {
+                    label: 'My First dataset',
+                    backgroundColor: 'rgb(255, 99, 132)',
+                    borderColor: 'rgb(255, 99, 132)',
+                    data: [0, 10, 5, 2, 20, 30, 45]
+                }
+            ]
+        },
+        options: {}
+    });
+</script>
