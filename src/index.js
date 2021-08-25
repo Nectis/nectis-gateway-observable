@@ -5,19 +5,8 @@
  */
 
 import { Inspector, Runtime } from '@observablehq/runtime';
-
-// import ChartJS from './ChartJS';
-// import ChartPanel from './ChartPanel';
-// import D3XYCharts from './D3XYChart';
-// import ECharts from './ECharts';
-// import Highcharts from './Highcharts';
 import Nivo from './Nivo';
 import React from './React';
-// import TabPanel from './TabPanel';
-// import Table from './Table';
-// import Theme from './Theme';
-// import Tile from './Tile';
-// import WorkforceSize from './WorkforceSize';
 
 // -------------------------------------------------------------------------------------------------------------------------------
 // Load Notebook
@@ -28,14 +17,14 @@ const urlSuffix = '.js?v=3';
 
 const loadNotebook = (notebookId, elementRef) =>
     new Promise((resolve, reject) => {
-        const notebookURL = `${urlPrefix}${notebookId}${urlSuffix}`;
         // NOTES: Do not convert import to await. Some combination of await and async results in an error.
-        import(/* webpackIgnore: true */ notebookURL)
+        import(/* webpackIgnore: true */ `${urlPrefix}${notebookId}${urlSuffix}`)
             .then((moduleNamespace) => {
                 const notebook = moduleNamespace.default;
-                console.log(1111, notebookId, elementRef, typeof elementRef, typeof elementRef === 'string');
-                const presentationElement = typeof elementRef === 'string' ? document.getElementById(elementRef) : elementRef;
-                console.log(2222, presentationElement);
+
+                const presentationElement = typeof elementRef === 'object' ? elementRef : document.getElementById(elementRef);
+                while (presentationElement.firstChild) presentationElement.removeChild(presentationElement.lastChild);
+
                 const runtime = new Runtime();
                 const observableModule = runtime.module(notebook, (name) => {
                     if (!name) return true;
@@ -48,6 +37,7 @@ const loadNotebook = (notebookId, elementRef) =>
                     return true;
                 });
                 observableModule.redefine('embedded', true);
+
                 resolve();
             })
             .catch((error) => reject(error));
@@ -57,5 +47,4 @@ const loadNotebook = (notebookId, elementRef) =>
 // Exports
 // -------------------------------------------------------------------------------------------------------------------------------
 
-// export { ChartJS, ChartPanel, D3XYCharts, ECharts, Highcharts, TabPanel, Table, Theme, Tile, WorkforceSize };
 export { Nivo, React, loadNotebook };

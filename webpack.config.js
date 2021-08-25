@@ -15,7 +15,7 @@ const path = require('path');
 module.exports = {
     entry: './src/index.js',
     experiments: { outputModule: true },
-    mode: 'development',
+    mode: 'development', // Fails if this is changed to 'production'. It appears to be linked to dynamic import of notebooks.
     output: {
         // chunkFormat: 'module',
         filename: 'nectis-observable-es.js',
