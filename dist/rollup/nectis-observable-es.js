@@ -30394,8 +30394,7 @@ const urlSuffix = '.js?v=3';
 const loadNotebook = (notebookId, elementRef) =>
     new Promise((resolve, reject) => {
         // NOTES: Do not convert import to await. Some combination of await and async results in an error.
-        const notebookURL = urlPrefix + notebookId + urlSuffix;
-        import(/* webpackIgnore: true */ notebookURL)
+        import(/* webpackIgnore: true */ `${urlPrefix}${notebookId}${urlSuffix}`)
             .then((moduleNamespace) => {
                 const notebook = moduleNamespace.default;
 
