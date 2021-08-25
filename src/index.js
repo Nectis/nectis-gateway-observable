@@ -32,19 +32,19 @@ const loadNotebook = async (notebookId, elementId) => {
     const notebookURL = `${urlPrefix}${notebookId}${urlSuffix}`;
     const xxxx = await import('https://api.observablehq.com/@jonathan-terrell/point-in-time-headcount-chartjs.js?v=3');
     const notebook = xxxx.default;
-    // const presentationElement = document.getElementById(elementId);
-    // const runtime = new Runtime();
-    // const module = runtime.module(notebook, (name) => {
-    //     if (!name) return true;
-    //     if (name.startsWith('narrative_') || name.startsWith('visual_')) {
-    //         const element = document.createElement('div');
-    //         presentationElement.appendChild(element);
-    //         const inspector = new Inspector(element);
-    //         return inspector;
-    //     }
-    //     return true;
-    // });
-    // module.redefine('embedded', true);
+    const presentationElement = document.getElementById(elementId);
+    const runtime = new Runtime();
+    const module = runtime.module(notebook, (name) => {
+        if (!name) return true;
+        if (name.startsWith('narrative_') || name.startsWith('visual_')) {
+            const element = document.createElement('div');
+            presentationElement.appendChild(element);
+            const inspector = new Inspector(element);
+            return inspector;
+        }
+        return true;
+    });
+    module.redefine('embedded', true);
 };
 
 // -------------------------------------------------------------------------------------------------------------------------------
