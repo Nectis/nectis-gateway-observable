@@ -29,21 +29,21 @@ const urlSuffix = '.js?v=3';
 const loadNotebook = async (notebookId, elementId) => {
     console.log(notebookId, elementId);
 
-    // const notebookURL = `${urlPrefix}${notebookId}${urlSuffix}`;
-    // const notebook = (await import(notebookURL)).default;
-    // const presentationElement = document.getElementById(elementId);
-    // const runtime = new Runtime();
-    // const module = runtime.module(notebook, (name) => {
-    //     if (!name) return true;
-    //     if (name.startsWith('narrative_') || name.startsWith('visual_')) {
-    //         const element = document.createElement('div');
-    //         presentationElement.appendChild(element);
-    //         const inspector = new Inspector(element);
-    //         return inspector;
-    //     }
-    //     return true;
-    // });
-    // module.redefine('embedded', true);
+    const notebookURL = `${urlPrefix}${notebookId}${urlSuffix}`;
+    const notebook = (await import(notebookURL)).default;
+    const presentationElement = document.getElementById(elementId);
+    const runtime = new Runtime();
+    const module = runtime.module(notebook, (name) => {
+        if (!name) return true;
+        if (name.startsWith('narrative_') || name.startsWith('visual_')) {
+            const element = document.createElement('div');
+            presentationElement.appendChild(element);
+            const inspector = new Inspector(element);
+            return inspector;
+        }
+        return true;
+    });
+    module.redefine('embedded', true);
 };
 
 // -------------------------------------------------------------------------------------------------------------------------------
