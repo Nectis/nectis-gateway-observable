@@ -29624,7 +29624,8 @@ const loadNotebook = async (notebookId, elementId) => {
     console.log(notebookId, elementId);
 
     const notebookURL = `${urlPrefix}${notebookId}${urlSuffix}`;
-    (await import(notebookURL)).default;
+    const xxxx = await import(notebookURL);
+    xxxx.default;
     // const presentationElement = document.getElementById(elementId);
     // const runtime = new Runtime();
     // const module = runtime.module(notebook, (name) => {
