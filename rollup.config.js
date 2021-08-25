@@ -9,7 +9,7 @@ import css from 'rollup-plugin-import-css';
 // import json from '@rollup/plugin-json';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import pkg from './package.json';
-import replace from '@rollup/plugin-replace';
+// import replace from '@rollup/plugin-replace';
 
 // -------------------------------------------------------------------------------------------------------------------------------
 // Exports
@@ -32,8 +32,8 @@ export default [
             css(),
             /* json(), */
             nodeResolve(),
-            commonjs(),
-            replace({ preventAssignment: true, 'process.env.NODE_ENV': JSON.stringify('production') })
+            commonjs()
+            // replace({ preventAssignment: true, 'process.env.NODE_ENV': JSON.stringify('production') })
         ]
     }
 ];
