@@ -15,7 +15,7 @@ const path = require('path');
 module.exports = {
     entry: './src/index.js',
     experiments: { outputModule: true },
-    mode: 'development',
+    mode: 'production',
     output: {
         // chunkFormat: 'module',
         filename: 'nectis-observable-es.js',
