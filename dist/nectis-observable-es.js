@@ -30386,7 +30386,9 @@ var React = { React: React$1, ReactDOM };
 
 const loadNotebook = async (notebookId, elementId) => {
     console.log(notebookId, elementId);
-    const xxxx = await import('https://api.observablehq.com/@jonathan-terrell/point-in-time-headcount-chartjs.js?v=3');
+    const xxxx = await import(
+        /* webpackIgnore: true */ 'https://api.observablehq.com/@jonathan-terrell/point-in-time-headcount-chartjs.js?v=3'
+    );
     const notebook = xxxx.default;
     const presentationElement = document.getElementById(elementId);
     const runtime = new Runtime();

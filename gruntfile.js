@@ -4,6 +4,8 @@
  * @license "Apache-2.0"
  */
 
+const webpackConfig = require('./webpack.config.js');
+
 // -------------------------------------------------------------------------------------------------------------------------------
 // Exports
 // -------------------------------------------------------------------------------------------------------------------------------
@@ -36,11 +38,17 @@ module.exports = (grunt) => {
             rollup: { args: ['rollup', '-c'], cmd: 'npx' },
             test: { args: ['WARNING: No tests implemented.'], cmd: 'echo' },
             update: { args: ['npm-check-updates', '-u'], cmd: 'npx' }
+        },
+
+        // Webpack configuration.
+        webpack: {
+            myConfig: webpackConfig
         }
     });
     // Load external tasks.
     grunt.loadNpmTasks('grunt-bump');
     grunt.loadNpmTasks('grunt-run');
+    grunt.loadNpmTasks('grunt-webpack');
 
     // Register local tasks.
     grunt.registerTask('audit', ['run:audit']);
@@ -48,7 +56,7 @@ module.exports = (grunt) => {
     grunt.registerTask('licenseCheck', ['run:licenseChecker', 'run:licenseNLF']);
     grunt.registerTask('lint', ['run:lint']);
     grunt.registerTask('outdated', ['run:outdated']);
-    grunt.registerTask('release', ['run:rollup', 'bump', 'run:publish']);
+    grunt.registerTask('release', ['webpack', 'run:rollup', 'bump', 'run:publish']);
     grunt.registerTask('test', ['run:test']);
     grunt.registerTask('sync', ['bump']);
     grunt.registerTask('update', ['run:update', 'run:install']);
