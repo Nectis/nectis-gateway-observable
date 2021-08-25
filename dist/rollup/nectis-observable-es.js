@@ -30403,7 +30403,7 @@ const loadNotebook = (notebookId, elementRef) =>
         import(/* webpackIgnore: true */ notebookURL)
             .then((moduleNamespace) => {
                 const notebook = moduleNamespace.default;
-                console.log(1111, notebookId, elementRef, elementRef instanceof String);
+                console.log(1111, notebookId, elementRef, typeof elementRef, typeof elementRef === 'string');
                 const presentationElement = typeof elementRef === 'string' ? document.getElementById(elementRef) : elementRef;
                 console.log(2222, presentationElement);
                 const runtime = new Runtime();
