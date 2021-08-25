@@ -18,7 +18,8 @@ const urlSuffix = '.js?v=3';
 const loadNotebook = (notebookId, elementRef) =>
     new Promise((resolve, reject) => {
         // NOTES: Do not convert import to await. Some combination of await and async results in an error.
-        import(/* webpackIgnore: true */ `${urlPrefix}${notebookId}${urlSuffix}`)
+        const notebookURL = urlPrefix + notebookId + urlSuffix;
+        import(/* webpackIgnore: true */ notebookURL)
             .then((moduleNamespace) => {
                 const notebook = moduleNamespace.default;
 
@@ -38,7 +39,7 @@ const loadNotebook = (notebookId, elementRef) =>
                 });
                 observableModule.redefine('embedded', true);
 
-                resolve();
+                resolve(...observableModule);
             })
             .catch((error) => reject(error));
     });
