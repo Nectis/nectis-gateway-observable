@@ -22,7 +22,7 @@ export default [
         output: [
             {
                 chunkFileNames: 'nectis-observable-[name]-[hash]-es.js',
-                dir: './dist',
+                dir: './dist/rollup',
                 entryFileNames: 'nectis-observable-es.js',
                 exports: 'auto',
                 format: 'es'
