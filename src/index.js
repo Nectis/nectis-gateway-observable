@@ -30,7 +30,7 @@ const loadNotebook = async (notebookId, elementId) => {
     console.log(notebookId, elementId);
 
     const notebookURL = `${urlPrefix}${notebookId}${urlSuffix}`;
-    // const notebook = (await import(notebookURL)).default;
+    const notebook = (await import(notebookURL)).default;
     // const presentationElement = document.getElementById(elementId);
     // const runtime = new Runtime();
     // const module = runtime.module(notebook, (name) => {
