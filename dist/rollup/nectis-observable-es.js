@@ -30396,17 +30396,16 @@ var React = { React: React$1, ReactDOM };
 const urlPrefix = 'https://api.observablehq.com/@jonathan-terrell/';
 const urlSuffix = '.js?v=3';
 
-const loadNotebook = (notebookId, elementId) =>
+const loadNotebook = (notebookId, elementRef) =>
     new Promise((resolve, reject) => {
-        console.log(1111, notebookId, elementId);
-
         const notebookURL = `${urlPrefix}${notebookId}${urlSuffix}`;
+        // NOTES: Do not convert import to await. Some combination of await and async results in an error.
         import(/* webpackIgnore: true */ notebookURL)
-            .then((xxxx) => {
-                const notebook = xxxx.default;
-                const presentationElement = document.getElementById(elementId);
+            .then((moduleNamespace) => {
+                const notebook = moduleNamespace.default;
+                const presentationElement = elementRef instanceof String ? document.getElementById(elementRef) : elementRef;
                 const runtime = new Runtime();
-                const module = runtime.module(notebook, (name) => {
+                const observableModule = runtime.module(notebook, (name) => {
                     if (!name) return true;
                     if (name.startsWith('narrative_') || name.startsWith('visual_')) {
                         const element = document.createElement('div');
@@ -30416,8 +30415,8 @@ const loadNotebook = (notebookId, elementId) =>
                     }
                     return true;
                 });
-                module.redefine('embedded', true);
-                resolve({ module, notebook });
+                observableModule.redefine('embedded', true);
+                resolve();
             })
             .catch((error) => reject(error));
     });

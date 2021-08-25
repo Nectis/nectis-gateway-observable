@@ -4,6 +4,8 @@
  * @license "Apache-2.0"
  */
 
+// Webpack required because rollup does not support dynamic imports with names in variables.
+
 const path = require('path');
 
 // -------------------------------------------------------------------------------------------------------------------------------
