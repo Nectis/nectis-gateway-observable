@@ -33,7 +33,9 @@ const loadNotebook = (notebookId, elementRef) =>
         import(/* webpackIgnore: true */ notebookURL)
             .then((moduleNamespace) => {
                 const notebook = moduleNamespace.default;
+                console.log(1111, notebookId, elementRef, elementRef instanceof String);
                 const presentationElement = elementRef instanceof String ? document.getElementById(elementRef) : elementRef;
+                console.log(2222, presentationElement);
                 const runtime = new Runtime();
                 const observableModule = runtime.module(notebook, (name) => {
                     if (!name) return true;
