@@ -33,9 +33,7 @@ export default [
             /* json(), */
             nodeResolve(),
             commonjs(),
-            replace({
-                'process.env.NODE_ENV': JSON.stringify('production')
-            })
+            replace({ preventAssignment: true, 'process.env.NODE_ENV': JSON.stringify('production') })
         ]
     }
 ];
