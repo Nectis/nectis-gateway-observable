@@ -12197,6 +12197,8 @@ class Visualiser {
             this.element.height = 500; // `${this.container.clientHeight || defaultVisualHeight}px`;
             this.element.width = width$1; // `${this.container.clientWidth || width}px`;
             console.log(2222, this.element.height, this.element.width);
+            var ctx = this.element.getContext('2d');
+            console.log(2222, ctx.height, ctx.width);
         } else {
             console.log(3333, defaultVisualHeight, width$1);
             this.element.height = `${defaultVisualHeight}px`;
