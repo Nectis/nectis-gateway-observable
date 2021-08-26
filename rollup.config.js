@@ -29,7 +29,7 @@ export default [
             {
                 chunkFileNames: 'nectis-observable-gateway-[name]-[hash]-es.js',
                 dir: './dist/rollup',
-                entryFileNames: 'nectis-observable-gateway-es.js',
+                entryFileNames: 'index.js',
                 exports: 'auto',
                 format: 'es'
             }
