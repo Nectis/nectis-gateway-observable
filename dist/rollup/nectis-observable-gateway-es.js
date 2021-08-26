@@ -28855,7 +28855,7 @@ class SQLiteDatabaseClient {
     });
   }
   static async open(source) {
-    const [SQL, buffer] = await Promise.all([sqlite(require), Promise.resolve(source).then(load$1)]);
+    const [SQL, buffer] = await Promise.all([sqlite(require), Promise.resolve(source).then(load$2)]);
     return new SQLiteDatabaseClient(new SQL.Database(buffer));
   }
   async query(query, params) {
@@ -28883,9 +28883,9 @@ class SQLiteDatabaseClient {
   }
 }
 
-function load$1(source) {
-  return typeof source === "string" ? fetch(source).then(load$1)
-    : source instanceof Response || source instanceof Blob ? source.arrayBuffer().then(load$1)
+function load$2(source) {
+  return typeof source === "string" ? fetch(source).then(load$2)
+    : source instanceof Response || source instanceof Blob ? source.arrayBuffer().then(load$2)
     : source instanceof ArrayBuffer ? new Uint8Array(source)
     : source;
 }
@@ -29676,7 +29676,7 @@ function generatorish(value) {
       && typeof value.return === "function";
 }
 
-function load(notebook, library, observer) {
+function load$1(notebook, library, observer) {
   if (typeof library == "function") observer = library, library = null;
   if (typeof observer !== "function") throw new Error("invalid observer");
   if (library == null) library = new Library();
@@ -30078,7 +30078,7 @@ function Runtime(builtins = new Library, global = window_global) {
 }
 
 Object.defineProperties(Runtime, {
-  load: {value: load, writable: true, configurable: true}
+  load: {value: load$1, writable: true, configurable: true}
 });
 
 Object.defineProperties(Runtime.prototype, {
@@ -30373,7 +30373,7 @@ function window_global(name) {
  */
 
 // -------------------------------------------------------------------------------------------------------------------------------
-// Notebook
+// Load
 // -------------------------------------------------------------------------------------------------------------------------------
 
 const cellTypeMap = new Map([
@@ -30386,7 +30386,7 @@ const cellTypeMap = new Map([
 const urlPrefix = 'https://api.observablehq.com/@jonathan-terrell/';
 const urlSuffix = '.js?v=3';
 
-const loadNotebook = (notebookId, elementRef) =>
+const load = (notebookId, elementRef) =>
     new Promise((resolve, reject) => {
         // NOTES: Do not convert import to await. Some combination of await and async results in an error. Linked to webpack dev/prod.
         import(/* webpackIgnore: true */ `${urlPrefix}${notebookId}${urlSuffix}`)
@@ -30424,7 +30424,7 @@ const loadNotebook = (notebookId, elementRef) =>
 // Exports
 // -------------------------------------------------------------------------------------------------------------------------------
 
-var Observable = { loadNotebook };
+var Notebook = { load };
 
 /**
  * @author Jonathan Terrell <jonathan.terrell@springbrook.es>
@@ -30438,4 +30438,4 @@ var Observable = { loadNotebook };
 
 var React = { React: React$1, ReactDOM };
 
-export { Nivo, Observable, React };
+export { Nivo, Notebook, React };

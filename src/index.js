@@ -5,11 +5,11 @@
  */
 
 import Nivo from './Nivo';
-import Observable from './Observable';
+import Notebook from './Notebook';
 import React from './React';
 
 // -------------------------------------------------------------------------------------------------------------------------------
 // Exports
 // -------------------------------------------------------------------------------------------------------------------------------
 
-export { Observable, Nivo, React };
+export { Nivo, Notebook, React };
