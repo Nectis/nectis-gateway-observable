@@ -12194,13 +12194,13 @@ class Visualiser {
         this.element = document.createElement('canvas');
         if (this.container) {
             console.log(1111, defaultVisualHeight, this.container.clientHeight, this.container.clientWidth);
-            this.element.style.height = `${this.container.clientHeight || defaultVisualHeight}px`;
-            this.element.style.width = `${this.container.clientWidth || width$1}px`;
-            console.log(2222, this.element.style.height, this.element.style.width);
+            this.element.height = `${this.container.clientHeight || defaultVisualHeight}px`;
+            this.element.width = `${this.container.clientWidth || width$1}px`;
+            console.log(2222, this.element.height, this.element.width);
         } else {
             console.log(3333, defaultVisualHeight, width$1);
-            this.element.style.height = `${defaultVisualHeight}px`;
-            this.element.style.width = `${width$1}px`;
+            this.element.height = `${defaultVisualHeight}px`;
+            this.element.width = `${width$1}px`;
         }
         this.element.style.padding = '0 16px';
 
