@@ -47,7 +47,7 @@ const loadNotebook = (notebookId, elementRef) =>
                 });
                 observableModule.redefine('embedded', true);
 
-                resolve(...observableModule);
+                resolve(observableModule);
             })
             .catch((error) => reject(error));
     });
