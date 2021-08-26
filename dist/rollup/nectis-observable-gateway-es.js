@@ -12194,8 +12194,8 @@ class Visualiser {
         this.element = document.createElement('canvas');
         if (this.container) {
             console.log(1111, defaultVisualHeight, this.container.clientHeight, this.container.clientWidth);
-            this.element.height = `${this.container.clientHeight || defaultVisualHeight}px`;
-            this.element.width = `${this.container.clientWidth || width$1}px`;
+            this.element.height = 500; // `${this.container.clientHeight || defaultVisualHeight}px`;
+            this.element.width = width$1; // `${this.container.clientWidth || width}px`;
             console.log(2222, this.element.height, this.element.width);
         } else {
             console.log(3333, defaultVisualHeight, width$1);
