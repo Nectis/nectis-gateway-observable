@@ -12170,14 +12170,13 @@ Chart.defaults.plugins.title.display = true;
 Chart.defaults.plugins.title.font.size = 20;
 Chart.defaults.plugins.title.font.weight = 'normal';
 Chart.defaults.maintainAspectRatio = false;
-Chart.defaults.responsive = false;
+// Chart.defaults.responsive = false;
 
 // -------------------------------------------------------------------------------------------------------------------------------
 // Declarations - Variables
 // -------------------------------------------------------------------------------------------------------------------------------
 
 const defaultVisualHeight = 500;
-const width$1 = 200;
 
 // -------------------------------------------------------------------------------------------------------------------------------
 // Declarations - Classes
@@ -12194,16 +12193,11 @@ class Visualiser {
     build() {
         this.element = document.createElement('canvas');
         if (this.container) {
-            console.log(1111, defaultVisualHeight, this.container.clientHeight, this.container.clientWidth);
-            this.element.height = 500; // `${this.container.clientHeight || defaultVisualHeight}px`;
-            this.element.width = width$1; // `${this.container.clientWidth || width}px`;
-            console.log(2222, this.element.height, this.element.width);
-            var ctx = this.element.getContext('2d');
-            console.log(2222, ctx.height, ctx.width);
+            this.element.height = this.container.clientHeight || defaultVisualHeight;
+            // this.element.width = width; // `${this.container.clientWidth || width}px`;
         } else {
-            console.log(3333, defaultVisualHeight, width$1);
-            this.element.height = `${defaultVisualHeight}px`;
-            this.element.width = `${width$1}px`;
+            this.element.height = defaultVisualHeight;
+            // this.element.width = `${width}px`;
         }
         this.element.style.padding = '0 16px';
 
