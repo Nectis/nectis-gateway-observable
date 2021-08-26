@@ -1,18 +1,19 @@
 {
-    "name": "@nectis/nectis-observable",
-    "description": "Nectis observable.",
+    "name": "@nectis/nectis-observable-gateway",
+    "description": "Nectis observable gateway.",
     "author": "Jonathan Terrell for Springbrook S.L.",
     "license": "Apache-2.0",
     "repository": {
         "type": "git",
-        "url": "git://github.com/nectis/nectis-observable.git"
+        "url": "git://github.com/nectis/nectis-observable-gateway.git"
     },
     "keywords": [
+        "gateway",
         "nectis",
         "observable"
     ],
     "main": "./src/index.js",
-    "version": "0.0.305",
+    "version": "0.0.306",
     "devDependencies": {
         "@nectis/eslint-config-nectis": "^0.1.71",
         "@rollup/plugin-commonjs": "^19.0.1",

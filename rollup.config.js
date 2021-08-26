@@ -27,9 +27,9 @@ export default [
         input: pkg.main,
         output: [
             {
-                chunkFileNames: 'nectis-observable-[name]-[hash]-es.js',
+                chunkFileNames: 'nectis-observable-gateway-[name]-[hash]-es.js',
                 dir: './dist/rollup',
-                entryFileNames: 'nectis-observable-es.js',
+                entryFileNames: 'nectis-observable-gateway-es.js',
                 exports: 'auto',
                 format: 'es'
             }
