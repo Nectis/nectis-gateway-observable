@@ -1,2493 +1,3 @@
-function dispatch(node, type, detail) {
-  detail = detail || {};
-  var document = node.ownerDocument, event = document.defaultView.CustomEvent;
-  if (typeof event === "function") {
-    event = new event(type, {detail: detail});
-  } else {
-    event = document.createEvent("Event");
-    event.initEvent(type, false, false);
-    event.detail = detail;
-  }
-  node.dispatchEvent(event);
-}
-
-// TODO https://twitter.com/mbostock/status/702737065121742848
-function isarray(value) {
-  return Array.isArray(value)
-      || value instanceof Int8Array
-      || value instanceof Int16Array
-      || value instanceof Int32Array
-      || value instanceof Uint8Array
-      || value instanceof Uint8ClampedArray
-      || value instanceof Uint16Array
-      || value instanceof Uint32Array
-      || value instanceof Float32Array
-      || value instanceof Float64Array;
-}
-
-// Non-integer keys in arrays, e.g. [1, 2, 0.5: "value"].
-function isindex(key) {
-  return key === (key | 0) + "";
-}
-
-function inspectName(name) {
-  const n = document.createElement("span");
-  n.className = "observablehq--cellname";
-  n.textContent = `${name} = `;
-  return n;
-}
-
-const symbolToString$1 = Symbol.prototype.toString;
-
-// Symbols do not coerce to strings; they must be explicitly converted.
-function formatSymbol(symbol) {
-  return symbolToString$1.call(symbol);
-}
-
-const {getOwnPropertySymbols: getOwnPropertySymbols$1, prototype: {hasOwnProperty: hasOwnProperty$f}} = Object;
-const {toStringTag} = Symbol;
-
-const FORBIDDEN = {};
-
-const symbolsof = getOwnPropertySymbols$1;
-
-function isown(object, key) {
-  return hasOwnProperty$f.call(object, key);
-}
-
-function tagof(object) {
-  return object[toStringTag]
-      || (object.constructor && object.constructor.name)
-      || "Object";
-}
-
-function valueof$1(object, key) {
-  try {
-    const value = object[key];
-    if (value) value.constructor; // Test for SecurityError.
-    return value;
-  } catch (ignore) {
-    return FORBIDDEN;
-  }
-}
-
-const SYMBOLS = [
-  { symbol: "@@__IMMUTABLE_INDEXED__@@", name: "Indexed", modifier: true },
-  { symbol: "@@__IMMUTABLE_KEYED__@@", name: "Keyed", modifier: true },
-  { symbol: "@@__IMMUTABLE_LIST__@@", name: "List", arrayish: true },
-  { symbol: "@@__IMMUTABLE_MAP__@@", name: "Map" },
-  {
-    symbol: "@@__IMMUTABLE_ORDERED__@@",
-    name: "Ordered",
-    modifier: true,
-    prefix: true
-  },
-  { symbol: "@@__IMMUTABLE_RECORD__@@", name: "Record" },
-  {
-    symbol: "@@__IMMUTABLE_SET__@@",
-    name: "Set",
-    arrayish: true,
-    setish: true
-  },
-  { symbol: "@@__IMMUTABLE_STACK__@@", name: "Stack", arrayish: true }
-];
-
-function immutableName(obj) {
-  try {
-    let symbols = SYMBOLS.filter(({ symbol }) => obj[symbol] === true);
-    if (!symbols.length) return;
-
-    const name = symbols.find(s => !s.modifier);
-    const prefix =
-      name.name === "Map" && symbols.find(s => s.modifier && s.prefix);
-
-    const arrayish = symbols.some(s => s.arrayish);
-    const setish = symbols.some(s => s.setish);
-
-    return {
-      name: `${prefix ? prefix.name : ""}${name.name}`,
-      symbols,
-      arrayish: arrayish && !setish,
-      setish
-    };
-  } catch (e) {
-    return null;
-  }
-}
-
-const {getPrototypeOf, getOwnPropertyDescriptors} = Object;
-const objectPrototype = getPrototypeOf({});
-
-function inspectExpanded(object, _, name, proto) {
-  let arrayish = isarray(object);
-  let tag, fields, next, n;
-
-  if (object instanceof Map) {
-    if (object instanceof object.constructor) {
-      tag = `Map(${object.size})`;
-      fields = iterateMap$1;
-    } else { // avoid incompatible receiver error for prototype
-      tag = "Map()";
-      fields = iterateObject$1;
-    }
-  } else if (object instanceof Set) {
-    if (object instanceof object.constructor) {
-      tag = `Set(${object.size})`;
-      fields = iterateSet$1;
-    } else { // avoid incompatible receiver error for prototype
-      tag = "Set()";
-      fields = iterateObject$1;
-    }
-  } else if (arrayish) {
-    tag = `${object.constructor.name}(${object.length})`;
-    fields = iterateArray$1;
-  } else if ((n = immutableName(object))) {
-    tag = `Immutable.${n.name}${n.name === "Record" ? "" : `(${object.size})`}`;
-    arrayish = n.arrayish;
-    fields = n.arrayish
-      ? iterateImArray$1
-      : n.setish
-      ? iterateImSet$1
-      : iterateImObject$1;
-  } else if (proto) {
-    tag = tagof(object);
-    fields = iterateProto;
-  } else {
-    tag = tagof(object);
-    fields = iterateObject$1;
-  }
-
-  const span = document.createElement("span");
-  span.className = "observablehq--expanded";
-  if (name) {
-    span.appendChild(inspectName(name));
-  }
-  const a = span.appendChild(document.createElement("a"));
-  a.innerHTML = `<svg width=8 height=8 class='observablehq--caret'>
-    <path d='M4 7L0 1h8z' fill='currentColor' />
-  </svg>`;
-  a.appendChild(document.createTextNode(`${tag}${arrayish ? " [" : " {"}`));
-  a.addEventListener("mouseup", function(event) {
-    event.stopPropagation();
-    replace(span, inspectCollapsed(object, null, name, proto));
-  });
-
-  fields = fields(object);
-  for (let i = 0; !(next = fields.next()).done && i < 20; ++i) {
-    span.appendChild(next.value);
-  }
-
-  if (!next.done) {
-    const a = span.appendChild(document.createElement("a"));
-    a.className = "observablehq--field";
-    a.style.display = "block";
-    a.appendChild(document.createTextNode(`  … more`));
-    a.addEventListener("mouseup", function(event) {
-      event.stopPropagation();
-      span.insertBefore(next.value, span.lastChild.previousSibling);
-      for (let i = 0; !(next = fields.next()).done && i < 19; ++i) {
-        span.insertBefore(next.value, span.lastChild.previousSibling);
-      }
-      if (next.done) span.removeChild(span.lastChild.previousSibling);
-      dispatch(span, "load");
-    });
-  }
-
-  span.appendChild(document.createTextNode(arrayish ? "]" : "}"));
-
-  return span;
-}
-
-function* iterateMap$1(map) {
-  for (const [key, value] of map) {
-    yield formatMapField$1(key, value);
-  }
-  yield* iterateObject$1(map);
-}
-
-function* iterateSet$1(set) {
-  for (const value of set) {
-    yield formatSetField(value);
-  }
-  yield* iterateObject$1(set);
-}
-
-function* iterateImSet$1(set) {
-  for (const value of set) {
-    yield formatSetField(value);
-  }
-}
-
-function* iterateArray$1(array) {
-  for (let i = 0, n = array.length; i < n; ++i) {
-    if (i in array) {
-      yield formatField$1(i, valueof$1(array, i), "observablehq--index");
-    }
-  }
-  for (const key in array) {
-    if (!isindex(key) && isown(array, key)) {
-      yield formatField$1(key, valueof$1(array, key), "observablehq--key");
-    }
-  }
-  for (const symbol of symbolsof(array)) {
-    yield formatField$1(
-      formatSymbol(symbol),
-      valueof$1(array, symbol),
-      "observablehq--symbol"
-    );
-  }
-}
-
-function* iterateImArray$1(array) {
-  let i1 = 0;
-  for (const n = array.size; i1 < n; ++i1) {
-    yield formatField$1(i1, array.get(i1), true);
-  }
-}
-
-function* iterateProto(object) {
-  for (const key in getOwnPropertyDescriptors(object)) {
-    yield formatField$1(key, valueof$1(object, key), "observablehq--key");
-  }
-  for (const symbol of symbolsof(object)) {
-    yield formatField$1(
-      formatSymbol(symbol),
-      valueof$1(object, symbol),
-      "observablehq--symbol"
-    );
-  }
-
-  const proto = getPrototypeOf(object);
-  if (proto && proto !== objectPrototype) {
-    yield formatPrototype(proto);
-  }
-}
-
-function* iterateObject$1(object) {
-  for (const key in object) {
-    if (isown(object, key)) {
-      yield formatField$1(key, valueof$1(object, key), "observablehq--key");
-    }
-  }
-  for (const symbol of symbolsof(object)) {
-    yield formatField$1(
-      formatSymbol(symbol),
-      valueof$1(object, symbol),
-      "observablehq--symbol"
-    );
-  }
-
-  const proto = getPrototypeOf(object);
-  if (proto && proto !== objectPrototype) {
-    yield formatPrototype(proto);
-  }
-}
-
-function* iterateImObject$1(object) {
-  for (const [key, value] of object) {
-    yield formatField$1(key, value, "observablehq--key");
-  }
-}
-
-function formatPrototype(value) {
-  const item = document.createElement("div");
-  const span = item.appendChild(document.createElement("span"));
-  item.className = "observablehq--field";
-  span.className = "observablehq--prototype-key";
-  span.textContent = `  <prototype>`;
-  item.appendChild(document.createTextNode(": "));
-  item.appendChild(inspect(value, undefined, undefined, undefined, true));
-  return item;
-}
-
-function formatField$1(key, value, className) {
-  const item = document.createElement("div");
-  const span = item.appendChild(document.createElement("span"));
-  item.className = "observablehq--field";
-  span.className = className;
-  span.textContent = `  ${key}`;
-  item.appendChild(document.createTextNode(": "));
-  item.appendChild(inspect(value));
-  return item;
-}
-
-function formatMapField$1(key, value) {
-  const item = document.createElement("div");
-  item.className = "observablehq--field";
-  item.appendChild(document.createTextNode("  "));
-  item.appendChild(inspect(key));
-  item.appendChild(document.createTextNode(" => "));
-  item.appendChild(inspect(value));
-  return item;
-}
-
-function formatSetField(value) {
-  const item = document.createElement("div");
-  item.className = "observablehq--field";
-  item.appendChild(document.createTextNode("  "));
-  item.appendChild(inspect(value));
-  return item;
-}
-
-function hasSelection(elem) {
-  const sel = window.getSelection();
-  return (
-    sel.type === "Range" &&
-    (sel.containsNode(elem, true) ||
-      sel.anchorNode.isSelfOrDescendant(elem) ||
-      sel.focusNode.isSelfOrDescendant(elem))
-  );
-}
-
-function inspectCollapsed(object, shallow, name, proto) {
-  let arrayish = isarray(object);
-  let tag, fields, next, n;
-
-  if (object instanceof Map) {
-    if (object instanceof object.constructor) {
-      tag = `Map(${object.size})`;
-      fields = iterateMap;
-    } else { // avoid incompatible receiver error for prototype
-      tag = "Map()";
-      fields = iterateObject;
-    }
-  } else if (object instanceof Set) {
-    if (object instanceof object.constructor) {
-      tag = `Set(${object.size})`;
-      fields = iterateSet;
-    } else { // avoid incompatible receiver error for prototype
-      tag = "Set()";
-      fields = iterateObject;
-    }
-  } else if (arrayish) {
-    tag = `${object.constructor.name}(${object.length})`;
-    fields = iterateArray;
-  } else if ((n = immutableName(object))) {
-    tag = `Immutable.${n.name}${n.name === 'Record' ? '' : `(${object.size})`}`;
-    arrayish = n.arrayish;
-    fields = n.arrayish ? iterateImArray : n.setish ? iterateImSet : iterateImObject;
-  } else {
-    tag = tagof(object);
-    fields = iterateObject;
-  }
-
-  if (shallow) {
-    const span = document.createElement("span");
-    span.className = "observablehq--shallow";
-    if (name) {
-      span.appendChild(inspectName(name));
-    }
-    span.appendChild(document.createTextNode(tag));
-    span.addEventListener("mouseup", function(event) {
-      if (hasSelection(span)) return;
-      event.stopPropagation();
-      replace(span, inspectCollapsed(object));
-    });
-    return span;
-  }
-
-  const span = document.createElement("span");
-  span.className = "observablehq--collapsed";
-  if (name) {
-    span.appendChild(inspectName(name));
-  }
-  const a = span.appendChild(document.createElement("a"));
-  a.innerHTML = `<svg width=8 height=8 class='observablehq--caret'>
-    <path d='M7 4L1 8V0z' fill='currentColor' />
-  </svg>`;
-  a.appendChild(document.createTextNode(`${tag}${arrayish ? " [" : " {"}`));
-  span.addEventListener("mouseup", function(event) {
-    if (hasSelection(span)) return;
-    event.stopPropagation();
-    replace(span, inspectExpanded(object, null, name, proto));
-  }, true);
-
-  fields = fields(object);
-  for (let i = 0; !(next = fields.next()).done && i < 20; ++i) {
-    if (i > 0) span.appendChild(document.createTextNode(", "));
-    span.appendChild(next.value);
-  }
-
-  if (!next.done) span.appendChild(document.createTextNode(", …"));
-  span.appendChild(document.createTextNode(arrayish ? "]" : "}"));
-
-  return span;
-}
-
-function* iterateMap(map) {
-  for (const [key, value] of map) {
-    yield formatMapField(key, value);
-  }
-  yield* iterateObject(map);
-}
-
-function* iterateSet(set) {
-  for (const value of set) {
-    yield inspect(value, true);
-  }
-  yield* iterateObject(set);
-}
-
-function* iterateImSet(set) {
-  for (const value of set) {
-    yield inspect(value, true);
-  }
-}
-
-function* iterateImArray(array) {
-  let i0 = -1, i1 = 0;
-  for (const n = array.size; i1 < n; ++i1) {
-    if (i1 > i0 + 1) yield formatEmpty(i1 - i0 - 1);
-    yield inspect(array.get(i1), true);
-    i0 = i1;
-  }
-  if (i1 > i0 + 1) yield formatEmpty(i1 - i0 - 1);
-}
-
-function* iterateArray(array) {
-  let i0 = -1, i1 = 0;
-  for (const n = array.length; i1 < n; ++i1) {
-    if (i1 in array) {
-      if (i1 > i0 + 1) yield formatEmpty(i1 - i0 - 1);
-      yield inspect(valueof$1(array, i1), true);
-      i0 = i1;
-    }
-  }
-  if (i1 > i0 + 1) yield formatEmpty(i1 - i0 - 1);
-  for (const key in array) {
-    if (!isindex(key) && isown(array, key)) {
-      yield formatField(key, valueof$1(array, key), "observablehq--key");
-    }
-  }
-  for (const symbol of symbolsof(array)) {
-    yield formatField(formatSymbol(symbol), valueof$1(array, symbol), "observablehq--symbol");
-  }
-}
-
-function* iterateObject(object) {
-  for (const key in object) {
-    if (isown(object, key)) {
-      yield formatField(key, valueof$1(object, key), "observablehq--key");
-    }
-  }
-  for (const symbol of symbolsof(object)) {
-    yield formatField(formatSymbol(symbol), valueof$1(object, symbol), "observablehq--symbol");
-  }
-}
-
-function* iterateImObject(object) {
-  for (const [key, value] of object) {
-    yield formatField(key, value, "observablehq--key");
-  }
-}
-
-function formatEmpty(e) {
-  const span = document.createElement("span");
-  span.className = "observablehq--empty";
-  span.textContent = e === 1 ? "empty" : `empty × ${e}`;
-  return span;
-}
-
-function formatField(key, value, className) {
-  const fragment = document.createDocumentFragment();
-  const span = fragment.appendChild(document.createElement("span"));
-  span.className = className;
-  span.textContent = key;
-  fragment.appendChild(document.createTextNode(": "));
-  fragment.appendChild(inspect(value, true));
-  return fragment;
-}
-
-function formatMapField(key, value) {
-  const fragment = document.createDocumentFragment();
-  fragment.appendChild(inspect(key, true));
-  fragment.appendChild(document.createTextNode(" => "));
-  fragment.appendChild(inspect(value, true));
-  return fragment;
-}
-
-function pad$1(value, width) {
-  var s = value + "", length = s.length;
-  return length < width ? new Array(width - length + 1).join(0) + s : s;
-}
-
-function isUTCMidnight(date) {
-  return date.getUTCMilliseconds() === 0
-      && date.getUTCSeconds() === 0
-      && date.getUTCMinutes() === 0
-      && date.getUTCHours() === 0;
-}
-
-function formatYear$1(year) {
-  return year < 0 ? "-" + pad$1(-year, 6)
-    : year > 9999 ? "+" + pad$1(year, 6)
-    : pad$1(year, 4);
-}
-
-function formatDate(date) {
-  return isNaN(date)
-    ? "Invalid Date"
-    : isUTCMidnight(date)
-      ? formatYear$1(date.getUTCFullYear()) + "-" + pad$1(date.getUTCMonth() + 1, 2) + "-" + pad$1(date.getUTCDate(), 2)
-      : formatYear$1(date.getFullYear()) + "-" + pad$1(date.getMonth() + 1, 2) + "-" + pad$1(date.getDate(), 2)
-        + "T" + pad$1(date.getHours(), 2) + ":" + pad$1(date.getMinutes(), 2)
-        + (date.getMilliseconds() ? ":" + pad$1(date.getSeconds(), 2) + "." + pad$1(date.getMilliseconds(), 3)
-          : date.getSeconds() ? ":" + pad$1(date.getSeconds(), 2)
-          : "");
-}
-
-var errorToString = Error.prototype.toString;
-
-function formatError(value) {
-  return value.stack || errorToString.call(value);
-}
-
-var regExpToString = RegExp.prototype.toString;
-
-function formatRegExp(value) {
-  return regExpToString.call(value);
-}
-
-/* eslint-disable no-control-regex */
-const NEWLINE_LIMIT = 20;
-
-function formatString(string, shallow, expanded, name) {
-  if (shallow === false) {
-    // String has fewer escapes displayed with double quotes
-    if (count$1(string, /["\n]/g) <= count$1(string, /`|\${/g)) {
-      const span = document.createElement("span");
-      if (name) span.appendChild(inspectName(name));
-      const textValue = span.appendChild(document.createElement("span"));
-      textValue.className = "observablehq--string";
-      textValue.textContent = JSON.stringify(string);
-      return span;
-    }
-    const lines = string.split("\n");
-    if (lines.length > NEWLINE_LIMIT && !expanded) {
-      const div = document.createElement("div");
-      if (name) div.appendChild(inspectName(name));
-      const textValue = div.appendChild(document.createElement("span"));
-      textValue.className = "observablehq--string";
-      textValue.textContent = "`" + templatify(lines.slice(0, NEWLINE_LIMIT).join("\n"));
-      const splitter = div.appendChild(document.createElement("span"));
-      const truncatedCount = lines.length - NEWLINE_LIMIT;
-      splitter.textContent = `Show ${truncatedCount} truncated line${truncatedCount > 1 ? "s": ""}`; splitter.className = "observablehq--string-expand";
-      splitter.addEventListener("mouseup", function (event) {
-        event.stopPropagation();
-        replace(div, inspect(string, shallow, true, name));
-      });
-      return div;
-    }
-    const span = document.createElement("span");
-    if (name) span.appendChild(inspectName(name));
-    const textValue = span.appendChild(document.createElement("span"));
-    textValue.className = `observablehq--string${expanded ? " observablehq--expanded" : ""}`;
-    textValue.textContent = "`" + templatify(string) + "`";
-    return span;
-  }
-
-  const span = document.createElement("span");
-  if (name) span.appendChild(inspectName(name));
-  const textValue = span.appendChild(document.createElement("span"));
-  textValue.className = "observablehq--string";
-  textValue.textContent = JSON.stringify(string.length > 100 ?
-    `${string.slice(0, 50)}…${string.slice(-49)}` : string);
-  return span;
-}
-
-function templatify(string) {
-  return string.replace(/[\\`\x00-\x09\x0b-\x19]|\${/g, templatifyChar);
-}
-
-function templatifyChar(char) {
-  var code = char.charCodeAt(0);
-  switch (code) {
-    case 0x8: return "\\b";
-    case 0x9: return "\\t";
-    case 0xb: return "\\v";
-    case 0xc: return "\\f";
-    case 0xd: return "\\r";
-  }
-  return code < 0x10 ? "\\x0" + code.toString(16)
-      : code < 0x20 ? "\\x" + code.toString(16)
-      : "\\" + char;
-}
-
-function count$1(string, re) {
-  var n = 0;
-  while (re.exec(string)) ++n;
-  return n;
-}
-
-var toString$3 = Function.prototype.toString,
-    TYPE_ASYNC = {prefix: "async ƒ"},
-    TYPE_ASYNC_GENERATOR = {prefix: "async ƒ*"},
-    TYPE_CLASS = {prefix: "class"},
-    TYPE_FUNCTION = {prefix: "ƒ"},
-    TYPE_GENERATOR = {prefix: "ƒ*"};
-
-function inspectFunction(f, name) {
-  var type, m, t = toString$3.call(f);
-
-  switch (f.constructor && f.constructor.name) {
-    case "AsyncFunction": type = TYPE_ASYNC; break;
-    case "AsyncGeneratorFunction": type = TYPE_ASYNC_GENERATOR; break;
-    case "GeneratorFunction": type = TYPE_GENERATOR; break;
-    default: type = /^class\b/.test(t) ? TYPE_CLASS : TYPE_FUNCTION; break;
-  }
-
-  // A class, possibly named.
-  // class Name
-  if (type === TYPE_CLASS) {
-    return formatFunction(type, "", name);
-  }
-
-  // An arrow function with a single argument.
-  // foo =>
-  // async foo =>
-  if ((m = /^(?:async\s*)?(\w+)\s*=>/.exec(t))) {
-    return formatFunction(type, "(" + m[1] + ")", name);
-  }
-
-  // An arrow function with parenthesized arguments.
-  // (…)
-  // async (…)
-  if ((m = /^(?:async\s*)?\(\s*(\w+(?:\s*,\s*\w+)*)?\s*\)/.exec(t))) {
-    return formatFunction(type, m[1] ? "(" + m[1].replace(/\s*,\s*/g, ", ") + ")" : "()", name);
-  }
-
-  // A function, possibly: async, generator, anonymous, simply arguments.
-  // function name(…)
-  // function* name(…)
-  // async function name(…)
-  // async function* name(…)
-  if ((m = /^(?:async\s*)?function(?:\s*\*)?(?:\s*\w+)?\s*\(\s*(\w+(?:\s*,\s*\w+)*)?\s*\)/.exec(t))) {
-    return formatFunction(type, m[1] ? "(" + m[1].replace(/\s*,\s*/g, ", ") + ")" : "()", name);
-  }
-
-  // Something else, like destructuring, comments or default values.
-  return formatFunction(type, "(…)", name);
-}
-
-function formatFunction(type, args, cellname) {
-  var span = document.createElement("span");
-  span.className = "observablehq--function";
-  if (cellname) {
-    span.appendChild(inspectName(cellname));
-  }
-  var spanType = span.appendChild(document.createElement("span"));
-  spanType.className = "observablehq--keyword";
-  spanType.textContent = type.prefix;
-  span.appendChild(document.createTextNode(args));
-  return span;
-}
-
-const {prototype: {toString: toString$2}} = Object;
-
-function inspect(value, shallow, expand, name, proto) {
-  let type = typeof value;
-  switch (type) {
-    case "boolean":
-    case "undefined": { value += ""; break; }
-    case "number": { value = value === 0 && 1 / value < 0 ? "-0" : value + ""; break; }
-    case "bigint": { value = value + "n"; break; }
-    case "symbol": { value = formatSymbol(value); break; }
-    case "function": { return inspectFunction(value, name); }
-    case "string": { return formatString(value, shallow, expand, name); }
-    default: {
-      if (value === null) { type = null, value = "null"; break; }
-      if (value instanceof Date) { type = "date", value = formatDate(value); break; }
-      if (value === FORBIDDEN) { type = "forbidden", value = "[forbidden]"; break; }
-      switch (toString$2.call(value)) {
-        case "[object RegExp]": { type = "regexp", value = formatRegExp(value); break; }
-        case "[object Error]": // https://github.com/lodash/lodash/blob/master/isError.js#L26
-        case "[object DOMException]": { type = "error", value = formatError(value); break; }
-        default: return (expand ? inspectExpanded : inspectCollapsed)(value, shallow, name, proto);
-      }
-      break;
-    }
-  }
-  const span = document.createElement("span");
-  if (name) span.appendChild(inspectName(name));
-  const n = span.appendChild(document.createElement("span"));
-  n.className = `observablehq--${type}`;
-  n.textContent = value;
-  return span;
-}
-
-function replace(spanOld, spanNew) {
-  if (spanOld.classList.contains("observablehq--inspect")) spanNew.classList.add("observablehq--inspect");
-  spanOld.parentNode.replaceChild(spanNew, spanOld);
-  dispatch(spanNew, "load");
-}
-
-const LOCATION_MATCH = /\s+\(\d+:\d+\)$/m;
-
-class Inspector {
-  constructor(node) {
-    if (!node) throw new Error("invalid node");
-    this._node = node;
-    node.classList.add("observablehq");
-  }
-  pending() {
-    const {_node} = this;
-    _node.classList.remove("observablehq--error");
-    _node.classList.add("observablehq--running");
-  }
-  fulfilled(value, name) {
-    const {_node} = this;
-    if (!(value instanceof Element || value instanceof Text) || (value.parentNode && value.parentNode !== _node)) {
-      value = inspect(value, false, _node.firstChild // TODO Do this better.
-          && _node.firstChild.classList
-          && _node.firstChild.classList.contains("observablehq--expanded"), name);
-      value.classList.add("observablehq--inspect");
-    }
-    _node.classList.remove("observablehq--running", "observablehq--error");
-    if (_node.firstChild !== value) {
-      if (_node.firstChild) {
-        while (_node.lastChild !== _node.firstChild) _node.removeChild(_node.lastChild);
-        _node.replaceChild(value, _node.firstChild);
-      } else {
-        _node.appendChild(value);
-      }
-    }
-    dispatch(_node, "update");
-  }
-  rejected(error, name) {
-    const {_node} = this;
-    _node.classList.remove("observablehq--running");
-    _node.classList.add("observablehq--error");
-    while (_node.lastChild) _node.removeChild(_node.lastChild);
-    var div = document.createElement("div");
-    div.className = "observablehq--inspect";
-    if (name) div.appendChild(inspectName(name));
-    div.appendChild(document.createTextNode((error + "").replace(LOCATION_MATCH, "")));
-    _node.appendChild(div);
-    dispatch(_node, "error", {error: error});
-  }
-}
-
-Inspector.into = function(container) {
-  if (typeof container === "string") {
-    container = document.querySelector(container);
-    if (container == null) throw new Error("container not found");
-  }
-  return function() {
-    return new Inspector(container.appendChild(document.createElement("div")));
-  };
-};
-
-const metas = new Map;
-const queue$2 = [];
-const map$3 = queue$2.map;
-const some = queue$2.some;
-const hasOwnProperty$e = queue$2.hasOwnProperty;
-const origin = "https://cdn.jsdelivr.net/npm/";
-const identifierRe = /^((?:@[^/@]+\/)?[^/@]+)(?:@([^/]+))?(?:\/(.*))?$/;
-const versionRe = /^\d+\.\d+\.\d+(-[\w-.+]+)?$/;
-const extensionRe = /\.[^/]*$/;
-const mains = ["unpkg", "jsdelivr", "browser", "main"];
-
-class RequireError extends Error {
-  constructor(message) {
-    super(message);
-  }
-}
-
-RequireError.prototype.name = RequireError.name;
-
-function main(meta) {
-  for (const key of mains) {
-    const value = meta[key];
-    if (typeof value === "string") {
-      return extensionRe.test(value) ? value : `${value}.js`;
-    }
-  }
-}
-
-function parseIdentifier(identifier) {
-  const match = identifierRe.exec(identifier);
-  return match && {
-    name: match[1],
-    version: match[2],
-    path: match[3]
-  };
-}
-
-function resolveMeta(target) {
-  const url = `${origin}${target.name}${target.version ? `@${target.version}` : ""}/package.json`;
-  let meta = metas.get(url);
-  if (!meta) metas.set(url, meta = fetch(url).then(response => {
-    if (!response.ok) throw new RequireError("unable to load package.json");
-    if (response.redirected && !metas.has(response.url)) metas.set(response.url, meta);
-    return response.json();
-  }));
-  return meta;
-}
-
-async function resolve$1(name, base) {
-  if (name.startsWith(origin)) name = name.substring(origin.length);
-  if (/^(\w+:)|\/\//i.test(name)) return name;
-  if (/^[.]{0,2}\//i.test(name)) return new URL(name, base == null ? location : base).href;
-  if (!name.length || /^[\s._]/.test(name) || /\s$/.test(name)) throw new RequireError("illegal name");
-  const target = parseIdentifier(name);
-  if (!target) return `${origin}${name}`;
-  if (!target.version && base != null && base.startsWith(origin)) {
-    const meta = await resolveMeta(parseIdentifier(base.substring(origin.length)));
-    target.version = meta.dependencies && meta.dependencies[target.name] || meta.peerDependencies && meta.peerDependencies[target.name];
-  }
-  if (target.path && !extensionRe.test(target.path)) target.path += ".js";
-  if (target.path && target.version && versionRe.test(target.version)) return `${origin}${target.name}@${target.version}/${target.path}`;
-  const meta = await resolveMeta(target);
-  return `${origin}${meta.name}@${meta.version}/${target.path || main(meta) || "index.js"}`;
-}
-
-var require = requireFrom(resolve$1);
-
-function requireFrom(resolver) {
-  const cache = new Map;
-  const requireBase = requireRelative(null);
-
-  function requireAbsolute(url) {
-    if (typeof url !== "string") return url;
-    let module = cache.get(url);
-    if (!module) cache.set(url, module = new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.onload = () => {
-        try { resolve(queue$2.pop()(requireRelative(url))); }
-        catch (error) { reject(new RequireError("invalid module")); }
-        script.remove();
-      };
-      script.onerror = () => {
-        reject(new RequireError("unable to load module"));
-        script.remove();
-      };
-      script.async = true;
-      script.src = url;
-      window.define = define$1;
-      document.head.appendChild(script);
-    }));
-    return module;
-  }
-
-  function requireRelative(base) {
-    return name => Promise.resolve(resolver(name, base)).then(requireAbsolute);
-  }
-
-  function requireAlias(aliases) {
-    return requireFrom((name, base) => {
-      if (name in aliases) {
-        name = aliases[name], base = null;
-        if (typeof name !== "string") return name;
-      }
-      return resolver(name, base);
-    });
-  }
-
-  function require(name) {
-    return arguments.length > 1
-        ? Promise.all(map$3.call(arguments, requireBase)).then(merge$1)
-        : requireBase(name);
-  }
-
-  require.alias = requireAlias;
-  require.resolve = resolver;
-
-  return require;
-}
-
-function merge$1(modules) {
-  const o = {};
-  for (const m of modules) {
-    for (const k in m) {
-      if (hasOwnProperty$e.call(m, k)) {
-        if (m[k] == null) Object.defineProperty(o, k, {get: getter(m, k)});
-        else o[k] = m[k];
-      }
-    }
-  }
-  return o;
-}
-
-function getter(object, name) {
-  return () => object[name];
-}
-
-function isbuiltin(name) {
-  name = name + "";
-  return name === "exports" || name === "module";
-}
-
-function define$1(name, dependencies, factory) {
-  const n = arguments.length;
-  if (n < 2) factory = name, dependencies = [];
-  else if (n < 3) factory = dependencies, dependencies = typeof name === "string" ? [] : name;
-  queue$2.push(some.call(dependencies, isbuiltin) ? require => {
-    const exports = {};
-    const module = {exports};
-    return Promise.all(map$3.call(dependencies, name => {
-      name = name + "";
-      return name === "exports" ? exports : name === "module" ? module : require(name);
-    })).then(dependencies => {
-      factory.apply(null, dependencies);
-      return module.exports;
-    });
-  } : require => {
-    return Promise.all(map$3.call(dependencies, require)).then(dependencies => {
-      return typeof factory === "function" ? factory.apply(null, dependencies) : factory;
-    });
-  });
-}
-
-define$1.amd = {};
-
-function dependency(name, version, main) {
-  return {
-    resolve(path = main) {
-      return `https://cdn.jsdelivr.net/npm/${name}@${version}/${path}`;
-    }
-  };
-}
-
-const d3 = dependency("d3", "6.7.0", "dist/d3.min.js");
-const d3Dsv = dependency("d3-dsv", "2.0.0", "dist/d3-dsv.min.js");
-const inputs = dependency("@observablehq/inputs", "0.8.0", "dist/inputs.umd.min.js");
-const plot = dependency("@observablehq/plot", "0.1.0", "dist/plot.umd.min.js");
-const graphviz = dependency("@observablehq/graphviz", "0.2.1", "dist/graphviz.min.js");
-const highlight = dependency("@observablehq/highlight.js", "2.0.0", "highlight.min.js");
-const katex = dependency("@observablehq/katex", "0.11.1", "dist/katex.min.js");
-const lodash = dependency("lodash", "4.17.21", "lodash.min.js");
-const htl = dependency("htl", "0.2.5", "dist/htl.min.js");
-const marked = dependency("marked", "0.3.12", "marked.min.js");
-const sql = dependency("sql.js", "1.5.0", "dist/sql-wasm.js");
-const vega = dependency("vega", "5.20.2", "build/vega.min.js");
-const vegalite = dependency("vega-lite", "5.1.0", "build/vega-lite.min.js");
-const vegaliteApi = dependency("vega-lite-api", "5.0.0", "build/vega-lite-api.min.js");
-const arrow = dependency("apache-arrow", "4.0.1", "Arrow.es2015.min.js");
-
-async function sqlite(require) {
-  const init = await require(sql.resolve());
-  return init({locateFile: file => sql.resolve(`dist/${file}`)});
-}
-
-class SQLiteDatabaseClient {
-  constructor(db) {
-    Object.defineProperties(this, {
-      _db: {value: db}
-    });
-  }
-  static async open(source) {
-    const [SQL, buffer] = await Promise.all([sqlite(require), Promise.resolve(source).then(load$1)]);
-    return new SQLiteDatabaseClient(new SQL.Database(buffer));
-  }
-  async query(query, params) {
-    return await exec(this._db, query, params);
-  }
-  async queryRow(query, params) {
-    return (await this.query(query, params))[0] || null;
-  }
-  async explain(query, params) {
-    const rows = await this.query(`EXPLAIN QUERY PLAN ${query}`, params);
-    return element$1("pre", {className: "observablehq--inspect"}, [
-      text$2(rows.map(row => row.detail).join("\n"))
-    ]);
-  }
-  async describe(object) {
-    const rows = await (object === undefined
-      ? this.query(`SELECT name FROM sqlite_master WHERE type = 'table'`)
-      : this.query(`SELECT * FROM pragma_table_info(?)`, [object]));
-    if (!rows.length) throw new Error("Not found");
-    const {columns} = rows;
-    return element$1("table", {value: rows}, [
-      element$1("thead", [element$1("tr", columns.map(c => element$1("th", [text$2(c)])))]),
-      element$1("tbody", rows.map(r => element$1("tr", columns.map(c => element$1("td", [text$2(r[c])])))))
-    ]);
-  }
-}
-
-function load$1(source) {
-  return typeof source === "string" ? fetch(source).then(load$1)
-    : source instanceof Response || source instanceof Blob ? source.arrayBuffer().then(load$1)
-    : source instanceof ArrayBuffer ? new Uint8Array(source)
-    : source;
-}
-
-async function exec(db, query, params) {
-  const [result] = await db.exec(query, params);
-  if (!result) return [];
-  const {columns, values} = result;
-  const rows = values.map(row => Object.fromEntries(row.map((value, i) => [columns[i], value])));
-  rows.columns = columns;
-  return rows;
-}
-
-function element$1(name, props, children) {
-  if (arguments.length === 2) children = props, props = undefined;
-  const element = document.createElement(name);
-  if (props !== undefined) for (const p in props) element[p] = props[p];
-  if (children !== undefined) for (const c of children) element.appendChild(c);
-  return element;
-}
-
-function text$2(value) {
-  return document.createTextNode(value);
-}
-
-async function jszip(require) {
-  return await require("jszip@3.6.0/dist/jszip.min.js");
-}
-
-async function remote_fetch(file) {
-  const response = await fetch(await file.url());
-  if (!response.ok) throw new Error(`Unable to load file: ${file.name}`);
-  return response;
-}
-
-async function dsv(file, delimiter, {array = false, typed = false} = {}) {
-  const [text, d3] = await Promise.all([file.text(), require(d3Dsv.resolve())]);
-  return (delimiter === "\t"
-      ? (array ? d3.tsvParseRows : d3.tsvParse)
-      : (array ? d3.csvParseRows : d3.csvParse))(text, typed && d3.autoType);
-}
-
-class AbstractFile {
-  constructor(name) {
-    Object.defineProperty(this, "name", {value: name, enumerable: true});
-  }
-  async blob() {
-    return (await remote_fetch(this)).blob();
-  }
-  async arrayBuffer() {
-    return (await remote_fetch(this)).arrayBuffer();
-  }
-  async text() {
-    return (await remote_fetch(this)).text();
-  }
-  async json() {
-    return (await remote_fetch(this)).json();
-  }
-  async stream() {
-    return (await remote_fetch(this)).body;
-  }
-  async csv(options) {
-    return dsv(this, ",", options);
-  }
-  async tsv(options) {
-    return dsv(this, "\t", options);
-  }
-  async image() {
-    const url = await this.url();
-    return new Promise((resolve, reject) => {
-      const i = new Image;
-      if (new URL(url, document.baseURI).origin !== new URL(location).origin) {
-        i.crossOrigin = "anonymous";
-      }
-      i.onload = () => resolve(i);
-      i.onerror = () => reject(new Error(`Unable to load file: ${this.name}`));
-      i.src = url;
-    });
-  }
-  async arrow() {
-    const [Arrow, response] = await Promise.all([require(arrow.resolve()), remote_fetch(this)]);
-    return Arrow.Table.from(response);
-  }
-  async sqlite() {
-    return SQLiteDatabaseClient.open(remote_fetch(this));
-  }
-  async zip() {
-    const [JSZip, buffer] = await Promise.all([jszip(require), this.arrayBuffer()]);
-    return new ZipArchive(await JSZip.loadAsync(buffer));
-  }
-}
-
-class FileAttachment extends AbstractFile {
-  constructor(url, name) {
-    super(name);
-    Object.defineProperty(this, "_url", {value: url});
-  }
-  async url() {
-    return (await this._url) + "";
-  }
-}
-
-function NoFileAttachments(name) {
-  throw new Error(`File not found: ${name}`);
-}
-
-function FileAttachments(resolve) {
-  return Object.assign(
-    name => {
-      const url = resolve(name += ""); // Returns a Promise, string, or null.
-      if (url == null) throw new Error(`File not found: ${name}`);
-      return new FileAttachment(url, name);
-    },
-    {prototype: FileAttachment.prototype} // instanceof
-  );
-}
-
-class ZipArchive {
-  constructor(archive) {
-    Object.defineProperty(this, "_", {value: archive});
-    this.filenames = Object.keys(archive.files).filter(name => !archive.files[name].dir);
-  }
-  file(path) {
-    const object = this._.file(path += "");
-    if (!object || object.dir) throw new Error(`file not found: ${path}`);
-    return new ZipArchiveEntry(object);
-  }
-}
-
-class ZipArchiveEntry extends AbstractFile {
-  constructor(object) {
-    super(object.name);
-    Object.defineProperty(this, "_", {value: object});
-    Object.defineProperty(this, "_url", {writable: true});
-  }
-  async url() {
-    return this._url || (this._url = this.blob().then(URL.createObjectURL));
-  }
-  async blob() {
-    return this._.async("blob");
-  }
-  async arrayBuffer() {
-    return this._.async("arraybuffer");
-  }
-  async text() {
-    return this._.async("text");
-  }
-  async json() {
-    return JSON.parse(await this.text());
-  }
-}
-
-function canvas(width, height) {
-  var canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  return canvas;
-}
-
-function context2d(width, height, dpi) {
-  if (dpi == null) dpi = devicePixelRatio;
-  var canvas = document.createElement("canvas");
-  canvas.width = width * dpi;
-  canvas.height = height * dpi;
-  canvas.style.width = width + "px";
-  var context = canvas.getContext("2d");
-  context.scale(dpi, dpi);
-  return context;
-}
-
-function download(value, name = "untitled", label = "Save") {
-  const a = document.createElement("a");
-  const b = a.appendChild(document.createElement("button"));
-  b.textContent = label;
-  a.download = name;
-
-  async function reset() {
-    await new Promise(requestAnimationFrame);
-    URL.revokeObjectURL(a.href);
-    a.removeAttribute("href");
-    b.textContent = label;
-    b.disabled = false;
-  }
-
-  a.onclick = async event => {
-    b.disabled = true;
-    if (a.href) return reset(); // Already saved.
-    b.textContent = "Saving…";
-    try {
-      const object = await (typeof value === "function" ? value() : value);
-      b.textContent = "Download";
-      a.href = URL.createObjectURL(object); // eslint-disable-line require-atomic-updates
-    } catch (ignore) {
-      b.textContent = label;
-    }
-    if (event.eventPhase) return reset(); // Already downloaded.
-    b.disabled = false;
-  };
-
-  return a;
-}
-
-var namespaces = {
-  math: "http://www.w3.org/1998/Math/MathML",
-  svg: "http://www.w3.org/2000/svg",
-  xhtml: "http://www.w3.org/1999/xhtml",
-  xlink: "http://www.w3.org/1999/xlink",
-  xml: "http://www.w3.org/XML/1998/namespace",
-  xmlns: "http://www.w3.org/2000/xmlns/"
-};
-
-function element(name, attributes) {
-  var prefix = name += "", i = prefix.indexOf(":"), value;
-  if (i >= 0 && (prefix = name.slice(0, i)) !== "xmlns") name = name.slice(i + 1);
-  var element = namespaces.hasOwnProperty(prefix) // eslint-disable-line no-prototype-builtins
-      ? document.createElementNS(namespaces[prefix], name)
-      : document.createElement(name);
-  if (attributes) for (var key in attributes) {
-    prefix = key, i = prefix.indexOf(":"), value = attributes[key];
-    if (i >= 0 && (prefix = key.slice(0, i)) !== "xmlns") key = key.slice(i + 1);
-    if (namespaces.hasOwnProperty(prefix)) element.setAttributeNS(namespaces[prefix], key, value); // eslint-disable-line no-prototype-builtins
-    else element.setAttribute(key, value);
-  }
-  return element;
-}
-
-function input$1(type) {
-  var input = document.createElement("input");
-  if (type != null) input.type = type;
-  return input;
-}
-
-function range$3(min, max, step) {
-  if (arguments.length === 1) max = min, min = null;
-  var input = document.createElement("input");
-  input.min = min = min == null ? 0 : +min;
-  input.max = max = max == null ? 1 : +max;
-  input.step = step == null ? "any" : step = +step;
-  input.type = "range";
-  return input;
-}
-
-function select(values) {
-  var select = document.createElement("select");
-  Array.prototype.forEach.call(values, function(value) {
-    var option = document.createElement("option");
-    option.value = option.textContent = value;
-    select.appendChild(option);
-  });
-  return select;
-}
-
-function svg$1(width, height) {
-  var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.setAttribute("viewBox", [0, 0, width, height]);
-  svg.setAttribute("width", width);
-  svg.setAttribute("height", height);
-  return svg;
-}
-
-function text$1(value) {
-  return document.createTextNode(value);
-}
-
-var count = 0;
-
-function uid(name) {
-  return new Id$1("O-" + (name == null ? "" : name + "-") + ++count);
-}
-
-function Id$1(id) {
-  this.id = id;
-  this.href = new URL(`#${id}`, location) + "";
-}
-
-Id$1.prototype.toString = function() {
-  return "url(" + this.href + ")";
-};
-
-var DOM = {
-  canvas: canvas,
-  context2d: context2d,
-  download: download,
-  element: element,
-  input: input$1,
-  range: range$3,
-  select: select,
-  svg: svg$1,
-  text: text$1,
-  uid: uid
-};
-
-function buffer(file) {
-  return new Promise(function(resolve, reject) {
-    var reader = new FileReader;
-    reader.onload = function() { resolve(reader.result); };
-    reader.onerror = reject;
-    reader.readAsArrayBuffer(file);
-  });
-}
-
-function text(file) {
-  return new Promise(function(resolve, reject) {
-    var reader = new FileReader;
-    reader.onload = function() { resolve(reader.result); };
-    reader.onerror = reject;
-    reader.readAsText(file);
-  });
-}
-
-function url(file) {
-  return new Promise(function(resolve, reject) {
-    var reader = new FileReader;
-    reader.onload = function() { resolve(reader.result); };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-var Files = {
-  buffer: buffer,
-  text: text,
-  url: url
-};
-
-function that() {
-  return this;
-}
-
-function disposable(value, dispose) {
-  let done = false;
-  if (typeof dispose !== "function") {
-    throw new Error("dispose is not a function");
-  }
-  return {
-    [Symbol.iterator]: that,
-    next: () => done ? {done: true} : (done = true, {done: false, value}),
-    return: () => (done = true, dispose(value), {done: true}),
-    throw: () => ({done: done = true})
-  };
-}
-
-function* filter$1(iterator, test) {
-  var result, index = -1;
-  while (!(result = iterator.next()).done) {
-    if (test(result.value, ++index)) {
-      yield result.value;
-    }
-  }
-}
-
-function observe(initialize) {
-  let stale = false;
-  let value;
-  let resolve;
-  const dispose = initialize(change);
-
-  if (dispose != null && typeof dispose !== "function") {
-    throw new Error(typeof dispose.then === "function"
-        ? "async initializers are not supported"
-        : "initializer returned something, but not a dispose function");
-  }
-
-  function change(x) {
-    if (resolve) resolve(x), resolve = null;
-    else stale = true;
-    return value = x;
-  }
-
-  function next() {
-    return {done: false, value: stale
-        ? (stale = false, Promise.resolve(value))
-        : new Promise(_ => (resolve = _))};
-  }
-
-  return {
-    [Symbol.iterator]: that,
-    throw: () => ({done: true}),
-    return: () => (dispose != null && dispose(), {done: true}),
-    next
-  };
-}
-
-function input(input) {
-  return observe(function(change) {
-    var event = eventof(input), value = valueof(input);
-    function inputted() { change(valueof(input)); }
-    input.addEventListener(event, inputted);
-    if (value !== undefined) change(value);
-    return function() { input.removeEventListener(event, inputted); };
-  });
-}
-
-function valueof(input) {
-  switch (input.type) {
-    case "range":
-    case "number": return input.valueAsNumber;
-    case "date": return input.valueAsDate;
-    case "checkbox": return input.checked;
-    case "file": return input.multiple ? input.files : input.files[0];
-    case "select-multiple": return Array.from(input.selectedOptions, o => o.value);
-    default: return input.value;
-  }
-}
-
-function eventof(input) {
-  switch (input.type) {
-    case "button":
-    case "submit":
-    case "checkbox": return "click";
-    case "file": return "change";
-    default: return "input";
-  }
-}
-
-function* map$2(iterator, transform) {
-  var result, index = -1;
-  while (!(result = iterator.next()).done) {
-    yield transform(result.value, ++index);
-  }
-}
-
-function queue$1(initialize) {
-  let resolve;
-  const queue = [];
-  const dispose = initialize(push);
-
-  if (dispose != null && typeof dispose !== "function") {
-    throw new Error(typeof dispose.then === "function"
-        ? "async initializers are not supported"
-        : "initializer returned something, but not a dispose function");
-  }
-
-  function push(x) {
-    queue.push(x);
-    if (resolve) resolve(queue.shift()), resolve = null;
-    return x;
-  }
-
-  function next() {
-    return {done: false, value: queue.length
-        ? Promise.resolve(queue.shift())
-        : new Promise(_ => (resolve = _))};
-  }
-
-  return {
-    [Symbol.iterator]: that,
-    throw: () => ({done: true}),
-    return: () => (dispose != null && dispose(), {done: true}),
-    next
-  };
-}
-
-function* range$2(start, stop, step) {
-  start = +start;
-  stop = +stop;
-  step = (n = arguments.length) < 2 ? (stop = start, start = 0, 1) : n < 3 ? 1 : +step;
-  var i = -1, n = Math.max(0, Math.ceil((stop - start) / step)) | 0;
-  while (++i < n) {
-    yield start + i * step;
-  }
-}
-
-function valueAt(iterator, i) {
-  if (!isFinite(i = +i) || i < 0 || i !== i | 0) return;
-  var result, index = -1;
-  while (!(result = iterator.next()).done) {
-    if (++index === i) {
-      return result.value;
-    }
-  }
-}
-
-function worker(source) {
-  const url = URL.createObjectURL(new Blob([source], {type: "text/javascript"}));
-  const worker = new Worker(url);
-  return disposable(worker, () => {
-    worker.terminate();
-    URL.revokeObjectURL(url);
-  });
-}
-
-var Generators = {
-  disposable: disposable,
-  filter: filter$1,
-  input: input,
-  map: map$2,
-  observe: observe,
-  queue: queue$1,
-  range: range$2,
-  valueAt: valueAt,
-  worker: worker
-};
-
-function template(render, wrapper) {
-  return function(strings) {
-    var string = strings[0],
-        parts = [], part,
-        root = null,
-        node, nodes,
-        walker,
-        i, n, j, m, k = -1;
-
-    // Concatenate the text using comments as placeholders.
-    for (i = 1, n = arguments.length; i < n; ++i) {
-      part = arguments[i];
-      if (part instanceof Node) {
-        parts[++k] = part;
-        string += "<!--o:" + k + "-->";
-      } else if (Array.isArray(part)) {
-        for (j = 0, m = part.length; j < m; ++j) {
-          node = part[j];
-          if (node instanceof Node) {
-            if (root === null) {
-              parts[++k] = root = document.createDocumentFragment();
-              string += "<!--o:" + k + "-->";
-            }
-            root.appendChild(node);
-          } else {
-            root = null;
-            string += node;
-          }
-        }
-        root = null;
-      } else {
-        string += part;
-      }
-      string += strings[i];
-    }
-
-    // Render the text.
-    root = render(string);
-
-    // Walk the rendered content to replace comment placeholders.
-    if (++k > 0) {
-      nodes = new Array(k);
-      walker = document.createTreeWalker(root, NodeFilter.SHOW_COMMENT, null, false);
-      while (walker.nextNode()) {
-        node = walker.currentNode;
-        if (/^o:/.test(node.nodeValue)) {
-          nodes[+node.nodeValue.slice(2)] = node;
-        }
-      }
-      for (i = 0; i < k; ++i) {
-        if (node = nodes[i]) {
-          node.parentNode.replaceChild(parts[i], node);
-        }
-      }
-    }
-
-    // Is the rendered content
-    // … a parent of a single child? Detach and return the child.
-    // … a document fragment? Replace the fragment with an element.
-    // … some other node? Return it.
-    return root.childNodes.length === 1 ? root.removeChild(root.firstChild)
-        : root.nodeType === 11 ? ((node = wrapper()).appendChild(root), node)
-        : root;
-  };
-}
-
-var html = template(function(string) {
-  var template = document.createElement("template");
-  template.innerHTML = string.trim();
-  return document.importNode(template.content, true);
-}, function() {
-  return document.createElement("span");
-});
-
-function md$1(require) {
-  return require(marked.resolve()).then(function(marked) {
-    return template(
-      function(string) {
-        var root = document.createElement("div");
-        root.innerHTML = marked(string, {langPrefix: ""}).trim();
-        var code = root.querySelectorAll("pre code[class]");
-        if (code.length > 0) {
-          require(highlight.resolve()).then(function(hl) {
-            code.forEach(function(block) {
-              function done() {
-                hl.highlightBlock(block);
-                block.parentNode.classList.add("observablehq--md-pre");
-              }
-              if (hl.getLanguage(block.className)) {
-                done();
-              } else {
-                require(highlight.resolve("async-languages/index.js"))
-                  .then(index => {
-                    if (index.has(block.className)) {
-                      return require(highlight.resolve("async-languages/" + index.get(block.className))).then(language => {
-                        hl.registerLanguage(block.className, language);
-                      });
-                    }
-                  })
-                  .then(done, done);
-              }
-            });
-          });
-        }
-        return root;
-      },
-      function() {
-        return document.createElement("div");
-      }
-    );
-  });
-}
-
-function Mutable(value) {
-  let change;
-  Object.defineProperties(this, {
-    generator: {value: observe(_ => void (change = _))},
-    value: {get: () => value, set: x => change(value = x)} // eslint-disable-line no-setter-return
-  });
-  if (value !== undefined) change(value);
-}
-
-function* now$1() {
-  while (true) {
-    yield Date.now();
-  }
-}
-
-function delay(duration, value) {
-  return new Promise(function(resolve) {
-    setTimeout(function() {
-      resolve(value);
-    }, duration);
-  });
-}
-
-var timeouts$1 = new Map;
-
-function timeout(now, time) {
-  var t = new Promise(function(resolve) {
-    timeouts$1.delete(time);
-    var delay = time - now;
-    if (!(delay > 0)) throw new Error("invalid time");
-    if (delay > 0x7fffffff) throw new Error("too long to wait");
-    setTimeout(resolve, delay);
-  });
-  timeouts$1.set(time, t);
-  return t;
-}
-
-function when(time, value) {
-  var now;
-  return (now = timeouts$1.get(time = +time)) ? now.then(() => value)
-      : (now = Date.now()) >= time ? Promise.resolve(value)
-      : timeout(now, time).then(() => value);
-}
-
-function tick(duration, value) {
-  return when(Math.ceil((Date.now() + 1) / duration) * duration, value);
-}
-
-var Promises = {
-  delay: delay,
-  tick: tick,
-  when: when
-};
-
-function resolve(name, base) {
-  if (/^(\w+:)|\/\//i.test(name)) return name;
-  if (/^[.]{0,2}\//i.test(name)) return new URL(name, base == null ? location : base).href;
-  if (!name.length || /^[\s._]/.test(name) || /\s$/.test(name)) throw new Error("illegal name");
-  return "https://unpkg.com/" + name;
-}
-
-function requirer(resolve) {
-  return resolve == null ? require : requireFrom(resolve);
-}
-
-var svg = template(function(string) {
-  var root = document.createElementNS("http://www.w3.org/2000/svg", "g");
-  root.innerHTML = string.trim();
-  return root;
-}, function() {
-  return document.createElementNS("http://www.w3.org/2000/svg", "g");
-});
-
-var raw = String.raw;
-
-function style(href) {
-  return new Promise(function(resolve, reject) {
-    var link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = href;
-    link.onerror = reject;
-    link.onload = resolve;
-    document.head.appendChild(link);
-  });
-}
-
-function tex(require) {
-  return Promise.all([
-    require(katex.resolve()),
-    style(katex.resolve("dist/katex.min.css"))
-  ]).then(function(values) {
-    var katex = values[0], tex = renderer();
-
-    function renderer(options) {
-      return function() {
-        var root = document.createElement("div");
-        katex.render(raw.apply(String, arguments), root, options);
-        return root.removeChild(root.firstChild);
-      };
-    }
-
-    tex.options = renderer;
-    tex.block = renderer({displayMode: true});
-    return tex;
-  });
-}
-
-async function vl(require) {
-  const [v, vl, api] = await Promise.all([vega, vegalite, vegaliteApi].map(d => require(d.resolve())));
-  return api.register(v, vl);
-}
-
-function width() {
-  return observe(function(change) {
-    var width = change(document.body.clientWidth);
-    function resized() {
-      var w = document.body.clientWidth;
-      if (w !== width) change(width = w);
-    }
-    window.addEventListener("resize", resized);
-    return function() {
-      window.removeEventListener("resize", resized);
-    };
-  });
-}
-
-var Library = Object.assign(function Library(resolver) {
-  const require = requirer(resolver);
-  Object.defineProperties(this, properties({
-    FileAttachment: () => NoFileAttachments,
-    Arrow: () => require(arrow.resolve()),
-    Inputs: () => require(inputs.resolve()),
-    Mutable: () => Mutable,
-    Plot: () => require(plot.resolve()),
-    SQLite: () => sqlite(require),
-    SQLiteDatabaseClient: () => SQLiteDatabaseClient,
-    _: () => require(lodash.resolve()),
-    d3: () => require(d3.resolve()),
-    dot: () => require(graphviz.resolve()),
-    htl: () => require(htl.resolve()),
-    html: () => html,
-    md: () => md$1(require),
-    now: now$1,
-    require: () => require,
-    resolve: () => resolve,
-    svg: () => svg,
-    tex: () => tex(require),
-    vl: () => vl(require),
-    width,
-
-    // Note: these are namespace objects, and thus exposed directly rather than
-    // being wrapped in a function. This allows library.Generators to resolve,
-    // rather than needing module.value.
-    DOM,
-    Files,
-    Generators,
-    Promises
-  }));
-}, {resolve: require.resolve});
-
-function properties(values) {
-  return Object.fromEntries(Object.entries(values).map(property$2));
-}
-
-function property$2([key, value]) {
-  return [key, ({value, writable: true, enumerable: true})];
-}
-
-function RuntimeError(message, input) {
-  this.message = message + "";
-  this.input = input;
-}
-
-RuntimeError.prototype = Object.create(Error.prototype);
-RuntimeError.prototype.name = "RuntimeError";
-RuntimeError.prototype.constructor = RuntimeError;
-
-function generatorish(value) {
-  return value
-      && typeof value.next === "function"
-      && typeof value.return === "function";
-}
-
-function load(notebook, library, observer) {
-  if (typeof library == "function") observer = library, library = null;
-  if (typeof observer !== "function") throw new Error("invalid observer");
-  if (library == null) library = new Library();
-
-  const {modules, id} = notebook;
-  const map = new Map;
-  const runtime = new Runtime(library);
-  const main = runtime_module(id);
-
-  function runtime_module(id) {
-    let module = map.get(id);
-    if (!module) map.set(id, module = runtime.module());
-    return module;
-  }
-
-  for (const m of modules) {
-    const module = runtime_module(m.id);
-    let i = 0;
-    for (const v of m.variables) {
-      if (v.from) module.import(v.remote, v.name, runtime_module(v.from));
-      else if (module === main) module.variable(observer(v, i, m.variables)).define(v.name, v.inputs, v.value);
-      else module.define(v.name, v.inputs, v.value);
-      ++i;
-    }
-  }
-
-  return runtime;
-}
-
-var prototype = Array.prototype;
-var map$1 = prototype.map;
-var forEach = prototype.forEach;
-
-function constant$6(x) {
-  return function() {
-    return x;
-  };
-}
-
-function identity$7(x) {
-  return x;
-}
-
-function rethrow(e) {
-  return function() {
-    throw e;
-  };
-}
-
-function noop$5() {}
-
-var TYPE_NORMAL = 1; // a normal variable
-var TYPE_IMPLICIT = 2; // created on reference
-var TYPE_DUPLICATE = 3; // created on duplicate definition
-
-var no_observer = {};
-
-function Variable(type, module, observer) {
-  if (!observer) observer = no_observer;
-  Object.defineProperties(this, {
-    _observer: {value: observer, writable: true},
-    _definition: {value: variable_undefined, writable: true},
-    _duplicate: {value: undefined, writable: true},
-    _duplicates: {value: undefined, writable: true},
-    _indegree: {value: NaN, writable: true}, // The number of computing inputs.
-    _inputs: {value: [], writable: true},
-    _invalidate: {value: noop$5, writable: true},
-    _module: {value: module},
-    _name: {value: null, writable: true},
-    _outputs: {value: new Set, writable: true},
-    _promise: {value: Promise.resolve(undefined), writable: true},
-    _reachable: {value: observer !== no_observer, writable: true}, // Is this variable transitively visible?
-    _rejector: {value: variable_rejector(this)},
-    _type: {value: type},
-    _value: {value: undefined, writable: true},
-    _version: {value: 0, writable: true}
-  });
-}
-
-Object.defineProperties(Variable.prototype, {
-  _pending: {value: variable_pending, writable: true, configurable: true},
-  _fulfilled: {value: variable_fulfilled, writable: true, configurable: true},
-  _rejected: {value: variable_rejected, writable: true, configurable: true},
-  define: {value: variable_define, writable: true, configurable: true},
-  delete: {value: variable_delete, writable: true, configurable: true},
-  import: {value: variable_import, writable: true, configurable: true}
-});
-
-function variable_attach(variable) {
-  variable._module._runtime._dirty.add(variable);
-  variable._outputs.add(this);
-}
-
-function variable_detach(variable) {
-  variable._module._runtime._dirty.add(variable);
-  variable._outputs.delete(this);
-}
-
-function variable_undefined() {
-  throw variable_undefined;
-}
-
-function variable_rejector(variable) {
-  return function(error) {
-    if (error === variable_undefined) throw new RuntimeError(variable._name + " is not defined", variable._name);
-    if (error instanceof Error && error.message) throw new RuntimeError(error.message, variable._name);
-    throw new RuntimeError(variable._name + " could not be resolved", variable._name);
-  };
-}
-
-function variable_duplicate(name) {
-  return function() {
-    throw new RuntimeError(name + " is defined more than once");
-  };
-}
-
-function variable_define(name, inputs, definition) {
-  switch (arguments.length) {
-    case 1: {
-      definition = name, name = inputs = null;
-      break;
-    }
-    case 2: {
-      definition = inputs;
-      if (typeof name === "string") inputs = null;
-      else inputs = name, name = null;
-      break;
-    }
-  }
-  return variable_defineImpl.call(this,
-    name == null ? null : name + "",
-    inputs == null ? [] : map$1.call(inputs, this._module._resolve, this._module),
-    typeof definition === "function" ? definition : constant$6(definition)
-  );
-}
-
-function variable_defineImpl(name, inputs, definition) {
-  var scope = this._module._scope, runtime = this._module._runtime;
-
-  this._inputs.forEach(variable_detach, this);
-  inputs.forEach(variable_attach, this);
-  this._inputs = inputs;
-  this._definition = definition;
-  this._value = undefined;
-
-  // Is this an active variable (that may require disposal)?
-  if (definition === noop$5) runtime._variables.delete(this);
-  else runtime._variables.add(this);
-
-  // Did the variable’s name change? Time to patch references!
-  if (name !== this._name || scope.get(name) !== this) {
-    var error, found;
-
-    if (this._name) { // Did this variable previously have a name?
-      if (this._outputs.size) { // And did other variables reference this variable?
-        scope.delete(this._name);
-        found = this._module._resolve(this._name);
-        found._outputs = this._outputs, this._outputs = new Set;
-        found._outputs.forEach(function(output) { output._inputs[output._inputs.indexOf(this)] = found; }, this);
-        found._outputs.forEach(runtime._updates.add, runtime._updates);
-        runtime._dirty.add(found).add(this);
-        scope.set(this._name, found);
-      } else if ((found = scope.get(this._name)) === this) { // Do no other variables reference this variable?
-        scope.delete(this._name); // It’s safe to delete!
-      } else if (found._type === TYPE_DUPLICATE) { // Do other variables assign this name?
-        found._duplicates.delete(this); // This variable no longer assigns this name.
-        this._duplicate = undefined;
-        if (found._duplicates.size === 1) { // Is there now only one variable assigning this name?
-          found = found._duplicates.keys().next().value; // Any references are now fixed!
-          error = scope.get(this._name);
-          found._outputs = error._outputs, error._outputs = new Set;
-          found._outputs.forEach(function(output) { output._inputs[output._inputs.indexOf(error)] = found; });
-          found._definition = found._duplicate, found._duplicate = undefined;
-          runtime._dirty.add(error).add(found);
-          runtime._updates.add(found);
-          scope.set(this._name, found);
-        }
-      } else {
-        throw new Error;
-      }
-    }
-
-    if (this._outputs.size) throw new Error;
-
-    if (name) { // Does this variable have a new name?
-      if (found = scope.get(name)) { // Do other variables reference or assign this name?
-        if (found._type === TYPE_DUPLICATE) { // Do multiple other variables already define this name?
-          this._definition = variable_duplicate(name), this._duplicate = definition;
-          found._duplicates.add(this);
-        } else if (found._type === TYPE_IMPLICIT) { // Are the variable references broken?
-          this._outputs = found._outputs, found._outputs = new Set; // Now they’re fixed!
-          this._outputs.forEach(function(output) { output._inputs[output._inputs.indexOf(found)] = this; }, this);
-          runtime._dirty.add(found).add(this);
-          scope.set(name, this);
-        } else { // Does another variable define this name?
-          found._duplicate = found._definition, this._duplicate = definition; // Now they’re duplicates.
-          error = new Variable(TYPE_DUPLICATE, this._module);
-          error._name = name;
-          error._definition = this._definition = found._definition = variable_duplicate(name);
-          error._outputs = found._outputs, found._outputs = new Set;
-          error._outputs.forEach(function(output) { output._inputs[output._inputs.indexOf(found)] = error; });
-          error._duplicates = new Set([this, found]);
-          runtime._dirty.add(found).add(error);
-          runtime._updates.add(found).add(error);
-          scope.set(name, error);
-        }
-      } else {
-        scope.set(name, this);
-      }
-    }
-
-    this._name = name;
-  }
-
-  runtime._updates.add(this);
-  runtime._compute();
-  return this;
-}
-
-function variable_import(remote, name, module) {
-  if (arguments.length < 3) module = name, name = remote;
-  return variable_defineImpl.call(this, name + "", [module._resolve(remote + "")], identity$7);
-}
-
-function variable_delete() {
-  return variable_defineImpl.call(this, null, [], noop$5);
-}
-
-function variable_pending() {
-  if (this._observer.pending) this._observer.pending();
-}
-
-function variable_fulfilled(value) {
-  if (this._observer.fulfilled) this._observer.fulfilled(value, this._name);
-}
-
-function variable_rejected(error) {
-  if (this._observer.rejected) this._observer.rejected(error, this._name);
-}
-
-function Module(runtime, builtins = []) {
-  Object.defineProperties(this, {
-    _runtime: {value: runtime},
-    _scope: {value: new Map},
-    _builtins: {value: new Map([
-      ["invalidation", variable_invalidation],
-      ["visibility", variable_visibility],
-      ...builtins
-    ])},
-    _source: {value: null, writable: true}
-  });
-}
-
-Object.defineProperties(Module.prototype, {
-  _copy: {value: module_copy, writable: true, configurable: true},
-  _resolve: {value: module_resolve, writable: true, configurable: true},
-  redefine: {value: module_redefine, writable: true, configurable: true},
-  define: {value: module_define, writable: true, configurable: true},
-  derive: {value: module_derive, writable: true, configurable: true},
-  import: {value: module_import, writable: true, configurable: true},
-  value: {value: module_value, writable: true, configurable: true},
-  variable: {value: module_variable, writable: true, configurable: true},
-  builtin: {value: module_builtin, writable: true, configurable: true}
-});
-
-function module_redefine(name) {
-  var v = this._scope.get(name);
-  if (!v) throw new RuntimeError(name + " is not defined");
-  if (v._type === TYPE_DUPLICATE) throw new RuntimeError(name + " is defined more than once");
-  return v.define.apply(v, arguments);
-}
-
-function module_define() {
-  var v = new Variable(TYPE_NORMAL, this);
-  return v.define.apply(v, arguments);
-}
-
-function module_import() {
-  var v = new Variable(TYPE_NORMAL, this);
-  return v.import.apply(v, arguments);
-}
-
-function module_variable(observer) {
-  return new Variable(TYPE_NORMAL, this, observer);
-}
-
-async function module_value(name) {
-  var v = this._scope.get(name);
-  if (!v) throw new RuntimeError(name + " is not defined");
-  if (v._observer === no_observer) {
-    v._observer = true;
-    this._runtime._dirty.add(v);
-  }
-  await this._runtime._compute();
-  return v._promise;
-}
-
-function module_derive(injects, injectModule) {
-  var copy = new Module(this._runtime, this._builtins);
-  copy._source = this;
-  forEach.call(injects, function(inject) {
-    if (typeof inject !== "object") inject = {name: inject + ""};
-    if (inject.alias == null) inject.alias = inject.name;
-    copy.import(inject.name, inject.alias, injectModule);
-  });
-  Promise.resolve().then(() => {
-    const modules = new Set([this]);
-    for (const module of modules) {
-      for (const variable of module._scope.values()) {
-        if (variable._definition === identity$7) { // import
-          const module = variable._inputs[0]._module;
-          const source = module._source || module;
-          if (source === this) { // circular import-with!
-            console.warn("circular module definition; ignoring"); // eslint-disable-line no-console
-            return;
-          }
-          modules.add(source);
-        }
-      }
-    }
-    this._copy(copy, new Map);
-  });
-  return copy;
-}
-
-function module_copy(copy, map) {
-  copy._source = this;
-  map.set(this, copy);
-  for (const [name, source] of this._scope) {
-    var target = copy._scope.get(name);
-    if (target && target._type === TYPE_NORMAL) continue; // injection
-    if (source._definition === identity$7) { // import
-      var sourceInput = source._inputs[0],
-          sourceModule = sourceInput._module;
-      copy.import(sourceInput._name, name, map.get(sourceModule)
-        || (sourceModule._source
-           ? sourceModule._copy(new Module(copy._runtime, copy._builtins), map) // import-with
-           : sourceModule));
-    } else {
-      copy.define(name, source._inputs.map(variable_name), source._definition);
-    }
-  }
-  return copy;
-}
-
-function module_resolve(name) {
-  var variable = this._scope.get(name), value;
-  if (!variable) {
-    variable = new Variable(TYPE_IMPLICIT, this);
-    if (this._builtins.has(name)) {
-      variable.define(name, constant$6(this._builtins.get(name)));
-    } else if (this._runtime._builtin._scope.has(name)) {
-      variable.import(name, this._runtime._builtin);
-    } else {
-      try {
-        value = this._runtime._global(name);
-      } catch (error) {
-        return variable.define(name, rethrow(error));
-      }
-      if (value === undefined) {
-        this._scope.set(variable._name = name, variable);
-      } else {
-        variable.define(name, constant$6(value));
-      }
-    }
-  }
-  return variable;
-}
-
-function module_builtin(name, value) {
-  this._builtins.set(name, value);
-}
-
-function variable_name(variable) {
-  return variable._name;
-}
-
-const frame = typeof requestAnimationFrame === "function" ? requestAnimationFrame : setImmediate;
-
-var variable_invalidation = {};
-var variable_visibility = {};
-
-function Runtime(builtins = new Library, global = window_global) {
-  var builtin = this.module();
-  Object.defineProperties(this, {
-    _dirty: {value: new Set},
-    _updates: {value: new Set},
-    _computing: {value: null, writable: true},
-    _init: {value: null, writable: true},
-    _modules: {value: new Map},
-    _variables: {value: new Set},
-    _disposed: {value: false, writable: true},
-    _builtin: {value: builtin},
-    _global: {value: global}
-  });
-  if (builtins) for (var name in builtins) {
-    (new Variable(TYPE_IMPLICIT, builtin)).define(name, [], builtins[name]);
-  }
-}
-
-Object.defineProperties(Runtime, {
-  load: {value: load, writable: true, configurable: true}
-});
-
-Object.defineProperties(Runtime.prototype, {
-  _compute: {value: runtime_compute, writable: true, configurable: true},
-  _computeSoon: {value: runtime_computeSoon, writable: true, configurable: true},
-  _computeNow: {value: runtime_computeNow, writable: true, configurable: true},
-  dispose: {value: runtime_dispose, writable: true, configurable: true},
-  module: {value: runtime_module, writable: true, configurable: true},
-  fileAttachments: {value: FileAttachments, writable: true, configurable: true}
-});
-
-function runtime_dispose() {
-  this._computing = Promise.resolve();
-  this._disposed = true;
-  this._variables.forEach(v => {
-    v._invalidate();
-    v._version = NaN;
-  });
-}
-
-function runtime_module(define, observer = noop$5) {
-  let module;
-  if (define === undefined) {
-    if (module = this._init) {
-      this._init = null;
-      return module;
-    }
-    return new Module(this);
-  }
-  module = this._modules.get(define);
-  if (module) return module;
-  this._init = module = new Module(this);
-  this._modules.set(define, module);
-  try {
-    define(this, observer);
-  } finally {
-    this._init = null;
-  }
-  return module;
-}
-
-function runtime_compute() {
-  return this._computing || (this._computing = this._computeSoon());
-}
-
-function runtime_computeSoon() {
-  var runtime = this;
-  return new Promise(function(resolve) {
-    frame(function() {
-      resolve();
-      runtime._disposed || runtime._computeNow();
-    });
-  });
-}
-
-function runtime_computeNow() {
-  var queue = [],
-      variables,
-      variable;
-
-  // Compute the reachability of the transitive closure of dirty variables.
-  // Any newly-reachable variable must also be recomputed.
-  // Any no-longer-reachable variable must be terminated.
-  variables = new Set(this._dirty);
-  variables.forEach(function(variable) {
-    variable._inputs.forEach(variables.add, variables);
-    const reachable = variable_reachable(variable);
-    if (reachable > variable._reachable) {
-      this._updates.add(variable);
-    } else if (reachable < variable._reachable) {
-      variable._invalidate();
-    }
-    variable._reachable = reachable;
-  }, this);
-
-  // Compute the transitive closure of updating, reachable variables.
-  variables = new Set(this._updates);
-  variables.forEach(function(variable) {
-    if (variable._reachable) {
-      variable._indegree = 0;
-      variable._outputs.forEach(variables.add, variables);
-    } else {
-      variable._indegree = NaN;
-      variables.delete(variable);
-    }
-  });
-
-  this._computing = null;
-  this._updates.clear();
-  this._dirty.clear();
-
-  // Compute the indegree of updating variables.
-  variables.forEach(function(variable) {
-    variable._outputs.forEach(variable_increment);
-  });
-
-  do {
-    // Identify the root variables (those with no updating inputs).
-    variables.forEach(function(variable) {
-      if (variable._indegree === 0) {
-        queue.push(variable);
-      }
-    });
-
-    // Compute the variables in topological order.
-    while (variable = queue.pop()) {
-      variable_compute(variable);
-      variable._outputs.forEach(postqueue);
-      variables.delete(variable);
-    }
-
-    // Any remaining variables are circular, or depend on them.
-    variables.forEach(function(variable) {
-      if (variable_circular(variable)) {
-        variable_error(variable, new RuntimeError("circular definition"));
-        variable._outputs.forEach(variable_decrement);
-        variables.delete(variable);
-      }
-    });
-  } while (variables.size);
-
-  function postqueue(variable) {
-    if (--variable._indegree === 0) {
-      queue.push(variable);
-    }
-  }
-}
-
-function variable_circular(variable) {
-  const inputs = new Set(variable._inputs);
-  for (const i of inputs) {
-    if (i === variable) return true;
-    i._inputs.forEach(inputs.add, inputs);
-  }
-  return false;
-}
-
-function variable_increment(variable) {
-  ++variable._indegree;
-}
-
-function variable_decrement(variable) {
-  --variable._indegree;
-}
-
-function variable_value(variable) {
-  return variable._promise.catch(variable._rejector);
-}
-
-function variable_invalidator(variable) {
-  return new Promise(function(resolve) {
-    variable._invalidate = resolve;
-  });
-}
-
-function variable_intersector(invalidation, variable) {
-  let node = typeof IntersectionObserver === "function" && variable._observer && variable._observer._node;
-  let visible = !node, resolve = noop$5, reject = noop$5, promise, observer;
-  if (node) {
-    observer = new IntersectionObserver(([entry]) => (visible = entry.isIntersecting) && (promise = null, resolve()));
-    observer.observe(node);
-    invalidation.then(() => (observer.disconnect(), observer = null, reject()));
-  }
-  return function(value) {
-    if (visible) return Promise.resolve(value);
-    if (!observer) return Promise.reject();
-    if (!promise) promise = new Promise((y, n) => (resolve = y, reject = n));
-    return promise.then(() => value);
-  };
-}
-
-function variable_compute(variable) {
-  variable._invalidate();
-  variable._invalidate = noop$5;
-  variable._pending();
-  var value0 = variable._value,
-      version = ++variable._version,
-      invalidation = null,
-      promise = variable._promise = Promise.all(variable._inputs.map(variable_value)).then(function(inputs) {
-    if (variable._version !== version) return;
-
-    // Replace any reference to invalidation with the promise, lazily.
-    for (var i = 0, n = inputs.length; i < n; ++i) {
-      switch (inputs[i]) {
-        case variable_invalidation: {
-          inputs[i] = invalidation = variable_invalidator(variable);
-          break;
-        }
-        case variable_visibility: {
-          if (!invalidation) invalidation = variable_invalidator(variable);
-          inputs[i] = variable_intersector(invalidation, variable);
-          break;
-        }
-      }
-    }
-
-    // Compute the initial value of the variable.
-    return variable._definition.apply(value0, inputs);
-  }).then(function(value) {
-    // If the value is a generator, then retrieve its first value,
-    // and dispose of the generator if the variable is invalidated.
-    // Note that the cell may already have been invalidated here,
-    // in which case we need to terminate the generator immediately!
-    if (generatorish(value)) {
-      if (variable._version !== version) return void value.return();
-      (invalidation || variable_invalidator(variable)).then(variable_return(value));
-      return variable_precompute(variable, version, promise, value);
-    }
-    return value;
-  });
-  promise.then(function(value) {
-    if (variable._version !== version) return;
-    variable._value = value;
-    variable._fulfilled(value);
-  }, function(error) {
-    if (variable._version !== version) return;
-    variable._value = undefined;
-    variable._rejected(error);
-  });
-}
-
-function variable_precompute(variable, version, promise, generator) {
-  function recompute() {
-    var promise = new Promise(function(resolve) {
-      resolve(generator.next());
-    }).then(function(next) {
-      return next.done ? undefined : Promise.resolve(next.value).then(function(value) {
-        if (variable._version !== version) return;
-        variable_postrecompute(variable, value, promise).then(recompute);
-        variable._fulfilled(value);
-        return value;
-      });
-    });
-    promise.catch(function(error) {
-      if (variable._version !== version) return;
-      variable_postrecompute(variable, undefined, promise);
-      variable._rejected(error);
-    });
-  }
-  return new Promise(function(resolve) {
-    resolve(generator.next());
-  }).then(function(next) {
-    if (next.done) return;
-    promise.then(recompute);
-    return next.value;
-  });
-}
-
-function variable_postrecompute(variable, value, promise) {
-  var runtime = variable._module._runtime;
-  variable._value = value;
-  variable._promise = promise;
-  variable._outputs.forEach(runtime._updates.add, runtime._updates); // TODO Cleaner?
-  return runtime._compute();
-}
-
-function variable_error(variable, error) {
-  variable._invalidate();
-  variable._invalidate = noop$5;
-  variable._pending();
-  ++variable._version;
-  variable._indegree = NaN;
-  (variable._promise = Promise.reject(error)).catch(noop$5);
-  variable._value = undefined;
-  variable._rejected(error);
-}
-
-function variable_return(generator) {
-  return function() {
-    generator.return();
-  };
-}
-
-function variable_reachable(variable) {
-  if (variable._observer !== no_observer) return true; // Directly reachable.
-  var outputs = new Set(variable._outputs);
-  for (const output of outputs) {
-    if (output._observer !== no_observer) return true;
-    output._outputs.forEach(outputs.add, outputs);
-  }
-  return false;
-}
-
-function window_global(name) {
-  return window[name];
-}
-
 var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
 var react = {exports: {}};
@@ -2500,8 +10,8 @@ object-assign
 @license MIT
 */
 /* eslint-disable no-unused-vars */
-var getOwnPropertySymbols = Object.getOwnPropertySymbols;
-var hasOwnProperty$d = Object.prototype.hasOwnProperty;
+var getOwnPropertySymbols$1 = Object.getOwnPropertySymbols;
+var hasOwnProperty$f = Object.prototype.hasOwnProperty;
 var propIsEnumerable = Object.prototype.propertyIsEnumerable;
 
 function toObject(val) {
@@ -2565,13 +75,13 @@ var objectAssign = shouldUseNative() ? Object.assign : function (target, source)
 		from = Object(arguments[s]);
 
 		for (var key in from) {
-			if (hasOwnProperty$d.call(from, key)) {
+			if (hasOwnProperty$f.call(from, key)) {
 				to[key] = from[key];
 			}
 		}
 
-		if (getOwnPropertySymbols) {
-			symbols = getOwnPropertySymbols(from);
+		if (getOwnPropertySymbols$1) {
+			symbols = getOwnPropertySymbols$1(from);
 			for (var i = 0; i < symbols.length; i++) {
 				if (propIsEnumerable.call(from, symbols[i])) {
 					to[symbols[i]] = from[symbols[i]];
@@ -2643,14 +153,14 @@ let onFinishQueue = makeQueue();
 
 raf$2.onFinish = fn => schedule(fn, onFinishQueue);
 
-let timeouts = [];
+let timeouts$1 = [];
 
 raf$2.setTimeout = (handler, ms) => {
   let time = raf$2.now() + ms;
 
   let cancel = () => {
-    let i = timeouts.findIndex(t => t.cancel == cancel);
-    if (~i) timeouts.splice(i, 1);
+    let i = timeouts$1.findIndex(t => t.cancel == cancel);
+    if (~i) timeouts$1.splice(i, 1);
     __raf.count -= ~i ? 1 : 0;
   };
 
@@ -2659,13 +169,13 @@ raf$2.setTimeout = (handler, ms) => {
     handler,
     cancel
   };
-  timeouts.splice(findTimeout(time), 0, timeout);
+  timeouts$1.splice(findTimeout(time), 0, timeout);
   __raf.count += 1;
   start();
   return timeout;
 };
 
-let findTimeout = time => ~(~timeouts.findIndex(t => t.time > time) || ~timeouts.length);
+let findTimeout = time => ~(~timeouts$1.findIndex(t => t.time > time) || ~timeouts$1.length);
 
 raf$2.cancel = fn => {
   updateQueue.delete(fn);
@@ -2759,7 +269,7 @@ function update() {
   let count = findTimeout(ts);
 
   if (count) {
-    eachSafely(timeouts.splice(0, count), t => t.handler());
+    eachSafely(timeouts$1.splice(0, count), t => t.handler());
     __raf.count -= count;
   }
 
@@ -2812,7 +322,7 @@ const __raf = {
 
   clear() {
     ts = -1;
-    timeouts = [];
+    timeouts$1 = [];
     onStartQueue = makeQueue();
     updateQueue = makeQueue();
     onFrameQueue = makeQueue();
@@ -2823,7 +333,7 @@ const __raf = {
 
 };
 
-function noop$4() {}
+function noop$5() {}
 const defineHidden = (obj, key, value) => Object.defineProperty(obj, key, {
   value,
   writable: true,
@@ -2872,7 +382,7 @@ let createStringInterpolator$1;
 let to$1;
 let colors$1 = null;
 let skipAnimation = false;
-let willAdvance = noop$4;
+let willAdvance = noop$5;
 const assign = globals => {
   if (globals.to) to$1 = globals.to;
   if (globals.now) raf$2.now = globals.now;
@@ -5506,8 +3016,8 @@ async function flushUpdate(ctrl, props, isLoop) {
       props,
       state,
       actions: {
-        pause: noop$4,
-        resume: noop$4,
+        pause: noop$5,
+        resume: noop$5,
 
         start(props, resolve) {
           if (cancel) {
@@ -6337,13 +3847,13 @@ function id$1(a,b,c,d){if(fd)if(0<Ac.length&&-1<Hc.indexOf(a))a=Kc(null,a,b,c,d)
 function Rc(a,b,c,d){c=nc(d);c=tc(c);if(null!==c){var e=dc(c);if(null===e)c=null;else {var f=e.tag;if(13===f){c=ec(e);if(null!==c)return c;c=null;}else if(3===f){if(e.stateNode.hydrate)return 3===e.tag?e.stateNode.containerInfo:null;c=null;}else e!==c&&(c=null);}}a=rc(a,d,c,b);try{Ma(sc,a);}finally{qc(a);}return null}
 var jd={animationIterationCount:!0,borderImageOutset:!0,borderImageSlice:!0,borderImageWidth:!0,boxFlex:!0,boxFlexGroup:!0,boxOrdinalGroup:!0,columnCount:!0,columns:!0,flex:!0,flexGrow:!0,flexPositive:!0,flexShrink:!0,flexNegative:!0,flexOrder:!0,gridArea:!0,gridRow:!0,gridRowEnd:!0,gridRowSpan:!0,gridRowStart:!0,gridColumn:!0,gridColumnEnd:!0,gridColumnSpan:!0,gridColumnStart:!0,fontWeight:!0,lineClamp:!0,lineHeight:!0,opacity:!0,order:!0,orphans:!0,tabSize:!0,widows:!0,zIndex:!0,zoom:!0,fillOpacity:!0,
 floodOpacity:!0,stopOpacity:!0,strokeDasharray:!0,strokeDashoffset:!0,strokeMiterlimit:!0,strokeOpacity:!0,strokeWidth:!0},kd=["Webkit","ms","Moz","O"];Object.keys(jd).forEach(function(a){kd.forEach(function(b){b=b+a.charAt(0).toUpperCase()+a.substring(1);jd[b]=jd[a];});});function ld(a,b,c){return null==b||"boolean"===typeof b||""===b?"":c||"number"!==typeof b||0===b||jd.hasOwnProperty(a)&&jd[a]?(""+b).trim():b+"px"}
-function md(a,b){a=a.style;for(var c in b)if(b.hasOwnProperty(c)){var d=0===c.indexOf("--"),e=ld(c,b[c],d);"float"===c&&(c="cssFloat");d?a.setProperty(c,e):a[c]=e;}}var nd=n$2({menuitem:!0},{area:!0,base:!0,br:!0,col:!0,embed:!0,hr:!0,img:!0,input:!0,keygen:!0,link:!0,meta:!0,param:!0,source:!0,track:!0,wbr:!0});
+function md$1(a,b){a=a.style;for(var c in b)if(b.hasOwnProperty(c)){var d=0===c.indexOf("--"),e=ld(c,b[c],d);"float"===c&&(c="cssFloat");d?a.setProperty(c,e):a[c]=e;}}var nd=n$2({menuitem:!0},{area:!0,base:!0,br:!0,col:!0,embed:!0,hr:!0,img:!0,input:!0,keygen:!0,link:!0,meta:!0,param:!0,source:!0,track:!0,wbr:!0});
 function od(a,b){if(b){if(nd[a]&&(null!=b.children||null!=b.dangerouslySetInnerHTML))throw Error(u(137,a,""));if(null!=b.dangerouslySetInnerHTML){if(null!=b.children)throw Error(u(60));if(!("object"===typeof b.dangerouslySetInnerHTML&&"__html"in b.dangerouslySetInnerHTML))throw Error(u(61));}if(null!=b.style&&"object"!==typeof b.style)throw Error(u(62,""));}}
 function pd(a,b){if(-1===a.indexOf("-"))return "string"===typeof b.is;switch(a){case "annotation-xml":case "color-profile":case "font-face":case "font-face-src":case "font-face-uri":case "font-face-format":case "font-face-name":case "missing-glyph":return !1;default:return !0}}var qd=Mb.html;function rd(a,b){a=9===a.nodeType||11===a.nodeType?a:a.ownerDocument;var c=cc(a);b=wa[b];for(var d=0;d<b.length;d++)uc(b[d],a,c);}function sd(){}
 function td(a){a=a||("undefined"!==typeof document?document:void 0);if("undefined"===typeof a)return null;try{return a.activeElement||a.body}catch(b){return a.body}}function ud(a){for(;a&&a.firstChild;)a=a.firstChild;return a}function vd(a,b){var c=ud(a);a=0;for(var d;c;){if(3===c.nodeType){d=a+c.textContent.length;if(a<=b&&d>=b)return {node:c,offset:b-a};a=d;}a:{for(;c;){if(c.nextSibling){c=c.nextSibling;break a}c=c.parentNode;}c=void 0;}c=ud(c);}}
 function wd(a,b){return a&&b?a===b?!0:a&&3===a.nodeType?!1:b&&3===b.nodeType?wd(a,b.parentNode):"contains"in a?a.contains(b):a.compareDocumentPosition?!!(a.compareDocumentPosition(b)&16):!1:!1}function xd(){for(var a=window,b=td();b instanceof a.HTMLIFrameElement;){try{var c="string"===typeof b.contentWindow.location.href;}catch(d){c=!1;}if(c)a=b.contentWindow;else break;b=td(a.document);}return b}
 function yd(a){var b=a&&a.nodeName&&a.nodeName.toLowerCase();return b&&("input"===b&&("text"===a.type||"search"===a.type||"tel"===a.type||"url"===a.type||"password"===a.type)||"textarea"===b||"true"===a.contentEditable)}var zd="$",Ad="/$",Bd="$?",Cd="$!",Dd=null,Ed=null;function Fd(a,b){switch(a){case "button":case "input":case "select":case "textarea":return !!b.autoFocus}return !1}
-function Gd(a,b){return "textarea"===a||"option"===a||"noscript"===a||"string"===typeof b.children||"number"===typeof b.children||"object"===typeof b.dangerouslySetInnerHTML&&null!==b.dangerouslySetInnerHTML&&null!=b.dangerouslySetInnerHTML.__html}var Hd="function"===typeof setTimeout?setTimeout:void 0,Id="function"===typeof clearTimeout?clearTimeout:void 0;function Jd(a){for(;null!=a;a=a.nextSibling){var b=a.nodeType;if(1===b||3===b)break}return a}
+function Gd(a,b){return "textarea"===a||"option"===a||"noscript"===a||"string"===typeof b.children||"number"===typeof b.children||"object"===typeof b.dangerouslySetInnerHTML&&null!==b.dangerouslySetInnerHTML&&null!=b.dangerouslySetInnerHTML.__html}var Hd="function"===typeof setTimeout?setTimeout:void 0,Id$1="function"===typeof clearTimeout?clearTimeout:void 0;function Jd(a){for(;null!=a;a=a.nextSibling){var b=a.nodeType;if(1===b||3===b)break}return a}
 function Kd(a){a=a.previousSibling;for(var b=0;a;){if(8===a.nodeType){var c=a.data;if(c===zd||c===Cd||c===Bd){if(0===b)return a;b--;}else c===Ad&&b++;}a=a.previousSibling;}return null}var Ld=Math.random().toString(36).slice(2),Md="__reactInternalInstance$"+Ld,Nd="__reactEventHandlers$"+Ld,Od="__reactContainere$"+Ld;
 function tc(a){var b=a[Md];if(b)return b;for(var c=a.parentNode;c;){if(b=c[Od]||c[Md]){c=b.alternate;if(null!==b.child||null!==c&&null!==c.child)for(a=Kd(a);null!==a;){if(c=a[Md])return c;a=Kd(a);}return b}a=c;c=a.parentNode;}return null}function Nc(a){a=a[Md]||a[Od];return !a||5!==a.tag&&6!==a.tag&&13!==a.tag&&3!==a.tag?null:a}function Pd(a){if(5===a.tag||6===a.tag)return a.stateNode;throw Error(u(33));}function Qd(a){return a[Nd]||null}
 function Rd(a){do a=a.return;while(a&&5!==a.tag);return a?a:null}
@@ -6465,7 +3975,7 @@ return null}a=ch($g.current);if(Wh(b)){d=b.stateNode;e=b.type;var f=b.memoizedPr
 {wasMultiple:!!f.multiple};F("invalid",d);rd(c,"onChange");break;case "textarea":Jb(d,f),F("invalid",d),rd(c,"onChange");}od(e,f);a=null;for(var g in f)if(f.hasOwnProperty(g)){var h=f[g];"children"===g?"string"===typeof h?d.textContent!==h&&(a=["children",h]):"number"===typeof h&&d.textContent!==""+h&&(a=["children",""+h]):va.hasOwnProperty(g)&&null!=h&&rd(c,g);}switch(e){case "input":xb(d);Eb(d,f,!0);break;case "textarea":xb(d);Lb(d);break;case "select":case "option":break;default:"function"===typeof f.onClick&&
 (d.onclick=sd);}c=a;b.updateQueue=c;null!==c&&(b.effectTag|=4);}else {g=9===c.nodeType?c:c.ownerDocument;a===qd&&(a=Nb(e));a===qd?"script"===e?(a=g.createElement("div"),a.innerHTML="<script>\x3c/script>",a=a.removeChild(a.firstChild)):"string"===typeof d.is?a=g.createElement(e,{is:d.is}):(a=g.createElement(e),"select"===e&&(g=a,d.multiple?g.multiple=!0:d.size&&(g.size=d.size))):a=g.createElementNS(a,e);a[Md]=b;a[Nd]=d;ni(a,b,!1,!1);b.stateNode=a;g=pd(e,d);switch(e){case "iframe":case "object":case "embed":F("load",
 a);h=d;break;case "video":case "audio":for(h=0;h<ac.length;h++)F(ac[h],a);h=d;break;case "source":F("error",a);h=d;break;case "img":case "image":case "link":F("error",a);F("load",a);h=d;break;case "form":F("reset",a);F("submit",a);h=d;break;case "details":F("toggle",a);h=d;break;case "input":Ab(a,d);h=zb(a,d);F("invalid",a);rd(c,"onChange");break;case "option":h=Gb(a,d);break;case "select":a._wrapperState={wasMultiple:!!d.multiple};h=n$2({},d,{value:void 0});F("invalid",a);rd(c,"onChange");break;case "textarea":Jb(a,
-d);h=Ib(a,d);F("invalid",a);rd(c,"onChange");break;default:h=d;}od(e,h);var k=h;for(f in k)if(k.hasOwnProperty(f)){var l=k[f];"style"===f?md(a,l):"dangerouslySetInnerHTML"===f?(l=l?l.__html:void 0,null!=l&&Qb(a,l)):"children"===f?"string"===typeof l?("textarea"!==e||""!==l)&&Rb(a,l):"number"===typeof l&&Rb(a,""+l):"suppressContentEditableWarning"!==f&&"suppressHydrationWarning"!==f&&"autoFocus"!==f&&(va.hasOwnProperty(f)?null!=l&&rd(c,f):null!=l&&Xa(a,f,l,g));}switch(e){case "input":xb(a);Eb(a,d,!1);
+d);h=Ib(a,d);F("invalid",a);rd(c,"onChange");break;default:h=d;}od(e,h);var k=h;for(f in k)if(k.hasOwnProperty(f)){var l=k[f];"style"===f?md$1(a,l):"dangerouslySetInnerHTML"===f?(l=l?l.__html:void 0,null!=l&&Qb(a,l)):"children"===f?"string"===typeof l?("textarea"!==e||""!==l)&&Rb(a,l):"number"===typeof l&&Rb(a,""+l):"suppressContentEditableWarning"!==f&&"suppressHydrationWarning"!==f&&"autoFocus"!==f&&(va.hasOwnProperty(f)?null!=l&&rd(c,f):null!=l&&Xa(a,f,l,g));}switch(e){case "input":xb(a);Eb(a,d,!1);
 break;case "textarea":xb(a);Lb(a);break;case "option":null!=d.value&&a.setAttribute("value",""+rb(d.value));break;case "select":a.multiple=!!d.multiple;c=d.value;null!=c?Hb(a,!!d.multiple,c,!1):null!=d.defaultValue&&Hb(a,!!d.multiple,d.defaultValue,!0);break;default:"function"===typeof h.onClick&&(a.onclick=sd);}Fd(e,d)&&(b.effectTag|=4);}null!==b.ref&&(b.effectTag|=128);}return null;case 6:if(a&&null!=b.stateNode)qi(a,b,a.memoizedProps,d);else {if("string"!==typeof d&&null===b.stateNode)throw Error(u(166));
 c=ch(bh.current);ch($g.current);Wh(b)?(c=b.stateNode,d=b.memoizedProps,c[Md]=b,c.nodeValue!==d&&(b.effectTag|=4)):(c=(9===c.nodeType?c:c.ownerDocument).createTextNode(d),c[Md]=b,b.stateNode=c);}return null;case 13:H(M);d=b.memoizedState;if(0!==(b.effectTag&64))return b.expirationTime=c,b;c=null!==d;d=!1;null===a?void 0!==b.memoizedProps.fallback&&Wh(b):(e=a.memoizedState,d=null!==e,c||null===e||(e=a.child.sibling,null!==e&&(f=b.firstEffect,null!==f?(b.firstEffect=e,e.nextEffect=f):(b.firstEffect=b.lastEffect=
 e,e.nextEffect=null),e.effectTag=8)));if(c&&!d&&0!==(b.mode&2))if(null===a&&!0!==b.memoizedProps.unstable_avoidThisFallback||0!==(M.current&1))S===ti&&(S=ui);else {if(S===ti||S===ui)S=vi;0!==wi&&null!==T&&(xi(T,U),yi(T,wi));}if(c||d)b.effectTag|=4;return null;case 4:return eh(),oi(b),null;case 10:return og(b),null;case 17:return L(b.type)&&Df(),null;case 19:H(M);d=b.memoizedState;if(null===d)return null;e=0!==(b.effectTag&64);f=d.rendering;if(null===f)if(e)ri(d,!1);else {if(S!==ti||null!==a&&0!==(a.effectTag&
@@ -6486,7 +3996,7 @@ function Qi(a,b,c){var d=a.tag,e=5===d||6===d;if(e)a=e?a.stateNode:a.stateNode.i
 function Ri(a,b,c){var d=a.tag,e=5===d||6===d;if(e)a=e?a.stateNode:a.stateNode.instance,b?c.insertBefore(a,b):c.appendChild(a);else if(4!==d&&(a=a.child,null!==a))for(Ri(a,b,c),a=a.sibling;null!==a;)Ri(a,b,c),a=a.sibling;}
 function Mi(a,b,c){for(var d=b,e=!1,f,g;;){if(!e){e=d.return;a:for(;;){if(null===e)throw Error(u(160));f=e.stateNode;switch(e.tag){case 5:g=!1;break a;case 3:f=f.containerInfo;g=!0;break a;case 4:f=f.containerInfo;g=!0;break a}e=e.return;}e=!0;}if(5===d.tag||6===d.tag){a:for(var h=a,k=d,l=c,m=k;;)if(Ki(h,m,l),null!==m.child&&4!==m.tag)m.child.return=m,m=m.child;else {if(m===k)break a;for(;null===m.sibling;){if(null===m.return||m.return===k)break a;m=m.return;}m.sibling.return=m.return;m=m.sibling;}g?(h=
 f,k=d.stateNode,8===h.nodeType?h.parentNode.removeChild(k):h.removeChild(k)):f.removeChild(d.stateNode);}else if(4===d.tag){if(null!==d.child){f=d.stateNode.containerInfo;g=!0;d.child.return=d;d=d.child;continue}}else if(Ki(a,d,c),null!==d.child){d.child.return=d;d=d.child;continue}if(d===b)break;for(;null===d.sibling;){if(null===d.return||d.return===b)return;d=d.return;4===d.tag&&(e=!1);}d.sibling.return=d.return;d=d.sibling;}}
-function Si(a,b){switch(b.tag){case 0:case 11:case 14:case 15:case 22:Hi(3,b);return;case 1:return;case 5:var c=b.stateNode;if(null!=c){var d=b.memoizedProps,e=null!==a?a.memoizedProps:d;a=b.type;var f=b.updateQueue;b.updateQueue=null;if(null!==f){c[Nd]=d;"input"===a&&"radio"===d.type&&null!=d.name&&Bb(c,d);pd(a,e);b=pd(a,d);for(e=0;e<f.length;e+=2){var g=f[e],h=f[e+1];"style"===g?md(c,h):"dangerouslySetInnerHTML"===g?Qb(c,h):"children"===g?Rb(c,h):Xa(c,g,h,b);}switch(a){case "input":Cb(c,d);break;
+function Si(a,b){switch(b.tag){case 0:case 11:case 14:case 15:case 22:Hi(3,b);return;case 1:return;case 5:var c=b.stateNode;if(null!=c){var d=b.memoizedProps,e=null!==a?a.memoizedProps:d;a=b.type;var f=b.updateQueue;b.updateQueue=null;if(null!==f){c[Nd]=d;"input"===a&&"radio"===d.type&&null!=d.name&&Bb(c,d);pd(a,e);b=pd(a,d);for(e=0;e<f.length;e+=2){var g=f[e],h=f[e+1];"style"===g?md$1(c,h):"dangerouslySetInnerHTML"===g?Qb(c,h):"children"===g?Rb(c,h):Xa(c,g,h,b);}switch(a){case "input":Cb(c,d);break;
 case "textarea":Kb(c,d);break;case "select":b=c._wrapperState.wasMultiple,c._wrapperState.wasMultiple=!!d.multiple,a=d.value,null!=a?Hb(c,!!d.multiple,a,!1):b!==!!d.multiple&&(null!=d.defaultValue?Hb(c,!!d.multiple,d.defaultValue,!0):Hb(c,!!d.multiple,d.multiple?[]:"",!1));}}}return;case 6:if(null===b.stateNode)throw Error(u(162));b.stateNode.nodeValue=b.memoizedProps;return;case 3:b=b.stateNode;b.hydrate&&(b.hydrate=!1,Vc(b.containerInfo));return;case 12:return;case 13:c=b;null===b.memoizedState?
 d=!1:(d=!0,c=b.child,Ti=$f());if(null!==c)a:for(a=c;;){if(5===a.tag)f=a.stateNode,d?(f=f.style,"function"===typeof f.setProperty?f.setProperty("display","none","important"):f.display="none"):(f=a.stateNode,e=a.memoizedProps.style,e=void 0!==e&&null!==e&&e.hasOwnProperty("display")?e.display:null,f.style.display=ld("display",e));else if(6===a.tag)a.stateNode.nodeValue=d?"":a.memoizedProps;else if(13===a.tag&&null!==a.memoizedState&&null===a.memoizedState.dehydrated){f=a.child.sibling;f.return=a;a=
 f;continue}else if(null!==a.child){a.child.return=a;a=a.child;continue}if(a===c)break;for(;null===a.sibling;){if(null===a.return||a.return===c)break a;a=a.return;}a.sibling.return=a.return;a=a.sibling;}Ui(b);return;case 19:Ui(b);return;case 17:return}throw Error(u(163));}function Ui(a){var b=a.updateQueue;if(null!==b){a.updateQueue=null;var c=a.stateNode;null===c&&(c=a.stateNode=new Bi);b.forEach(function(b){var d=Vi.bind(null,a,b);c.has(b)||(c.add(b),b.then(d,d));});}}
@@ -6505,7 +4015,7 @@ d;break}1073741823!==mj?d=10*(1073741821-mj)-$f():1073741823===lj?d=0:(d=10*(107
 Hd(Jj.bind(null,a),d);break}}Jj(a);break;default:throw Error(u(329));}Z(a);if(a.callbackNode===b)return Bj.bind(null,a)}}return null}
 function yj(a){var b=a.lastExpiredTime;b=0!==b?b:1073741823;if((W&(fj|gj))!==V)throw Error(u(327));Dj();a===T&&b===U||Ej(a,b);if(null!==X){var c=W;W|=fj;var d=Fj();do try{Kj();break}catch(e){Hj(a,e);}while(1);ng();W=c;cj.current=d;if(S===hj)throw c=kj,Ej(a,b),xi(a,b),Z(a),c;if(null!==X)throw Error(u(261));a.finishedWork=a.current.alternate;a.finishedExpirationTime=b;T=null;Jj(a);Z(a);}return null}function Lj(){if(null!==tj){var a=tj;tj=null;a.forEach(function(a,c){Cj(c,a);Z(c);});gg();}}
 function Mj(a,b){var c=W;W|=1;try{return a(b)}finally{W=c,W===V&&gg();}}function Nj(a,b){var c=W;W&=-2;W|=ej;try{return a(b)}finally{W=c,W===V&&gg();}}
-function Ej(a,b){a.finishedWork=null;a.finishedExpirationTime=0;var c=a.timeoutHandle;-1!==c&&(a.timeoutHandle=-1,Id(c));if(null!==X)for(c=X.return;null!==c;){var d=c;switch(d.tag){case 1:d=d.type.childContextTypes;null!==d&&void 0!==d&&Df();break;case 3:eh();H(K);H(J);break;case 5:gh(d);break;case 4:eh();break;case 13:H(M);break;case 19:H(M);break;case 10:og(d);}c=c.return;}T=a;X=Sg(a.current,null);U=b;S=ti;kj=null;mj=lj=1073741823;nj=null;wi=0;oj=!1;}
+function Ej(a,b){a.finishedWork=null;a.finishedExpirationTime=0;var c=a.timeoutHandle;-1!==c&&(a.timeoutHandle=-1,Id$1(c));if(null!==X)for(c=X.return;null!==c;){var d=c;switch(d.tag){case 1:d=d.type.childContextTypes;null!==d&&void 0!==d&&Df();break;case 3:eh();H(K);H(J);break;case 5:gh(d);break;case 4:eh();break;case 13:H(M);break;case 19:H(M);break;case 10:og(d);}c=c.return;}T=a;X=Sg(a.current,null);U=b;S=ti;kj=null;mj=lj=1073741823;nj=null;wi=0;oj=!1;}
 function Hj(a,b){do{try{ng();jh.current=sh;if(mh)for(var c=N.memoizedState;null!==c;){var d=c.queue;null!==d&&(d.pending=null);c=c.next;}lh=0;P=O=N=null;mh=!1;if(null===X||null===X.return)return S=hj,kj=b,X=null;a:{var e=a,f=X.return,g=X,h=b;b=U;g.effectTag|=2048;g.firstEffect=g.lastEffect=null;if(null!==h&&"object"===typeof h&&"function"===typeof h.then){var k=h;if(0===(g.mode&2)){var l=g.alternate;l?(g.updateQueue=l.updateQueue,g.memoizedState=l.memoizedState,g.expirationTime=l.expirationTime):(g.updateQueue=
 null,g.memoizedState=null);}var m=0!==(M.current&1),p=f;do{var x;if(x=13===p.tag){var z=p.memoizedState;if(null!==z)x=null!==z.dehydrated?!0:!1;else {var ca=p.memoizedProps;x=void 0===ca.fallback?!1:!0!==ca.unstable_avoidThisFallback?!0:m?!1:!0;}}if(x){var D=p.updateQueue;if(null===D){var t=new Set;t.add(k);p.updateQueue=t;}else D.add(k);if(0===(p.mode&2)){p.effectTag|=64;g.effectTag&=-2981;if(1===g.tag)if(null===g.alternate)g.tag=17;else {var y=wg(1073741823,null);y.tag=2;xg(g,y);}g.expirationTime=1073741823;
 break a}h=void 0;g=b;var A=e.pingCache;null===A?(A=e.pingCache=new Wi,h=new Set,A.set(k,h)):(h=A.get(k),void 0===h&&(h=new Set,A.set(k,h)));if(!h.has(g)){h.add(g);var q=Oj.bind(null,e,k,g);k.then(q,q);}p.effectTag|=4096;p.expirationTime=b;break a}p=p.return;}while(null!==p);h=Error((pb(g.type)||"A React component")+" suspended while rendering, but no fallback UI was specified.\n\nAdd a <Suspense fallback=...> component higher in the tree to provide a loading indicator or placeholder to display."+qb(g));}S!==
@@ -7820,7 +5330,7 @@ var Symbol$6 = _Symbol;
 var objectProto$f = Object.prototype;
 
 /** Used to check objects for own properties. */
-var hasOwnProperty$c = objectProto$f.hasOwnProperty;
+var hasOwnProperty$e = objectProto$f.hasOwnProperty;
 
 /**
  * Used to resolve the
@@ -7840,7 +5350,7 @@ var symToStringTag$1 = Symbol$6 ? Symbol$6.toStringTag : undefined;
  * @returns {string} Returns the raw `toStringTag`.
  */
 function getRawTag$1(value) {
-  var isOwn = hasOwnProperty$c.call(value, symToStringTag$1),
+  var isOwn = hasOwnProperty$e.call(value, symToStringTag$1),
       tag = value[symToStringTag$1];
 
   try {
@@ -8063,11 +5573,11 @@ var funcProto$1 = Function.prototype,
 var funcToString$1 = funcProto$1.toString;
 
 /** Used to check objects for own properties. */
-var hasOwnProperty$b = objectProto$d.hasOwnProperty;
+var hasOwnProperty$d = objectProto$d.hasOwnProperty;
 
 /** Used to detect if a method is native. */
 var reIsNative = RegExp('^' +
-  funcToString$1.call(hasOwnProperty$b).replace(reRegExpChar, '\\$&')
+  funcToString$1.call(hasOwnProperty$d).replace(reRegExpChar, '\\$&')
   .replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$'
 );
 
@@ -8181,7 +5691,7 @@ var HASH_UNDEFINED$2 = '__lodash_hash_undefined__';
 var objectProto$c = Object.prototype;
 
 /** Used to check objects for own properties. */
-var hasOwnProperty$a = objectProto$c.hasOwnProperty;
+var hasOwnProperty$c = objectProto$c.hasOwnProperty;
 
 /**
  * Gets the hash value for `key`.
@@ -8198,7 +5708,7 @@ function hashGet$1(key) {
     var result = data[key];
     return result === HASH_UNDEFINED$2 ? undefined : result;
   }
-  return hasOwnProperty$a.call(data, key) ? data[key] : undefined;
+  return hasOwnProperty$c.call(data, key) ? data[key] : undefined;
 }
 
 var _hashGet = hashGet$1;
@@ -8209,7 +5719,7 @@ var nativeCreate$1 = _nativeCreate;
 var objectProto$b = Object.prototype;
 
 /** Used to check objects for own properties. */
-var hasOwnProperty$9 = objectProto$b.hasOwnProperty;
+var hasOwnProperty$b = objectProto$b.hasOwnProperty;
 
 /**
  * Checks if a hash value for `key` exists.
@@ -8222,7 +5732,7 @@ var hasOwnProperty$9 = objectProto$b.hasOwnProperty;
  */
 function hashHas$1(key) {
   var data = this.__data__;
-  return nativeCreate$1 ? (data[key] !== undefined) : hasOwnProperty$9.call(data, key);
+  return nativeCreate$1 ? (data[key] !== undefined) : hasOwnProperty$b.call(data, key);
 }
 
 var _hashHas = hashHas$1;
@@ -8871,7 +6381,7 @@ var baseIsArguments = _baseIsArguments,
 var objectProto$9 = Object.prototype;
 
 /** Used to check objects for own properties. */
-var hasOwnProperty$8 = objectProto$9.hasOwnProperty;
+var hasOwnProperty$a = objectProto$9.hasOwnProperty;
 
 /** Built-in value references. */
 var propertyIsEnumerable$1 = objectProto$9.propertyIsEnumerable;
@@ -8895,7 +6405,7 @@ var propertyIsEnumerable$1 = objectProto$9.propertyIsEnumerable;
  * // => false
  */
 var isArguments$4 = baseIsArguments(function() { return arguments; }()) ? baseIsArguments : function(value) {
-  return isObjectLike$9(value) && hasOwnProperty$8.call(value, 'callee') &&
+  return isObjectLike$9(value) && hasOwnProperty$a.call(value, 'callee') &&
     !propertyIsEnumerable$1.call(value, 'callee');
 };
 
@@ -9112,7 +6622,7 @@ var funcProto = Function.prototype,
 var funcToString = funcProto.toString;
 
 /** Used to check objects for own properties. */
-var hasOwnProperty$7 = objectProto$8.hasOwnProperty;
+var hasOwnProperty$9 = objectProto$8.hasOwnProperty;
 
 /** Used to infer the `Object` constructor. */
 var objectCtorString = funcToString.call(Object);
@@ -9153,7 +6663,7 @@ function isPlainObject$2(value) {
   if (proto === null) {
     return true;
   }
-  var Ctor = hasOwnProperty$7.call(proto, 'constructor') && proto.constructor;
+  var Ctor = hasOwnProperty$9.call(proto, 'constructor') && proto.constructor;
   return typeof Ctor == 'function' && Ctor instanceof Ctor &&
     funcToString.call(Ctor) == objectCtorString;
 }
@@ -9330,7 +6840,7 @@ var baseAssignValue$2 = _baseAssignValue,
 var objectProto$7 = Object.prototype;
 
 /** Used to check objects for own properties. */
-var hasOwnProperty$6 = objectProto$7.hasOwnProperty;
+var hasOwnProperty$8 = objectProto$7.hasOwnProperty;
 
 /**
  * Assigns `value` to `key` of `object` if the existing value is not equivalent
@@ -9344,7 +6854,7 @@ var hasOwnProperty$6 = objectProto$7.hasOwnProperty;
  */
 function assignValue$3(object, key, value) {
   var objValue = object[key];
-  if (!(hasOwnProperty$6.call(object, key) && eq$2(objValue, value)) ||
+  if (!(hasOwnProperty$8.call(object, key) && eq$2(objValue, value)) ||
       (value === undefined && !(key in object))) {
     baseAssignValue$2(object, key, value);
   }
@@ -9453,7 +6963,7 @@ var baseTimes = _baseTimes,
 var objectProto$6 = Object.prototype;
 
 /** Used to check objects for own properties. */
-var hasOwnProperty$5 = objectProto$6.hasOwnProperty;
+var hasOwnProperty$7 = objectProto$6.hasOwnProperty;
 
 /**
  * Creates an array of the enumerable property names of the array-like `value`.
@@ -9473,7 +6983,7 @@ function arrayLikeKeys$2(value, inherited) {
       length = result.length;
 
   for (var key in value) {
-    if ((inherited || hasOwnProperty$5.call(value, key)) &&
+    if ((inherited || hasOwnProperty$7.call(value, key)) &&
         !(skipIndexes && (
            // Safari 9 has enumerable `arguments.length` in strict mode.
            key == 'length' ||
@@ -9522,7 +7032,7 @@ var isObject$7 = isObject_1,
 var objectProto$5 = Object.prototype;
 
 /** Used to check objects for own properties. */
-var hasOwnProperty$4 = objectProto$5.hasOwnProperty;
+var hasOwnProperty$6 = objectProto$5.hasOwnProperty;
 
 /**
  * The base implementation of `_.keysIn` which doesn't treat sparse arrays as dense.
@@ -9539,7 +7049,7 @@ function baseKeysIn$1(object) {
       result = [];
 
   for (var key in object) {
-    if (!(key == 'constructor' && (isProto || !hasOwnProperty$4.call(object, key)))) {
+    if (!(key == 'constructor' && (isProto || !hasOwnProperty$6.call(object, key)))) {
       result.push(key);
     }
   }
@@ -9769,11 +7279,11 @@ var _baseMerge = baseMerge$1;
  * // => true
  */
 
-function identity$6(value) {
+function identity$7(value) {
   return value;
 }
 
-var identity_1 = identity$6;
+var identity_1 = identity$7;
 
 /**
  * A faster alternative to `Function#apply`, this function invokes `func`
@@ -9855,17 +7365,17 @@ var _overRest = overRest$2;
  * // => true
  */
 
-function constant$5(value) {
+function constant$6(value) {
   return function() {
     return value;
   };
 }
 
-var constant_1 = constant$5;
+var constant_1 = constant$6;
 
-var constant$4 = constant_1,
+var constant$5 = constant_1,
     defineProperty = _defineProperty$8,
-    identity$5 = identity_1;
+    identity$6 = identity_1;
 
 /**
  * The base implementation of `setToString` without support for hot loop shorting.
@@ -9875,11 +7385,11 @@ var constant$4 = constant_1,
  * @param {Function} string The `toString` result.
  * @returns {Function} Returns `func`.
  */
-var baseSetToString$1 = !defineProperty ? identity$5 : function(func, string) {
+var baseSetToString$1 = !defineProperty ? identity$6 : function(func, string) {
   return defineProperty(func, 'toString', {
     'configurable': true,
     'enumerable': false,
-    'value': constant$4(string),
+    'value': constant$5(string),
     'writable': true
   });
 };
@@ -9940,7 +7450,7 @@ var setToString$2 = shortOut(baseSetToString);
 
 var _setToString = setToString$2;
 
-var identity$4 = identity_1,
+var identity$5 = identity_1,
     overRest$1 = _overRest,
     setToString$1 = _setToString;
 
@@ -9953,7 +7463,7 @@ var identity$4 = identity_1,
  * @returns {Function} Returns the new function.
  */
 function baseRest$3(func, start) {
-  return setToString$1(overRest$1(func, start, identity$4), func + '');
+  return setToString$1(overRest$1(func, start, identity$5), func + '');
 }
 
 var _baseRest = baseRest$3;
@@ -10061,11 +7571,11 @@ var baseMerge = _baseMerge,
  * _.merge(object, other);
  * // => { 'a': [{ 'b': 2, 'c': 3 }, { 'd': 4, 'e': 5 }] }
  */
-var merge = createAssigner(function(object, source, srcIndex) {
+var merge$1 = createAssigner(function(object, source, srcIndex) {
   baseMerge(object, source, srcIndex);
 });
 
-var merge_1 = merge;
+var merge_1 = merge$1;
 
 var baseGetTag$3 = _baseGetTag,
     isObjectLike$5 = isObjectLike_1;
@@ -10289,7 +7799,7 @@ var INFINITY$2 = 1 / 0;
 
 /** Used to convert symbols to primitives and strings. */
 var symbolProto$2 = Symbol$4 ? Symbol$4.prototype : undefined,
-    symbolToString = symbolProto$2 ? symbolProto$2.toString : undefined;
+    symbolToString$1 = symbolProto$2 ? symbolProto$2.toString : undefined;
 
 /**
  * The base implementation of `_.toString` which doesn't convert nullish
@@ -10309,7 +7819,7 @@ function baseToString$1(value) {
     return arrayMap$3(value, baseToString$1) + '';
   }
   if (isSymbol$2(value)) {
-    return symbolToString ? symbolToString.call(value) : '';
+    return symbolToString$1 ? symbolToString$1.call(value) : '';
   }
   var result = (value + '');
   return (result == '0' && (1 / value) == -INFINITY$2) ? '-0' : result;
@@ -10340,16 +7850,16 @@ var baseToString = _baseToString;
  * _.toString([1, 2, 3]);
  * // => '1,2,3'
  */
-function toString$1(value) {
+function toString$3(value) {
   return value == null ? '' : baseToString(value);
 }
 
-var toString_1 = toString$1;
+var toString_1 = toString$3;
 
 var isArray$a = isArray_1,
     isKey$2 = _isKey,
     stringToPath = _stringToPath,
-    toString = toString_1;
+    toString$2 = toString_1;
 
 /**
  * Casts `value` to a path array if it's not one.
@@ -10363,7 +7873,7 @@ function castPath$6(value, object) {
   if (isArray$a(value)) {
     return value;
   }
-  return isKey$2(value, object) ? [value] : stringToPath(toString(value));
+  return isKey$2(value, object) ? [value] : stringToPath(toString$2(value));
 }
 
 var _castPath = castPath$6;
@@ -10537,7 +8047,7 @@ function set(object, path, value) {
 
 var set_1 = set;
 
-function define(constructor, factory, prototype) {
+function define$1(constructor, factory, prototype) {
   constructor.prototype = factory.prototype = prototype;
   prototype.constructor = constructor;
 }
@@ -10715,7 +8225,7 @@ var named = {
   yellowgreen: 0x9acd32
 };
 
-define(Color, color, {
+define$1(Color, color, {
   copy: function(channels) {
     return Object.assign(new this.constructor, this, channels);
   },
@@ -10787,7 +8297,7 @@ function Rgb(r, g, b, opacity) {
   this.opacity = +opacity;
 }
 
-define(Rgb, rgb$1, extend(Color, {
+define$1(Rgb, rgb$1, extend(Color, {
   brighter: function(k) {
     k = k == null ? brighter : Math.pow(brighter, k);
     return new Rgb(this.r * k, this.g * k, this.b * k, this.opacity);
@@ -10873,7 +8383,7 @@ function Hsl(h, s, l, opacity) {
   this.opacity = +opacity;
 }
 
-define(Hsl, hsl, extend(Color, {
+define$1(Hsl, hsl, extend(Color, {
   brighter: function(k) {
     k = k == null ? brighter : Math.pow(brighter, k);
     return new Hsl(this.h, this.s, this.l * k, this.opacity);
@@ -10955,7 +8465,7 @@ function Cubehelix(h, s, l, opacity) {
   this.opacity = +opacity;
 }
 
-define(Cubehelix, cubehelix$1, extend(Color, {
+define$1(Cubehelix, cubehelix$1, extend(Color, {
   brighter: function(k) {
     k = k == null ? brighter : Math.pow(brighter, k);
     return new Cubehelix(this.h, this.s, this.l * k, this.opacity);
@@ -10999,7 +8509,7 @@ function basis$1(values) {
   };
 }
 
-var constant$3 = x => () => x;
+var constant$4 = x => () => x;
 
 function linear$1(a, d) {
   return function(t) {
@@ -11015,18 +8525,18 @@ function exponential(a, b, y) {
 
 function hue(a, b) {
   var d = b - a;
-  return d ? linear$1(a, d > 180 || d < -180 ? d - 360 * Math.round(d / 360) : d) : constant$3(isNaN(a) ? b : a);
+  return d ? linear$1(a, d > 180 || d < -180 ? d - 360 * Math.round(d / 360) : d) : constant$4(isNaN(a) ? b : a);
 }
 
 function gamma(y) {
   return (y = +y) === 1 ? nogamma : function(a, b) {
-    return b - a ? exponential(a, b, y) : constant$3(isNaN(a) ? b : a);
+    return b - a ? exponential(a, b, y) : constant$4(isNaN(a) ? b : a);
   };
 }
 
 function nogamma(a, b) {
   var d = b - a;
-  return d ? linear$1(a, d) : constant$3(isNaN(a) ? b : a);
+  return d ? linear$1(a, d) : constant$4(isNaN(a) ? b : a);
 }
 
 var rgb = (function rgbGamma(y) {
@@ -11210,7 +8720,7 @@ function interpolateString(a, b) {
 
 function interpolate(a, b) {
   var t = typeof b, c;
-  return b == null || t === "boolean" ? constant$3(b)
+  return b == null || t === "boolean" ? constant$4(b)
       : (t === "number" ? interpolateNumber
       : t === "string" ? ((c = color(b)) ? (b = c, rgb) : interpolateString)
       : b instanceof color ? rgb
@@ -11658,7 +9168,7 @@ function number$1(x) {
 
 var unit = [0, 1];
 
-function identity$3(x) {
+function identity$4(x) {
   return x;
 }
 
@@ -11722,14 +9232,14 @@ function transformer() {
       transform,
       untransform,
       unknown,
-      clamp = identity$3,
+      clamp = identity$4,
       piecewise,
       output,
       input;
 
   function rescale() {
     var n = Math.min(domain.length, range.length);
-    if (clamp !== identity$3) clamp = clamper(domain[0], domain[n - 1]);
+    if (clamp !== identity$4) clamp = clamper(domain[0], domain[n - 1]);
     piecewise = n > 2 ? polymap : bimap;
     output = input = null;
     return scale;
@@ -11756,7 +9266,7 @@ function transformer() {
   };
 
   scale.clamp = function(_) {
-    return arguments.length ? (clamp = _ ? true : identity$3, rescale()) : clamp !== identity$3;
+    return arguments.length ? (clamp = _ ? true : identity$4, rescale()) : clamp !== identity$4;
   };
 
   scale.interpolate = function(_) {
@@ -11774,7 +9284,7 @@ function transformer() {
 }
 
 function continuous() {
-  return transformer()(identity$3, identity$3);
+  return transformer()(identity$4, identity$4);
 }
 
 function formatDecimal(x) {
@@ -11930,19 +9440,19 @@ var formatTypes = {
   "x": function(x) { return Math.round(x).toString(16); }
 };
 
-function identity$2(x) {
+function identity$3(x) {
   return x;
 }
 
-var map = Array.prototype.map,
+var map$3 = Array.prototype.map,
     prefixes = ["y","z","a","f","p","n","µ","m","","k","M","G","T","P","E","Z","Y"];
 
 function formatLocale$1(locale) {
-  var group = locale.grouping === undefined || locale.thousands === undefined ? identity$2 : formatGroup(map.call(locale.grouping, Number), locale.thousands + ""),
+  var group = locale.grouping === undefined || locale.thousands === undefined ? identity$3 : formatGroup(map$3.call(locale.grouping, Number), locale.thousands + ""),
       currencyPrefix = locale.currency === undefined ? "" : locale.currency[0] + "",
       currencySuffix = locale.currency === undefined ? "" : locale.currency[1] + "",
       decimal = locale.decimal === undefined ? "." : locale.decimal + "",
-      numerals = locale.numerals === undefined ? identity$2 : formatNumerals(map.call(locale.numerals, String)),
+      numerals = locale.numerals === undefined ? identity$3 : formatNumerals(map$3.call(locale.numerals, String)),
       percent = locale.percent === undefined ? "%" : locale.percent + "",
       minus = locale.minus === undefined ? "-" : locale.minus + "",
       nan = locale.nan === undefined ? "NaN" : locale.nan + "";
@@ -12781,7 +10291,7 @@ function formatLocale(locale) {
     "W": formatWeekNumberMonday,
     "x": null,
     "X": null,
-    "y": formatYear,
+    "y": formatYear$1,
     "Y": formatFullYear,
     "Z": formatZone,
     "%": formatLiteralPercent
@@ -13088,7 +10598,7 @@ var pads = {"-": "", "_": " ", "0": "0"},
     percentRe = /^%/,
     requoteRe = /[\\^$*+?|[\]().{}]/g;
 
-function pad(value, fill, width) {
+function pad$1(value, fill, width) {
   var sign = value < 0 ? "-" : "",
       string = (sign ? -value : value) + "",
       length = string.length;
@@ -13208,23 +10718,23 @@ function parseUnixTimestampSeconds(d, string, i) {
 }
 
 function formatDayOfMonth(d, p) {
-  return pad(d.getDate(), p, 2);
+  return pad$1(d.getDate(), p, 2);
 }
 
 function formatHour24(d, p) {
-  return pad(d.getHours(), p, 2);
+  return pad$1(d.getHours(), p, 2);
 }
 
 function formatHour12(d, p) {
-  return pad(d.getHours() % 12 || 12, p, 2);
+  return pad$1(d.getHours() % 12 || 12, p, 2);
 }
 
 function formatDayOfYear(d, p) {
-  return pad(1 + day.count(year$1(d), d), p, 3);
+  return pad$1(1 + day.count(year$1(d), d), p, 3);
 }
 
 function formatMilliseconds(d, p) {
-  return pad(d.getMilliseconds(), p, 3);
+  return pad$1(d.getMilliseconds(), p, 3);
 }
 
 function formatMicroseconds(d, p) {
@@ -13232,15 +10742,15 @@ function formatMicroseconds(d, p) {
 }
 
 function formatMonthNumber(d, p) {
-  return pad(d.getMonth() + 1, p, 2);
+  return pad$1(d.getMonth() + 1, p, 2);
 }
 
 function formatMinutes(d, p) {
-  return pad(d.getMinutes(), p, 2);
+  return pad$1(d.getMinutes(), p, 2);
 }
 
 function formatSeconds(d, p) {
-  return pad(d.getSeconds(), p, 2);
+  return pad$1(d.getSeconds(), p, 2);
 }
 
 function formatWeekdayNumberMonday(d) {
@@ -13249,7 +10759,7 @@ function formatWeekdayNumberMonday(d) {
 }
 
 function formatWeekNumberSunday(d, p) {
-  return pad(sunday$1.count(year$1(d) - 1, d), p, 2);
+  return pad$1(sunday$1.count(year$1(d) - 1, d), p, 2);
 }
 
 function dISO(d) {
@@ -13259,7 +10769,7 @@ function dISO(d) {
 
 function formatWeekNumberISO(d, p) {
   d = dISO(d);
-  return pad(thursday$1.count(year$1(d), d) + (year$1(d).getDay() === 4), p, 2);
+  return pad$1(thursday$1.count(year$1(d), d) + (year$1(d).getDay() === 4), p, 2);
 }
 
 function formatWeekdayNumberSunday(d) {
@@ -13267,53 +10777,53 @@ function formatWeekdayNumberSunday(d) {
 }
 
 function formatWeekNumberMonday(d, p) {
-  return pad(monday$1.count(year$1(d) - 1, d), p, 2);
+  return pad$1(monday$1.count(year$1(d) - 1, d), p, 2);
 }
 
-function formatYear(d, p) {
-  return pad(d.getFullYear() % 100, p, 2);
+function formatYear$1(d, p) {
+  return pad$1(d.getFullYear() % 100, p, 2);
 }
 
 function formatYearISO(d, p) {
   d = dISO(d);
-  return pad(d.getFullYear() % 100, p, 2);
+  return pad$1(d.getFullYear() % 100, p, 2);
 }
 
 function formatFullYear(d, p) {
-  return pad(d.getFullYear() % 10000, p, 4);
+  return pad$1(d.getFullYear() % 10000, p, 4);
 }
 
 function formatFullYearISO(d, p) {
   var day = d.getDay();
   d = (day >= 4 || day === 0) ? thursday$1(d) : thursday$1.ceil(d);
-  return pad(d.getFullYear() % 10000, p, 4);
+  return pad$1(d.getFullYear() % 10000, p, 4);
 }
 
 function formatZone(d) {
   var z = d.getTimezoneOffset();
   return (z > 0 ? "-" : (z *= -1, "+"))
-      + pad(z / 60 | 0, "0", 2)
-      + pad(z % 60, "0", 2);
+      + pad$1(z / 60 | 0, "0", 2)
+      + pad$1(z % 60, "0", 2);
 }
 
 function formatUTCDayOfMonth(d, p) {
-  return pad(d.getUTCDate(), p, 2);
+  return pad$1(d.getUTCDate(), p, 2);
 }
 
 function formatUTCHour24(d, p) {
-  return pad(d.getUTCHours(), p, 2);
+  return pad$1(d.getUTCHours(), p, 2);
 }
 
 function formatUTCHour12(d, p) {
-  return pad(d.getUTCHours() % 12 || 12, p, 2);
+  return pad$1(d.getUTCHours() % 12 || 12, p, 2);
 }
 
 function formatUTCDayOfYear(d, p) {
-  return pad(1 + utcDay$1.count(utcYear$1(d), d), p, 3);
+  return pad$1(1 + utcDay$1.count(utcYear$1(d), d), p, 3);
 }
 
 function formatUTCMilliseconds(d, p) {
-  return pad(d.getUTCMilliseconds(), p, 3);
+  return pad$1(d.getUTCMilliseconds(), p, 3);
 }
 
 function formatUTCMicroseconds(d, p) {
@@ -13321,15 +10831,15 @@ function formatUTCMicroseconds(d, p) {
 }
 
 function formatUTCMonthNumber(d, p) {
-  return pad(d.getUTCMonth() + 1, p, 2);
+  return pad$1(d.getUTCMonth() + 1, p, 2);
 }
 
 function formatUTCMinutes(d, p) {
-  return pad(d.getUTCMinutes(), p, 2);
+  return pad$1(d.getUTCMinutes(), p, 2);
 }
 
 function formatUTCSeconds(d, p) {
-  return pad(d.getUTCSeconds(), p, 2);
+  return pad$1(d.getUTCSeconds(), p, 2);
 }
 
 function formatUTCWeekdayNumberMonday(d) {
@@ -13338,7 +10848,7 @@ function formatUTCWeekdayNumberMonday(d) {
 }
 
 function formatUTCWeekNumberSunday(d, p) {
-  return pad(utcSunday$1.count(utcYear$1(d) - 1, d), p, 2);
+  return pad$1(utcSunday$1.count(utcYear$1(d) - 1, d), p, 2);
 }
 
 function UTCdISO(d) {
@@ -13348,7 +10858,7 @@ function UTCdISO(d) {
 
 function formatUTCWeekNumberISO(d, p) {
   d = UTCdISO(d);
-  return pad(utcThursday$1.count(utcYear$1(d), d) + (utcYear$1(d).getUTCDay() === 4), p, 2);
+  return pad$1(utcThursday$1.count(utcYear$1(d), d) + (utcYear$1(d).getUTCDay() === 4), p, 2);
 }
 
 function formatUTCWeekdayNumberSunday(d) {
@@ -13356,26 +10866,26 @@ function formatUTCWeekdayNumberSunday(d) {
 }
 
 function formatUTCWeekNumberMonday(d, p) {
-  return pad(utcMonday$1.count(utcYear$1(d) - 1, d), p, 2);
+  return pad$1(utcMonday$1.count(utcYear$1(d) - 1, d), p, 2);
 }
 
 function formatUTCYear(d, p) {
-  return pad(d.getUTCFullYear() % 100, p, 2);
+  return pad$1(d.getUTCFullYear() % 100, p, 2);
 }
 
 function formatUTCYearISO(d, p) {
   d = UTCdISO(d);
-  return pad(d.getUTCFullYear() % 100, p, 2);
+  return pad$1(d.getUTCFullYear() % 100, p, 2);
 }
 
 function formatUTCFullYear(d, p) {
-  return pad(d.getUTCFullYear() % 10000, p, 4);
+  return pad$1(d.getUTCFullYear() % 10000, p, 4);
 }
 
 function formatUTCFullYearISO(d, p) {
   var day = d.getUTCDay();
   d = (day >= 4 || day === 0) ? utcThursday$1(d) : utcThursday$1.ceil(d);
-  return pad(d.getUTCFullYear() % 10000, p, 4);
+  return pad$1(d.getUTCFullYear() % 10000, p, 4);
 }
 
 function formatUTCZone() {
@@ -14358,7 +11868,7 @@ Path.prototype = path.prototype = {
   }
 };
 
-function constant$2(x) {
+function constant$3(x) {
   return function constant() {
     return x;
   };
@@ -14460,7 +11970,7 @@ function cornerTangents(x0, y0, x1, y1, r1, rc, cw) {
 function arc() {
   var innerRadius = arcInnerRadius,
       outerRadius = arcOuterRadius,
-      cornerRadius = constant$2(0),
+      cornerRadius = constant$3(0),
       padRadius = null,
       startAngle = arcStartAngle,
       endAngle = arcEndAngle,
@@ -14609,31 +12119,31 @@ function arc() {
   };
 
   arc.innerRadius = function(_) {
-    return arguments.length ? (innerRadius = typeof _ === "function" ? _ : constant$2(+_), arc) : innerRadius;
+    return arguments.length ? (innerRadius = typeof _ === "function" ? _ : constant$3(+_), arc) : innerRadius;
   };
 
   arc.outerRadius = function(_) {
-    return arguments.length ? (outerRadius = typeof _ === "function" ? _ : constant$2(+_), arc) : outerRadius;
+    return arguments.length ? (outerRadius = typeof _ === "function" ? _ : constant$3(+_), arc) : outerRadius;
   };
 
   arc.cornerRadius = function(_) {
-    return arguments.length ? (cornerRadius = typeof _ === "function" ? _ : constant$2(+_), arc) : cornerRadius;
+    return arguments.length ? (cornerRadius = typeof _ === "function" ? _ : constant$3(+_), arc) : cornerRadius;
   };
 
   arc.padRadius = function(_) {
-    return arguments.length ? (padRadius = _ == null ? null : typeof _ === "function" ? _ : constant$2(+_), arc) : padRadius;
+    return arguments.length ? (padRadius = _ == null ? null : typeof _ === "function" ? _ : constant$3(+_), arc) : padRadius;
   };
 
   arc.startAngle = function(_) {
-    return arguments.length ? (startAngle = typeof _ === "function" ? _ : constant$2(+_), arc) : startAngle;
+    return arguments.length ? (startAngle = typeof _ === "function" ? _ : constant$3(+_), arc) : startAngle;
   };
 
   arc.endAngle = function(_) {
-    return arguments.length ? (endAngle = typeof _ === "function" ? _ : constant$2(+_), arc) : endAngle;
+    return arguments.length ? (endAngle = typeof _ === "function" ? _ : constant$3(+_), arc) : endAngle;
   };
 
   arc.padAngle = function(_) {
-    return arguments.length ? (padAngle = typeof _ === "function" ? _ : constant$2(+_), arc) : padAngle;
+    return arguments.length ? (padAngle = typeof _ === "function" ? _ : constant$3(+_), arc) : padAngle;
   };
 
   arc.context = function(_) {
@@ -14686,7 +12196,7 @@ function y(p) {
 function line() {
   var x$1 = x,
       y$1 = y,
-      defined = constant$2(true),
+      defined = constant$3(true),
       context = null,
       curve = curveLinear,
       output = null;
@@ -14712,15 +12222,15 @@ function line() {
   }
 
   line.x = function(_) {
-    return arguments.length ? (x$1 = typeof _ === "function" ? _ : constant$2(+_), line) : x$1;
+    return arguments.length ? (x$1 = typeof _ === "function" ? _ : constant$3(+_), line) : x$1;
   };
 
   line.y = function(_) {
-    return arguments.length ? (y$1 = typeof _ === "function" ? _ : constant$2(+_), line) : y$1;
+    return arguments.length ? (y$1 = typeof _ === "function" ? _ : constant$3(+_), line) : y$1;
   };
 
   line.defined = function(_) {
-    return arguments.length ? (defined = typeof _ === "function" ? _ : constant$2(!!_), line) : defined;
+    return arguments.length ? (defined = typeof _ === "function" ? _ : constant$3(!!_), line) : defined;
   };
 
   line.curve = function(_) {
@@ -14736,7 +12246,7 @@ function line() {
 
 var slice$1 = Array.prototype.slice;
 
-function noop$3() {}
+function noop$4() {}
 
 function point$3(that, x, y) {
   that._context.bezierCurveTo(
@@ -14795,8 +12305,8 @@ function BasisClosed(context) {
 }
 
 BasisClosed.prototype = {
-  areaStart: noop$3,
-  areaEnd: noop$3,
+  areaStart: noop$4,
+  areaEnd: noop$4,
   lineStart: function() {
     this._x0 = this._x1 = this._x2 = this._x3 = this._x4 =
     this._y0 = this._y1 = this._y2 = this._y3 = this._y4 = NaN;
@@ -15001,8 +12511,8 @@ function CardinalClosed(context, tension) {
 }
 
 CardinalClosed.prototype = {
-  areaStart: noop$3,
-  areaEnd: noop$3,
+  areaStart: noop$4,
+  areaEnd: noop$4,
   lineStart: function() {
     this._x0 = this._x1 = this._x2 = this._x3 = this._x4 = this._x5 =
     this._y0 = this._y1 = this._y2 = this._y3 = this._y4 = this._y5 = NaN;
@@ -15194,8 +12704,8 @@ function CatmullRomClosed(context, alpha) {
 }
 
 CatmullRomClosed.prototype = {
-  areaStart: noop$3,
-  areaEnd: noop$3,
+  areaStart: noop$4,
+  areaEnd: noop$4,
   lineStart: function() {
     this._x0 = this._x1 = this._x2 = this._x3 = this._x4 = this._x5 =
     this._y0 = this._y1 = this._y2 = this._y3 = this._y4 = this._y5 = NaN;
@@ -15324,8 +12834,8 @@ function LinearClosed(context) {
 }
 
 LinearClosed.prototype = {
-  areaStart: noop$3,
-  areaEnd: noop$3,
+  areaStart: noop$4,
+  areaEnd: noop$4,
   lineStart: function() {
     this._point = 0;
   },
@@ -15589,7 +13099,7 @@ function stackValue(d, key) {
 }
 
 function stack() {
-  var keys = constant$2([]),
+  var keys = constant$3([]),
       order = stackOrderNone,
       offset = stackOffsetNone,
       value = stackValue;
@@ -15619,15 +13129,15 @@ function stack() {
   }
 
   stack.keys = function(_) {
-    return arguments.length ? (keys = typeof _ === "function" ? _ : constant$2(slice$1.call(_)), stack) : keys;
+    return arguments.length ? (keys = typeof _ === "function" ? _ : constant$3(slice$1.call(_)), stack) : keys;
   };
 
   stack.value = function(_) {
-    return arguments.length ? (value = typeof _ === "function" ? _ : constant$2(+_), stack) : value;
+    return arguments.length ? (value = typeof _ === "function" ? _ : constant$3(+_), stack) : value;
   };
 
   stack.order = function(_) {
-    return arguments.length ? (order = _ == null ? stackOrderNone : typeof _ === "function" ? _ : constant$2(slice$1.call(_)), stack) : order;
+    return arguments.length ? (order = _ == null ? stackOrderNone : typeof _ === "function" ? _ : constant$3(slice$1.call(_)), stack) : order;
   };
 
   stack.offset = function(_) {
@@ -16325,7 +13835,7 @@ var isPrototype = _isPrototype,
 var objectProto$3 = Object.prototype;
 
 /** Used to check objects for own properties. */
-var hasOwnProperty$3 = objectProto$3.hasOwnProperty;
+var hasOwnProperty$5 = objectProto$3.hasOwnProperty;
 
 /**
  * The base implementation of `_.keys` which doesn't treat sparse arrays as dense.
@@ -16340,7 +13850,7 @@ function baseKeys$1(object) {
   }
   var result = [];
   for (var key in Object(object)) {
-    if (hasOwnProperty$3.call(object, key) && key != 'constructor') {
+    if (hasOwnProperty$5.call(object, key) && key != 'constructor') {
       result.push(key);
     }
   }
@@ -16413,7 +13923,7 @@ var COMPARE_PARTIAL_FLAG$3 = 1;
 var objectProto$2 = Object.prototype;
 
 /** Used to check objects for own properties. */
-var hasOwnProperty$2 = objectProto$2.hasOwnProperty;
+var hasOwnProperty$4 = objectProto$2.hasOwnProperty;
 
 /**
  * A specialized version of `baseIsEqualDeep` for objects with support for
@@ -16441,7 +13951,7 @@ function equalObjects$1(object, other, bitmask, customizer, equalFunc, stack) {
   var index = objLength;
   while (index--) {
     var key = objProps[index];
-    if (!(isPartial ? key in other : hasOwnProperty$2.call(other, key))) {
+    if (!(isPartial ? key in other : hasOwnProperty$4.call(other, key))) {
       return false;
     }
   }
@@ -16607,7 +14117,7 @@ var argsTag$1 = '[object Arguments]',
 var objectProto$1 = Object.prototype;
 
 /** Used to check objects for own properties. */
-var hasOwnProperty$1 = objectProto$1.hasOwnProperty;
+var hasOwnProperty$3 = objectProto$1.hasOwnProperty;
 
 /**
  * A specialized version of `baseIsEqual` for arrays and objects which performs
@@ -16650,8 +14160,8 @@ function baseIsEqualDeep$1(object, other, bitmask, customizer, equalFunc, stack)
       : equalByTag(object, other, objTag, bitmask, customizer, equalFunc, stack);
   }
   if (!(bitmask & COMPARE_PARTIAL_FLAG$2)) {
-    var objIsWrapped = objIsObj && hasOwnProperty$1.call(object, '__wrapped__'),
-        othIsWrapped = othIsObj && hasOwnProperty$1.call(other, '__wrapped__');
+    var objIsWrapped = objIsObj && hasOwnProperty$3.call(object, '__wrapped__'),
+        othIsWrapped = othIsObj && hasOwnProperty$3.call(other, '__wrapped__');
 
     if (objIsWrapped || othIsWrapped) {
       var objUnwrapped = objIsWrapped ? object.value() : object,
@@ -18161,7 +15671,7 @@ var Container = function Container(_ref) {
   });
 };
 
-var noop$2 = (function () {});
+var noop$3 = (function () {});
 
 var ResponsiveWrapper = function ResponsiveWrapper(_ref) {
   var children = _ref.children;
@@ -20421,7 +17931,7 @@ var _getAllKeysIn = getAllKeysIn$2;
 var objectProto = Object.prototype;
 
 /** Used to check objects for own properties. */
-var hasOwnProperty = objectProto.hasOwnProperty;
+var hasOwnProperty$2 = objectProto.hasOwnProperty;
 
 /**
  * Initializes an array clone.
@@ -20435,7 +17945,7 @@ function initCloneArray$1(array) {
       result = new array.constructor(length);
 
   // Add properties assigned by `RegExp#exec`.
-  if (length && typeof array[0] == 'string' && hasOwnProperty.call(array, 'index')) {
+  if (length && typeof array[0] == 'string' && hasOwnProperty$2.call(array, 'index')) {
     result.index = array.index;
     result.input = array.input;
   }
@@ -21353,17 +18863,17 @@ var baseProperty = _baseProperty,
  * _.map(_.sortBy(objects, _.property(['a', 'b'])), 'a.b');
  * // => [1, 2]
  */
-function property$1(path) {
+function property$2(path) {
   return isKey(path) ? baseProperty(toKey(path)) : basePropertyDeep(path);
 }
 
-var property_1 = property$1;
+var property_1 = property$2;
 
 var baseMatches = _baseMatches,
     baseMatchesProperty = _baseMatchesProperty,
-    identity$1 = identity_1,
+    identity$2 = identity_1,
     isArray$2 = isArray_1,
-    property = property_1;
+    property$1 = property_1;
 
 /**
  * The base implementation of `_.iteratee`.
@@ -21379,14 +18889,14 @@ function baseIteratee$4(value) {
     return value;
   }
   if (value == null) {
-    return identity$1;
+    return identity$2;
   }
   if (typeof value == 'object') {
     return isArray$2(value)
       ? baseMatchesProperty(value[0], value[1])
       : baseMatches(value);
   }
-  return property(value);
+  return property$1(value);
 }
 
 var _baseIteratee = baseIteratee$4;
@@ -21437,12 +18947,12 @@ var arrayFilter = _arrayFilter,
  * _.filter(users, _.overSome([{ 'age': 36 }, ['age', 40]]));
  * // => objects for ['fred', 'barney']
  */
-function filter(collection, predicate) {
+function filter$1(collection, predicate) {
   var func = isArray$1(collection) ? arrayFilter : baseFilter;
   return func(collection, baseIteratee$3(predicate));
 }
 
-var filter_1 = filter;
+var filter_1 = filter$1;
 
 function _defineProperty$5(obj, key, value) {
   if (key in obj) {
@@ -22913,14 +20423,14 @@ var LegendPropShape = {
  * // => [undefined, undefined]
  */
 
-function noop$1() {
+function noop$2() {
   // No operation performed.
 }
 
-var noop_1 = noop$1;
+var noop_1 = noop$2;
 
 var Set$1 = _Set,
-    noop = noop_1,
+    noop$1 = noop_1,
     setToArray$1 = _setToArray;
 
 /** Used as references for various `Number` constants. */
@@ -22933,7 +20443,7 @@ var INFINITY = 1 / 0;
  * @param {Array} values The values to add to the set.
  * @returns {Object} Returns the new set.
  */
-var createSet$1 = !(Set$1 && (1 / setToArray$1(new Set$1([,-0]))[1]) == INFINITY) ? noop : function(values) {
+var createSet$1 = !(Set$1 && (1 / setToArray$1(new Set$1([,-0]))[1]) == INFINITY) ? noop$1 : function(values) {
   return new Set$1(values);
 };
 
@@ -23210,7 +20720,7 @@ var arrayMap = _arrayMap,
     baseSortBy = _baseSortBy,
     baseUnary = _baseUnary,
     compareMultiple = _compareMultiple,
-    identity = identity_1,
+    identity$1 = identity_1,
     isArray = isArray_1;
 
 /**
@@ -23233,7 +20743,7 @@ function baseOrderBy$1(collection, iteratees, orders) {
       return iteratee;
     });
   } else {
-    iteratees = [identity];
+    iteratees = [identity$1];
   }
 
   var index = -1;
@@ -23732,7 +21242,7 @@ var performanceNow = {exports: {}};
 
 }).call(commonjsGlobal);
 
-var now = performanceNow.exports
+var now$1 = performanceNow.exports
   , root = typeof window === 'undefined' ? commonjsGlobal : window
   , vendors = ['moz', 'webkit']
   , suffix = 'AnimationFrame'
@@ -23749,20 +21259,20 @@ for(var i = 0; !raf && i < vendors.length; i++) {
 if(!raf || !caf) {
   var last = 0
     , id = 0
-    , queue = []
+    , queue$2 = []
     , frameDuration = 1000 / 60;
 
   raf = function(callback) {
-    if(queue.length === 0) {
-      var _now = now()
+    if(queue$2.length === 0) {
+      var _now = now$1()
         , next = Math.max(0, frameDuration - (_now - last));
       last = next + _now;
       setTimeout(function() {
-        var cp = queue.slice(0);
+        var cp = queue$2.slice(0);
         // Clear queue here to prevent
         // callbacks from appending listeners
         // to the current frame's queue
-        queue.length = 0;
+        queue$2.length = 0;
         for(var i = 0; i < cp.length; i++) {
           if(!cp[i].cancelled) {
             try{
@@ -23774,7 +21284,7 @@ if(!raf || !caf) {
         }
       }, Math.round(next));
     }
-    queue.push({
+    queue$2.push({
       handle: ++id,
       callback: callback,
       cancelled: false
@@ -23783,9 +21293,9 @@ if(!raf || !caf) {
   };
 
   caf = function(handle) {
-    for(var i = 0; i < queue.length; i++) {
-      if(queue[i].handle === handle) {
-        queue[i].cancelled = true;
+    for(var i = 0; i < queue$2.length; i++) {
+      if(queue$2[i].handle === handle) {
+        queue$2[i].cancelled = true;
       }
     }
   };
@@ -25827,7 +23337,7 @@ var flatten = function flatten(array) {
   return (_ref = []).concat.apply(_ref, _toConsumableArray(array));
 };
 
-var range$1 = function range(start, end) {
+var range$3 = function range(start, end) {
   return Array.from(' '.repeat(end - start), function (_, index) {
     return start + index;
   });
@@ -25868,7 +23378,7 @@ var generateVerticalGroupedBars = function generateVerticalGroupedBars(_ref2, ba
 
   var cleanedData = data.map(filterNullValues);
   var bars = flatten(keys.map(function (key, i) {
-    return range$1(0, xScale.domain().length).map(function (index) {
+    return range$3(0, xScale.domain().length).map(function (index) {
       var _xScale;
 
       var _coerceValue = coerceValue(data[index][key]),
@@ -25931,7 +23441,7 @@ var generateHorizontalGroupedBars = function generateHorizontalGroupedBars(_ref3
 
   var cleanedData = data.map(filterNullValues);
   var bars = flatten(keys.map(function (key, i) {
-    return range$1(0, yScale.domain().length).map(function (index) {
+    return range$3(0, yScale.domain().length).map(function (index) {
       var _yScale3;
 
       var _coerceValue3 = coerceValue(data[index][key]),
@@ -27343,7 +24853,7 @@ function ascendingComparator(f) {
 
 bisector(ascending);
 
-function range(start, stop, step) {
+function range$2(start, stop, step) {
   start = +start, stop = +stop, step = (n = arguments.length) < 2 ? (stop = start, start = 0, 1) : n < 3 ? 1 : +step;
 
   var i = -1,
@@ -27382,7 +24892,7 @@ function chord() {
   function chord(matrix) {
     var n = matrix.length,
         groupSums = [],
-        groupIndex = range(n),
+        groupIndex = range$2(n),
         subgroupIndex = [],
         chords = [],
         groups = chords.groups = new Array(n),
@@ -27400,7 +24910,7 @@ function chord() {
         x += matrix[i][j];
       }
       groupSums.push(x);
-      subgroupIndex.push(range(n));
+      subgroupIndex.push(range$2(n));
       k += x;
     }
 
@@ -27485,7 +24995,7 @@ function chord() {
 
 var slice = Array.prototype.slice;
 
-function constant$1(x) {
+function constant$2(x) {
   return function() {
     return x;
   };
@@ -27548,15 +25058,15 @@ function ribbon() {
   }
 
   ribbon.radius = function(_) {
-    return arguments.length ? (radius = typeof _ === "function" ? _ : constant$1(+_), ribbon) : radius;
+    return arguments.length ? (radius = typeof _ === "function" ? _ : constant$2(+_), ribbon) : radius;
   };
 
   ribbon.startAngle = function(_) {
-    return arguments.length ? (startAngle = typeof _ === "function" ? _ : constant$1(+_), ribbon) : startAngle;
+    return arguments.length ? (startAngle = typeof _ === "function" ? _ : constant$2(+_), ribbon) : startAngle;
   };
 
   ribbon.endAngle = function(_) {
-    return arguments.length ? (endAngle = typeof _ === "function" ? _ : constant$1(+_), ribbon) : endAngle;
+    return arguments.length ? (endAngle = typeof _ === "function" ? _ : constant$2(+_), ribbon) : endAngle;
   };
 
   ribbon.source = function(_) {
@@ -29002,7 +26512,7 @@ function center(node) {
       : 0;
 }
 
-function constant(x) {
+function constant$1(x) {
   return function() {
     return x;
   };
@@ -29086,11 +26596,11 @@ function Sankey$1() {
   };
 
   sankey.nodeId = function(_) {
-    return arguments.length ? (id = typeof _ === "function" ? _ : constant(_), sankey) : id;
+    return arguments.length ? (id = typeof _ === "function" ? _ : constant$1(_), sankey) : id;
   };
 
   sankey.nodeAlign = function(_) {
-    return arguments.length ? (align = typeof _ === "function" ? _ : constant(_), sankey) : align;
+    return arguments.length ? (align = typeof _ === "function" ? _ : constant$1(_), sankey) : align;
   };
 
   sankey.nodeSort = function(_) {
@@ -29106,11 +26616,11 @@ function Sankey$1() {
   };
 
   sankey.nodes = function(_) {
-    return arguments.length ? (nodes = typeof _ === "function" ? _ : constant(_), sankey) : nodes;
+    return arguments.length ? (nodes = typeof _ === "function" ? _ : constant$1(_), sankey) : nodes;
   };
 
   sankey.links = function(_) {
-    return arguments.length ? (links = typeof _ === "function" ? _ : constant(_), sankey) : links;
+    return arguments.length ? (links = typeof _ === "function" ? _ : constant$1(_), sankey) : links;
   };
 
   sankey.linkSort = function(_) {
@@ -29536,7 +27046,7 @@ var SankeyDefaultProps = {
     modifiers: [['darker', 0.8]]
   },
   isInteractive: true,
-  onClick: noop$2,
+  onClick: noop$3,
   legends: [],
   layers: ['links', 'nodes', 'labels', 'legends'],
   role: 'img',
@@ -30366,6 +27876,2496 @@ var ResponsiveSankey = function ResponsiveSankey(props) {
 
 var Nivo = { ResponsiveBar, ResponsiveChord, ResponsiveSankey };
 
+function dispatch(node, type, detail) {
+  detail = detail || {};
+  var document = node.ownerDocument, event = document.defaultView.CustomEvent;
+  if (typeof event === "function") {
+    event = new event(type, {detail: detail});
+  } else {
+    event = document.createEvent("Event");
+    event.initEvent(type, false, false);
+    event.detail = detail;
+  }
+  node.dispatchEvent(event);
+}
+
+// TODO https://twitter.com/mbostock/status/702737065121742848
+function isarray(value) {
+  return Array.isArray(value)
+      || value instanceof Int8Array
+      || value instanceof Int16Array
+      || value instanceof Int32Array
+      || value instanceof Uint8Array
+      || value instanceof Uint8ClampedArray
+      || value instanceof Uint16Array
+      || value instanceof Uint32Array
+      || value instanceof Float32Array
+      || value instanceof Float64Array;
+}
+
+// Non-integer keys in arrays, e.g. [1, 2, 0.5: "value"].
+function isindex(key) {
+  return key === (key | 0) + "";
+}
+
+function inspectName(name) {
+  const n = document.createElement("span");
+  n.className = "observablehq--cellname";
+  n.textContent = `${name} = `;
+  return n;
+}
+
+const symbolToString = Symbol.prototype.toString;
+
+// Symbols do not coerce to strings; they must be explicitly converted.
+function formatSymbol(symbol) {
+  return symbolToString.call(symbol);
+}
+
+const {getOwnPropertySymbols, prototype: {hasOwnProperty: hasOwnProperty$1}} = Object;
+const {toStringTag} = Symbol;
+
+const FORBIDDEN = {};
+
+const symbolsof = getOwnPropertySymbols;
+
+function isown(object, key) {
+  return hasOwnProperty$1.call(object, key);
+}
+
+function tagof(object) {
+  return object[toStringTag]
+      || (object.constructor && object.constructor.name)
+      || "Object";
+}
+
+function valueof$1(object, key) {
+  try {
+    const value = object[key];
+    if (value) value.constructor; // Test for SecurityError.
+    return value;
+  } catch (ignore) {
+    return FORBIDDEN;
+  }
+}
+
+const SYMBOLS = [
+  { symbol: "@@__IMMUTABLE_INDEXED__@@", name: "Indexed", modifier: true },
+  { symbol: "@@__IMMUTABLE_KEYED__@@", name: "Keyed", modifier: true },
+  { symbol: "@@__IMMUTABLE_LIST__@@", name: "List", arrayish: true },
+  { symbol: "@@__IMMUTABLE_MAP__@@", name: "Map" },
+  {
+    symbol: "@@__IMMUTABLE_ORDERED__@@",
+    name: "Ordered",
+    modifier: true,
+    prefix: true
+  },
+  { symbol: "@@__IMMUTABLE_RECORD__@@", name: "Record" },
+  {
+    symbol: "@@__IMMUTABLE_SET__@@",
+    name: "Set",
+    arrayish: true,
+    setish: true
+  },
+  { symbol: "@@__IMMUTABLE_STACK__@@", name: "Stack", arrayish: true }
+];
+
+function immutableName(obj) {
+  try {
+    let symbols = SYMBOLS.filter(({ symbol }) => obj[symbol] === true);
+    if (!symbols.length) return;
+
+    const name = symbols.find(s => !s.modifier);
+    const prefix =
+      name.name === "Map" && symbols.find(s => s.modifier && s.prefix);
+
+    const arrayish = symbols.some(s => s.arrayish);
+    const setish = symbols.some(s => s.setish);
+
+    return {
+      name: `${prefix ? prefix.name : ""}${name.name}`,
+      symbols,
+      arrayish: arrayish && !setish,
+      setish
+    };
+  } catch (e) {
+    return null;
+  }
+}
+
+const {getPrototypeOf, getOwnPropertyDescriptors} = Object;
+const objectPrototype = getPrototypeOf({});
+
+function inspectExpanded(object, _, name, proto) {
+  let arrayish = isarray(object);
+  let tag, fields, next, n;
+
+  if (object instanceof Map) {
+    if (object instanceof object.constructor) {
+      tag = `Map(${object.size})`;
+      fields = iterateMap$1;
+    } else { // avoid incompatible receiver error for prototype
+      tag = "Map()";
+      fields = iterateObject$1;
+    }
+  } else if (object instanceof Set) {
+    if (object instanceof object.constructor) {
+      tag = `Set(${object.size})`;
+      fields = iterateSet$1;
+    } else { // avoid incompatible receiver error for prototype
+      tag = "Set()";
+      fields = iterateObject$1;
+    }
+  } else if (arrayish) {
+    tag = `${object.constructor.name}(${object.length})`;
+    fields = iterateArray$1;
+  } else if ((n = immutableName(object))) {
+    tag = `Immutable.${n.name}${n.name === "Record" ? "" : `(${object.size})`}`;
+    arrayish = n.arrayish;
+    fields = n.arrayish
+      ? iterateImArray$1
+      : n.setish
+      ? iterateImSet$1
+      : iterateImObject$1;
+  } else if (proto) {
+    tag = tagof(object);
+    fields = iterateProto;
+  } else {
+    tag = tagof(object);
+    fields = iterateObject$1;
+  }
+
+  const span = document.createElement("span");
+  span.className = "observablehq--expanded";
+  if (name) {
+    span.appendChild(inspectName(name));
+  }
+  const a = span.appendChild(document.createElement("a"));
+  a.innerHTML = `<svg width=8 height=8 class='observablehq--caret'>
+    <path d='M4 7L0 1h8z' fill='currentColor' />
+  </svg>`;
+  a.appendChild(document.createTextNode(`${tag}${arrayish ? " [" : " {"}`));
+  a.addEventListener("mouseup", function(event) {
+    event.stopPropagation();
+    replace(span, inspectCollapsed(object, null, name, proto));
+  });
+
+  fields = fields(object);
+  for (let i = 0; !(next = fields.next()).done && i < 20; ++i) {
+    span.appendChild(next.value);
+  }
+
+  if (!next.done) {
+    const a = span.appendChild(document.createElement("a"));
+    a.className = "observablehq--field";
+    a.style.display = "block";
+    a.appendChild(document.createTextNode(`  … more`));
+    a.addEventListener("mouseup", function(event) {
+      event.stopPropagation();
+      span.insertBefore(next.value, span.lastChild.previousSibling);
+      for (let i = 0; !(next = fields.next()).done && i < 19; ++i) {
+        span.insertBefore(next.value, span.lastChild.previousSibling);
+      }
+      if (next.done) span.removeChild(span.lastChild.previousSibling);
+      dispatch(span, "load");
+    });
+  }
+
+  span.appendChild(document.createTextNode(arrayish ? "]" : "}"));
+
+  return span;
+}
+
+function* iterateMap$1(map) {
+  for (const [key, value] of map) {
+    yield formatMapField$1(key, value);
+  }
+  yield* iterateObject$1(map);
+}
+
+function* iterateSet$1(set) {
+  for (const value of set) {
+    yield formatSetField(value);
+  }
+  yield* iterateObject$1(set);
+}
+
+function* iterateImSet$1(set) {
+  for (const value of set) {
+    yield formatSetField(value);
+  }
+}
+
+function* iterateArray$1(array) {
+  for (let i = 0, n = array.length; i < n; ++i) {
+    if (i in array) {
+      yield formatField$1(i, valueof$1(array, i), "observablehq--index");
+    }
+  }
+  for (const key in array) {
+    if (!isindex(key) && isown(array, key)) {
+      yield formatField$1(key, valueof$1(array, key), "observablehq--key");
+    }
+  }
+  for (const symbol of symbolsof(array)) {
+    yield formatField$1(
+      formatSymbol(symbol),
+      valueof$1(array, symbol),
+      "observablehq--symbol"
+    );
+  }
+}
+
+function* iterateImArray$1(array) {
+  let i1 = 0;
+  for (const n = array.size; i1 < n; ++i1) {
+    yield formatField$1(i1, array.get(i1), true);
+  }
+}
+
+function* iterateProto(object) {
+  for (const key in getOwnPropertyDescriptors(object)) {
+    yield formatField$1(key, valueof$1(object, key), "observablehq--key");
+  }
+  for (const symbol of symbolsof(object)) {
+    yield formatField$1(
+      formatSymbol(symbol),
+      valueof$1(object, symbol),
+      "observablehq--symbol"
+    );
+  }
+
+  const proto = getPrototypeOf(object);
+  if (proto && proto !== objectPrototype) {
+    yield formatPrototype(proto);
+  }
+}
+
+function* iterateObject$1(object) {
+  for (const key in object) {
+    if (isown(object, key)) {
+      yield formatField$1(key, valueof$1(object, key), "observablehq--key");
+    }
+  }
+  for (const symbol of symbolsof(object)) {
+    yield formatField$1(
+      formatSymbol(symbol),
+      valueof$1(object, symbol),
+      "observablehq--symbol"
+    );
+  }
+
+  const proto = getPrototypeOf(object);
+  if (proto && proto !== objectPrototype) {
+    yield formatPrototype(proto);
+  }
+}
+
+function* iterateImObject$1(object) {
+  for (const [key, value] of object) {
+    yield formatField$1(key, value, "observablehq--key");
+  }
+}
+
+function formatPrototype(value) {
+  const item = document.createElement("div");
+  const span = item.appendChild(document.createElement("span"));
+  item.className = "observablehq--field";
+  span.className = "observablehq--prototype-key";
+  span.textContent = `  <prototype>`;
+  item.appendChild(document.createTextNode(": "));
+  item.appendChild(inspect(value, undefined, undefined, undefined, true));
+  return item;
+}
+
+function formatField$1(key, value, className) {
+  const item = document.createElement("div");
+  const span = item.appendChild(document.createElement("span"));
+  item.className = "observablehq--field";
+  span.className = className;
+  span.textContent = `  ${key}`;
+  item.appendChild(document.createTextNode(": "));
+  item.appendChild(inspect(value));
+  return item;
+}
+
+function formatMapField$1(key, value) {
+  const item = document.createElement("div");
+  item.className = "observablehq--field";
+  item.appendChild(document.createTextNode("  "));
+  item.appendChild(inspect(key));
+  item.appendChild(document.createTextNode(" => "));
+  item.appendChild(inspect(value));
+  return item;
+}
+
+function formatSetField(value) {
+  const item = document.createElement("div");
+  item.className = "observablehq--field";
+  item.appendChild(document.createTextNode("  "));
+  item.appendChild(inspect(value));
+  return item;
+}
+
+function hasSelection(elem) {
+  const sel = window.getSelection();
+  return (
+    sel.type === "Range" &&
+    (sel.containsNode(elem, true) ||
+      sel.anchorNode.isSelfOrDescendant(elem) ||
+      sel.focusNode.isSelfOrDescendant(elem))
+  );
+}
+
+function inspectCollapsed(object, shallow, name, proto) {
+  let arrayish = isarray(object);
+  let tag, fields, next, n;
+
+  if (object instanceof Map) {
+    if (object instanceof object.constructor) {
+      tag = `Map(${object.size})`;
+      fields = iterateMap;
+    } else { // avoid incompatible receiver error for prototype
+      tag = "Map()";
+      fields = iterateObject;
+    }
+  } else if (object instanceof Set) {
+    if (object instanceof object.constructor) {
+      tag = `Set(${object.size})`;
+      fields = iterateSet;
+    } else { // avoid incompatible receiver error for prototype
+      tag = "Set()";
+      fields = iterateObject;
+    }
+  } else if (arrayish) {
+    tag = `${object.constructor.name}(${object.length})`;
+    fields = iterateArray;
+  } else if ((n = immutableName(object))) {
+    tag = `Immutable.${n.name}${n.name === 'Record' ? '' : `(${object.size})`}`;
+    arrayish = n.arrayish;
+    fields = n.arrayish ? iterateImArray : n.setish ? iterateImSet : iterateImObject;
+  } else {
+    tag = tagof(object);
+    fields = iterateObject;
+  }
+
+  if (shallow) {
+    const span = document.createElement("span");
+    span.className = "observablehq--shallow";
+    if (name) {
+      span.appendChild(inspectName(name));
+    }
+    span.appendChild(document.createTextNode(tag));
+    span.addEventListener("mouseup", function(event) {
+      if (hasSelection(span)) return;
+      event.stopPropagation();
+      replace(span, inspectCollapsed(object));
+    });
+    return span;
+  }
+
+  const span = document.createElement("span");
+  span.className = "observablehq--collapsed";
+  if (name) {
+    span.appendChild(inspectName(name));
+  }
+  const a = span.appendChild(document.createElement("a"));
+  a.innerHTML = `<svg width=8 height=8 class='observablehq--caret'>
+    <path d='M7 4L1 8V0z' fill='currentColor' />
+  </svg>`;
+  a.appendChild(document.createTextNode(`${tag}${arrayish ? " [" : " {"}`));
+  span.addEventListener("mouseup", function(event) {
+    if (hasSelection(span)) return;
+    event.stopPropagation();
+    replace(span, inspectExpanded(object, null, name, proto));
+  }, true);
+
+  fields = fields(object);
+  for (let i = 0; !(next = fields.next()).done && i < 20; ++i) {
+    if (i > 0) span.appendChild(document.createTextNode(", "));
+    span.appendChild(next.value);
+  }
+
+  if (!next.done) span.appendChild(document.createTextNode(", …"));
+  span.appendChild(document.createTextNode(arrayish ? "]" : "}"));
+
+  return span;
+}
+
+function* iterateMap(map) {
+  for (const [key, value] of map) {
+    yield formatMapField(key, value);
+  }
+  yield* iterateObject(map);
+}
+
+function* iterateSet(set) {
+  for (const value of set) {
+    yield inspect(value, true);
+  }
+  yield* iterateObject(set);
+}
+
+function* iterateImSet(set) {
+  for (const value of set) {
+    yield inspect(value, true);
+  }
+}
+
+function* iterateImArray(array) {
+  let i0 = -1, i1 = 0;
+  for (const n = array.size; i1 < n; ++i1) {
+    if (i1 > i0 + 1) yield formatEmpty(i1 - i0 - 1);
+    yield inspect(array.get(i1), true);
+    i0 = i1;
+  }
+  if (i1 > i0 + 1) yield formatEmpty(i1 - i0 - 1);
+}
+
+function* iterateArray(array) {
+  let i0 = -1, i1 = 0;
+  for (const n = array.length; i1 < n; ++i1) {
+    if (i1 in array) {
+      if (i1 > i0 + 1) yield formatEmpty(i1 - i0 - 1);
+      yield inspect(valueof$1(array, i1), true);
+      i0 = i1;
+    }
+  }
+  if (i1 > i0 + 1) yield formatEmpty(i1 - i0 - 1);
+  for (const key in array) {
+    if (!isindex(key) && isown(array, key)) {
+      yield formatField(key, valueof$1(array, key), "observablehq--key");
+    }
+  }
+  for (const symbol of symbolsof(array)) {
+    yield formatField(formatSymbol(symbol), valueof$1(array, symbol), "observablehq--symbol");
+  }
+}
+
+function* iterateObject(object) {
+  for (const key in object) {
+    if (isown(object, key)) {
+      yield formatField(key, valueof$1(object, key), "observablehq--key");
+    }
+  }
+  for (const symbol of symbolsof(object)) {
+    yield formatField(formatSymbol(symbol), valueof$1(object, symbol), "observablehq--symbol");
+  }
+}
+
+function* iterateImObject(object) {
+  for (const [key, value] of object) {
+    yield formatField(key, value, "observablehq--key");
+  }
+}
+
+function formatEmpty(e) {
+  const span = document.createElement("span");
+  span.className = "observablehq--empty";
+  span.textContent = e === 1 ? "empty" : `empty × ${e}`;
+  return span;
+}
+
+function formatField(key, value, className) {
+  const fragment = document.createDocumentFragment();
+  const span = fragment.appendChild(document.createElement("span"));
+  span.className = className;
+  span.textContent = key;
+  fragment.appendChild(document.createTextNode(": "));
+  fragment.appendChild(inspect(value, true));
+  return fragment;
+}
+
+function formatMapField(key, value) {
+  const fragment = document.createDocumentFragment();
+  fragment.appendChild(inspect(key, true));
+  fragment.appendChild(document.createTextNode(" => "));
+  fragment.appendChild(inspect(value, true));
+  return fragment;
+}
+
+function pad(value, width) {
+  var s = value + "", length = s.length;
+  return length < width ? new Array(width - length + 1).join(0) + s : s;
+}
+
+function isUTCMidnight(date) {
+  return date.getUTCMilliseconds() === 0
+      && date.getUTCSeconds() === 0
+      && date.getUTCMinutes() === 0
+      && date.getUTCHours() === 0;
+}
+
+function formatYear(year) {
+  return year < 0 ? "-" + pad(-year, 6)
+    : year > 9999 ? "+" + pad(year, 6)
+    : pad(year, 4);
+}
+
+function formatDate(date) {
+  return isNaN(date)
+    ? "Invalid Date"
+    : isUTCMidnight(date)
+      ? formatYear(date.getUTCFullYear()) + "-" + pad(date.getUTCMonth() + 1, 2) + "-" + pad(date.getUTCDate(), 2)
+      : formatYear(date.getFullYear()) + "-" + pad(date.getMonth() + 1, 2) + "-" + pad(date.getDate(), 2)
+        + "T" + pad(date.getHours(), 2) + ":" + pad(date.getMinutes(), 2)
+        + (date.getMilliseconds() ? ":" + pad(date.getSeconds(), 2) + "." + pad(date.getMilliseconds(), 3)
+          : date.getSeconds() ? ":" + pad(date.getSeconds(), 2)
+          : "");
+}
+
+var errorToString = Error.prototype.toString;
+
+function formatError(value) {
+  return value.stack || errorToString.call(value);
+}
+
+var regExpToString = RegExp.prototype.toString;
+
+function formatRegExp(value) {
+  return regExpToString.call(value);
+}
+
+/* eslint-disable no-control-regex */
+const NEWLINE_LIMIT = 20;
+
+function formatString(string, shallow, expanded, name) {
+  if (shallow === false) {
+    // String has fewer escapes displayed with double quotes
+    if (count$1(string, /["\n]/g) <= count$1(string, /`|\${/g)) {
+      const span = document.createElement("span");
+      if (name) span.appendChild(inspectName(name));
+      const textValue = span.appendChild(document.createElement("span"));
+      textValue.className = "observablehq--string";
+      textValue.textContent = JSON.stringify(string);
+      return span;
+    }
+    const lines = string.split("\n");
+    if (lines.length > NEWLINE_LIMIT && !expanded) {
+      const div = document.createElement("div");
+      if (name) div.appendChild(inspectName(name));
+      const textValue = div.appendChild(document.createElement("span"));
+      textValue.className = "observablehq--string";
+      textValue.textContent = "`" + templatify(lines.slice(0, NEWLINE_LIMIT).join("\n"));
+      const splitter = div.appendChild(document.createElement("span"));
+      const truncatedCount = lines.length - NEWLINE_LIMIT;
+      splitter.textContent = `Show ${truncatedCount} truncated line${truncatedCount > 1 ? "s": ""}`; splitter.className = "observablehq--string-expand";
+      splitter.addEventListener("mouseup", function (event) {
+        event.stopPropagation();
+        replace(div, inspect(string, shallow, true, name));
+      });
+      return div;
+    }
+    const span = document.createElement("span");
+    if (name) span.appendChild(inspectName(name));
+    const textValue = span.appendChild(document.createElement("span"));
+    textValue.className = `observablehq--string${expanded ? " observablehq--expanded" : ""}`;
+    textValue.textContent = "`" + templatify(string) + "`";
+    return span;
+  }
+
+  const span = document.createElement("span");
+  if (name) span.appendChild(inspectName(name));
+  const textValue = span.appendChild(document.createElement("span"));
+  textValue.className = "observablehq--string";
+  textValue.textContent = JSON.stringify(string.length > 100 ?
+    `${string.slice(0, 50)}…${string.slice(-49)}` : string);
+  return span;
+}
+
+function templatify(string) {
+  return string.replace(/[\\`\x00-\x09\x0b-\x19]|\${/g, templatifyChar);
+}
+
+function templatifyChar(char) {
+  var code = char.charCodeAt(0);
+  switch (code) {
+    case 0x8: return "\\b";
+    case 0x9: return "\\t";
+    case 0xb: return "\\v";
+    case 0xc: return "\\f";
+    case 0xd: return "\\r";
+  }
+  return code < 0x10 ? "\\x0" + code.toString(16)
+      : code < 0x20 ? "\\x" + code.toString(16)
+      : "\\" + char;
+}
+
+function count$1(string, re) {
+  var n = 0;
+  while (re.exec(string)) ++n;
+  return n;
+}
+
+var toString$1 = Function.prototype.toString,
+    TYPE_ASYNC = {prefix: "async ƒ"},
+    TYPE_ASYNC_GENERATOR = {prefix: "async ƒ*"},
+    TYPE_CLASS = {prefix: "class"},
+    TYPE_FUNCTION = {prefix: "ƒ"},
+    TYPE_GENERATOR = {prefix: "ƒ*"};
+
+function inspectFunction(f, name) {
+  var type, m, t = toString$1.call(f);
+
+  switch (f.constructor && f.constructor.name) {
+    case "AsyncFunction": type = TYPE_ASYNC; break;
+    case "AsyncGeneratorFunction": type = TYPE_ASYNC_GENERATOR; break;
+    case "GeneratorFunction": type = TYPE_GENERATOR; break;
+    default: type = /^class\b/.test(t) ? TYPE_CLASS : TYPE_FUNCTION; break;
+  }
+
+  // A class, possibly named.
+  // class Name
+  if (type === TYPE_CLASS) {
+    return formatFunction(type, "", name);
+  }
+
+  // An arrow function with a single argument.
+  // foo =>
+  // async foo =>
+  if ((m = /^(?:async\s*)?(\w+)\s*=>/.exec(t))) {
+    return formatFunction(type, "(" + m[1] + ")", name);
+  }
+
+  // An arrow function with parenthesized arguments.
+  // (…)
+  // async (…)
+  if ((m = /^(?:async\s*)?\(\s*(\w+(?:\s*,\s*\w+)*)?\s*\)/.exec(t))) {
+    return formatFunction(type, m[1] ? "(" + m[1].replace(/\s*,\s*/g, ", ") + ")" : "()", name);
+  }
+
+  // A function, possibly: async, generator, anonymous, simply arguments.
+  // function name(…)
+  // function* name(…)
+  // async function name(…)
+  // async function* name(…)
+  if ((m = /^(?:async\s*)?function(?:\s*\*)?(?:\s*\w+)?\s*\(\s*(\w+(?:\s*,\s*\w+)*)?\s*\)/.exec(t))) {
+    return formatFunction(type, m[1] ? "(" + m[1].replace(/\s*,\s*/g, ", ") + ")" : "()", name);
+  }
+
+  // Something else, like destructuring, comments or default values.
+  return formatFunction(type, "(…)", name);
+}
+
+function formatFunction(type, args, cellname) {
+  var span = document.createElement("span");
+  span.className = "observablehq--function";
+  if (cellname) {
+    span.appendChild(inspectName(cellname));
+  }
+  var spanType = span.appendChild(document.createElement("span"));
+  spanType.className = "observablehq--keyword";
+  spanType.textContent = type.prefix;
+  span.appendChild(document.createTextNode(args));
+  return span;
+}
+
+const {prototype: {toString}} = Object;
+
+function inspect(value, shallow, expand, name, proto) {
+  let type = typeof value;
+  switch (type) {
+    case "boolean":
+    case "undefined": { value += ""; break; }
+    case "number": { value = value === 0 && 1 / value < 0 ? "-0" : value + ""; break; }
+    case "bigint": { value = value + "n"; break; }
+    case "symbol": { value = formatSymbol(value); break; }
+    case "function": { return inspectFunction(value, name); }
+    case "string": { return formatString(value, shallow, expand, name); }
+    default: {
+      if (value === null) { type = null, value = "null"; break; }
+      if (value instanceof Date) { type = "date", value = formatDate(value); break; }
+      if (value === FORBIDDEN) { type = "forbidden", value = "[forbidden]"; break; }
+      switch (toString.call(value)) {
+        case "[object RegExp]": { type = "regexp", value = formatRegExp(value); break; }
+        case "[object Error]": // https://github.com/lodash/lodash/blob/master/isError.js#L26
+        case "[object DOMException]": { type = "error", value = formatError(value); break; }
+        default: return (expand ? inspectExpanded : inspectCollapsed)(value, shallow, name, proto);
+      }
+      break;
+    }
+  }
+  const span = document.createElement("span");
+  if (name) span.appendChild(inspectName(name));
+  const n = span.appendChild(document.createElement("span"));
+  n.className = `observablehq--${type}`;
+  n.textContent = value;
+  return span;
+}
+
+function replace(spanOld, spanNew) {
+  if (spanOld.classList.contains("observablehq--inspect")) spanNew.classList.add("observablehq--inspect");
+  spanOld.parentNode.replaceChild(spanNew, spanOld);
+  dispatch(spanNew, "load");
+}
+
+const LOCATION_MATCH = /\s+\(\d+:\d+\)$/m;
+
+class Inspector {
+  constructor(node) {
+    if (!node) throw new Error("invalid node");
+    this._node = node;
+    node.classList.add("observablehq");
+  }
+  pending() {
+    const {_node} = this;
+    _node.classList.remove("observablehq--error");
+    _node.classList.add("observablehq--running");
+  }
+  fulfilled(value, name) {
+    const {_node} = this;
+    if (!(value instanceof Element || value instanceof Text) || (value.parentNode && value.parentNode !== _node)) {
+      value = inspect(value, false, _node.firstChild // TODO Do this better.
+          && _node.firstChild.classList
+          && _node.firstChild.classList.contains("observablehq--expanded"), name);
+      value.classList.add("observablehq--inspect");
+    }
+    _node.classList.remove("observablehq--running", "observablehq--error");
+    if (_node.firstChild !== value) {
+      if (_node.firstChild) {
+        while (_node.lastChild !== _node.firstChild) _node.removeChild(_node.lastChild);
+        _node.replaceChild(value, _node.firstChild);
+      } else {
+        _node.appendChild(value);
+      }
+    }
+    dispatch(_node, "update");
+  }
+  rejected(error, name) {
+    const {_node} = this;
+    _node.classList.remove("observablehq--running");
+    _node.classList.add("observablehq--error");
+    while (_node.lastChild) _node.removeChild(_node.lastChild);
+    var div = document.createElement("div");
+    div.className = "observablehq--inspect";
+    if (name) div.appendChild(inspectName(name));
+    div.appendChild(document.createTextNode((error + "").replace(LOCATION_MATCH, "")));
+    _node.appendChild(div);
+    dispatch(_node, "error", {error: error});
+  }
+}
+
+Inspector.into = function(container) {
+  if (typeof container === "string") {
+    container = document.querySelector(container);
+    if (container == null) throw new Error("container not found");
+  }
+  return function() {
+    return new Inspector(container.appendChild(document.createElement("div")));
+  };
+};
+
+const metas = new Map;
+const queue$1 = [];
+const map$2 = queue$1.map;
+const some = queue$1.some;
+const hasOwnProperty = queue$1.hasOwnProperty;
+const origin = "https://cdn.jsdelivr.net/npm/";
+const identifierRe = /^((?:@[^/@]+\/)?[^/@]+)(?:@([^/]+))?(?:\/(.*))?$/;
+const versionRe = /^\d+\.\d+\.\d+(-[\w-.+]+)?$/;
+const extensionRe = /\.[^/]*$/;
+const mains = ["unpkg", "jsdelivr", "browser", "main"];
+
+class RequireError extends Error {
+  constructor(message) {
+    super(message);
+  }
+}
+
+RequireError.prototype.name = RequireError.name;
+
+function main(meta) {
+  for (const key of mains) {
+    const value = meta[key];
+    if (typeof value === "string") {
+      return extensionRe.test(value) ? value : `${value}.js`;
+    }
+  }
+}
+
+function parseIdentifier(identifier) {
+  const match = identifierRe.exec(identifier);
+  return match && {
+    name: match[1],
+    version: match[2],
+    path: match[3]
+  };
+}
+
+function resolveMeta(target) {
+  const url = `${origin}${target.name}${target.version ? `@${target.version}` : ""}/package.json`;
+  let meta = metas.get(url);
+  if (!meta) metas.set(url, meta = fetch(url).then(response => {
+    if (!response.ok) throw new RequireError("unable to load package.json");
+    if (response.redirected && !metas.has(response.url)) metas.set(response.url, meta);
+    return response.json();
+  }));
+  return meta;
+}
+
+async function resolve$1(name, base) {
+  if (name.startsWith(origin)) name = name.substring(origin.length);
+  if (/^(\w+:)|\/\//i.test(name)) return name;
+  if (/^[.]{0,2}\//i.test(name)) return new URL(name, base == null ? location : base).href;
+  if (!name.length || /^[\s._]/.test(name) || /\s$/.test(name)) throw new RequireError("illegal name");
+  const target = parseIdentifier(name);
+  if (!target) return `${origin}${name}`;
+  if (!target.version && base != null && base.startsWith(origin)) {
+    const meta = await resolveMeta(parseIdentifier(base.substring(origin.length)));
+    target.version = meta.dependencies && meta.dependencies[target.name] || meta.peerDependencies && meta.peerDependencies[target.name];
+  }
+  if (target.path && !extensionRe.test(target.path)) target.path += ".js";
+  if (target.path && target.version && versionRe.test(target.version)) return `${origin}${target.name}@${target.version}/${target.path}`;
+  const meta = await resolveMeta(target);
+  return `${origin}${meta.name}@${meta.version}/${target.path || main(meta) || "index.js"}`;
+}
+
+var require = requireFrom(resolve$1);
+
+function requireFrom(resolver) {
+  const cache = new Map;
+  const requireBase = requireRelative(null);
+
+  function requireAbsolute(url) {
+    if (typeof url !== "string") return url;
+    let module = cache.get(url);
+    if (!module) cache.set(url, module = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.onload = () => {
+        try { resolve(queue$1.pop()(requireRelative(url))); }
+        catch (error) { reject(new RequireError("invalid module")); }
+        script.remove();
+      };
+      script.onerror = () => {
+        reject(new RequireError("unable to load module"));
+        script.remove();
+      };
+      script.async = true;
+      script.src = url;
+      window.define = define;
+      document.head.appendChild(script);
+    }));
+    return module;
+  }
+
+  function requireRelative(base) {
+    return name => Promise.resolve(resolver(name, base)).then(requireAbsolute);
+  }
+
+  function requireAlias(aliases) {
+    return requireFrom((name, base) => {
+      if (name in aliases) {
+        name = aliases[name], base = null;
+        if (typeof name !== "string") return name;
+      }
+      return resolver(name, base);
+    });
+  }
+
+  function require(name) {
+    return arguments.length > 1
+        ? Promise.all(map$2.call(arguments, requireBase)).then(merge)
+        : requireBase(name);
+  }
+
+  require.alias = requireAlias;
+  require.resolve = resolver;
+
+  return require;
+}
+
+function merge(modules) {
+  const o = {};
+  for (const m of modules) {
+    for (const k in m) {
+      if (hasOwnProperty.call(m, k)) {
+        if (m[k] == null) Object.defineProperty(o, k, {get: getter(m, k)});
+        else o[k] = m[k];
+      }
+    }
+  }
+  return o;
+}
+
+function getter(object, name) {
+  return () => object[name];
+}
+
+function isbuiltin(name) {
+  name = name + "";
+  return name === "exports" || name === "module";
+}
+
+function define(name, dependencies, factory) {
+  const n = arguments.length;
+  if (n < 2) factory = name, dependencies = [];
+  else if (n < 3) factory = dependencies, dependencies = typeof name === "string" ? [] : name;
+  queue$1.push(some.call(dependencies, isbuiltin) ? require => {
+    const exports = {};
+    const module = {exports};
+    return Promise.all(map$2.call(dependencies, name => {
+      name = name + "";
+      return name === "exports" ? exports : name === "module" ? module : require(name);
+    })).then(dependencies => {
+      factory.apply(null, dependencies);
+      return module.exports;
+    });
+  } : require => {
+    return Promise.all(map$2.call(dependencies, require)).then(dependencies => {
+      return typeof factory === "function" ? factory.apply(null, dependencies) : factory;
+    });
+  });
+}
+
+define.amd = {};
+
+function dependency(name, version, main) {
+  return {
+    resolve(path = main) {
+      return `https://cdn.jsdelivr.net/npm/${name}@${version}/${path}`;
+    }
+  };
+}
+
+const d3 = dependency("d3", "6.7.0", "dist/d3.min.js");
+const d3Dsv = dependency("d3-dsv", "2.0.0", "dist/d3-dsv.min.js");
+const inputs = dependency("@observablehq/inputs", "0.8.0", "dist/inputs.umd.min.js");
+const plot = dependency("@observablehq/plot", "0.1.0", "dist/plot.umd.min.js");
+const graphviz = dependency("@observablehq/graphviz", "0.2.1", "dist/graphviz.min.js");
+const highlight = dependency("@observablehq/highlight.js", "2.0.0", "highlight.min.js");
+const katex = dependency("@observablehq/katex", "0.11.1", "dist/katex.min.js");
+const lodash = dependency("lodash", "4.17.21", "lodash.min.js");
+const htl = dependency("htl", "0.2.5", "dist/htl.min.js");
+const marked = dependency("marked", "0.3.12", "marked.min.js");
+const sql = dependency("sql.js", "1.5.0", "dist/sql-wasm.js");
+const vega = dependency("vega", "5.20.2", "build/vega.min.js");
+const vegalite = dependency("vega-lite", "5.1.0", "build/vega-lite.min.js");
+const vegaliteApi = dependency("vega-lite-api", "5.0.0", "build/vega-lite-api.min.js");
+const arrow = dependency("apache-arrow", "4.0.1", "Arrow.es2015.min.js");
+
+async function sqlite(require) {
+  const init = await require(sql.resolve());
+  return init({locateFile: file => sql.resolve(`dist/${file}`)});
+}
+
+class SQLiteDatabaseClient {
+  constructor(db) {
+    Object.defineProperties(this, {
+      _db: {value: db}
+    });
+  }
+  static async open(source) {
+    const [SQL, buffer] = await Promise.all([sqlite(require), Promise.resolve(source).then(load$1)]);
+    return new SQLiteDatabaseClient(new SQL.Database(buffer));
+  }
+  async query(query, params) {
+    return await exec(this._db, query, params);
+  }
+  async queryRow(query, params) {
+    return (await this.query(query, params))[0] || null;
+  }
+  async explain(query, params) {
+    const rows = await this.query(`EXPLAIN QUERY PLAN ${query}`, params);
+    return element$1("pre", {className: "observablehq--inspect"}, [
+      text$2(rows.map(row => row.detail).join("\n"))
+    ]);
+  }
+  async describe(object) {
+    const rows = await (object === undefined
+      ? this.query(`SELECT name FROM sqlite_master WHERE type = 'table'`)
+      : this.query(`SELECT * FROM pragma_table_info(?)`, [object]));
+    if (!rows.length) throw new Error("Not found");
+    const {columns} = rows;
+    return element$1("table", {value: rows}, [
+      element$1("thead", [element$1("tr", columns.map(c => element$1("th", [text$2(c)])))]),
+      element$1("tbody", rows.map(r => element$1("tr", columns.map(c => element$1("td", [text$2(r[c])])))))
+    ]);
+  }
+}
+
+function load$1(source) {
+  return typeof source === "string" ? fetch(source).then(load$1)
+    : source instanceof Response || source instanceof Blob ? source.arrayBuffer().then(load$1)
+    : source instanceof ArrayBuffer ? new Uint8Array(source)
+    : source;
+}
+
+async function exec(db, query, params) {
+  const [result] = await db.exec(query, params);
+  if (!result) return [];
+  const {columns, values} = result;
+  const rows = values.map(row => Object.fromEntries(row.map((value, i) => [columns[i], value])));
+  rows.columns = columns;
+  return rows;
+}
+
+function element$1(name, props, children) {
+  if (arguments.length === 2) children = props, props = undefined;
+  const element = document.createElement(name);
+  if (props !== undefined) for (const p in props) element[p] = props[p];
+  if (children !== undefined) for (const c of children) element.appendChild(c);
+  return element;
+}
+
+function text$2(value) {
+  return document.createTextNode(value);
+}
+
+async function jszip(require) {
+  return await require("jszip@3.6.0/dist/jszip.min.js");
+}
+
+async function remote_fetch(file) {
+  const response = await fetch(await file.url());
+  if (!response.ok) throw new Error(`Unable to load file: ${file.name}`);
+  return response;
+}
+
+async function dsv(file, delimiter, {array = false, typed = false} = {}) {
+  const [text, d3] = await Promise.all([file.text(), require(d3Dsv.resolve())]);
+  return (delimiter === "\t"
+      ? (array ? d3.tsvParseRows : d3.tsvParse)
+      : (array ? d3.csvParseRows : d3.csvParse))(text, typed && d3.autoType);
+}
+
+class AbstractFile {
+  constructor(name) {
+    Object.defineProperty(this, "name", {value: name, enumerable: true});
+  }
+  async blob() {
+    return (await remote_fetch(this)).blob();
+  }
+  async arrayBuffer() {
+    return (await remote_fetch(this)).arrayBuffer();
+  }
+  async text() {
+    return (await remote_fetch(this)).text();
+  }
+  async json() {
+    return (await remote_fetch(this)).json();
+  }
+  async stream() {
+    return (await remote_fetch(this)).body;
+  }
+  async csv(options) {
+    return dsv(this, ",", options);
+  }
+  async tsv(options) {
+    return dsv(this, "\t", options);
+  }
+  async image() {
+    const url = await this.url();
+    return new Promise((resolve, reject) => {
+      const i = new Image;
+      if (new URL(url, document.baseURI).origin !== new URL(location).origin) {
+        i.crossOrigin = "anonymous";
+      }
+      i.onload = () => resolve(i);
+      i.onerror = () => reject(new Error(`Unable to load file: ${this.name}`));
+      i.src = url;
+    });
+  }
+  async arrow() {
+    const [Arrow, response] = await Promise.all([require(arrow.resolve()), remote_fetch(this)]);
+    return Arrow.Table.from(response);
+  }
+  async sqlite() {
+    return SQLiteDatabaseClient.open(remote_fetch(this));
+  }
+  async zip() {
+    const [JSZip, buffer] = await Promise.all([jszip(require), this.arrayBuffer()]);
+    return new ZipArchive(await JSZip.loadAsync(buffer));
+  }
+}
+
+class FileAttachment extends AbstractFile {
+  constructor(url, name) {
+    super(name);
+    Object.defineProperty(this, "_url", {value: url});
+  }
+  async url() {
+    return (await this._url) + "";
+  }
+}
+
+function NoFileAttachments(name) {
+  throw new Error(`File not found: ${name}`);
+}
+
+function FileAttachments(resolve) {
+  return Object.assign(
+    name => {
+      const url = resolve(name += ""); // Returns a Promise, string, or null.
+      if (url == null) throw new Error(`File not found: ${name}`);
+      return new FileAttachment(url, name);
+    },
+    {prototype: FileAttachment.prototype} // instanceof
+  );
+}
+
+class ZipArchive {
+  constructor(archive) {
+    Object.defineProperty(this, "_", {value: archive});
+    this.filenames = Object.keys(archive.files).filter(name => !archive.files[name].dir);
+  }
+  file(path) {
+    const object = this._.file(path += "");
+    if (!object || object.dir) throw new Error(`file not found: ${path}`);
+    return new ZipArchiveEntry(object);
+  }
+}
+
+class ZipArchiveEntry extends AbstractFile {
+  constructor(object) {
+    super(object.name);
+    Object.defineProperty(this, "_", {value: object});
+    Object.defineProperty(this, "_url", {writable: true});
+  }
+  async url() {
+    return this._url || (this._url = this.blob().then(URL.createObjectURL));
+  }
+  async blob() {
+    return this._.async("blob");
+  }
+  async arrayBuffer() {
+    return this._.async("arraybuffer");
+  }
+  async text() {
+    return this._.async("text");
+  }
+  async json() {
+    return JSON.parse(await this.text());
+  }
+}
+
+function canvas(width, height) {
+  var canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  return canvas;
+}
+
+function context2d(width, height, dpi) {
+  if (dpi == null) dpi = devicePixelRatio;
+  var canvas = document.createElement("canvas");
+  canvas.width = width * dpi;
+  canvas.height = height * dpi;
+  canvas.style.width = width + "px";
+  var context = canvas.getContext("2d");
+  context.scale(dpi, dpi);
+  return context;
+}
+
+function download(value, name = "untitled", label = "Save") {
+  const a = document.createElement("a");
+  const b = a.appendChild(document.createElement("button"));
+  b.textContent = label;
+  a.download = name;
+
+  async function reset() {
+    await new Promise(requestAnimationFrame);
+    URL.revokeObjectURL(a.href);
+    a.removeAttribute("href");
+    b.textContent = label;
+    b.disabled = false;
+  }
+
+  a.onclick = async event => {
+    b.disabled = true;
+    if (a.href) return reset(); // Already saved.
+    b.textContent = "Saving…";
+    try {
+      const object = await (typeof value === "function" ? value() : value);
+      b.textContent = "Download";
+      a.href = URL.createObjectURL(object); // eslint-disable-line require-atomic-updates
+    } catch (ignore) {
+      b.textContent = label;
+    }
+    if (event.eventPhase) return reset(); // Already downloaded.
+    b.disabled = false;
+  };
+
+  return a;
+}
+
+var namespaces = {
+  math: "http://www.w3.org/1998/Math/MathML",
+  svg: "http://www.w3.org/2000/svg",
+  xhtml: "http://www.w3.org/1999/xhtml",
+  xlink: "http://www.w3.org/1999/xlink",
+  xml: "http://www.w3.org/XML/1998/namespace",
+  xmlns: "http://www.w3.org/2000/xmlns/"
+};
+
+function element(name, attributes) {
+  var prefix = name += "", i = prefix.indexOf(":"), value;
+  if (i >= 0 && (prefix = name.slice(0, i)) !== "xmlns") name = name.slice(i + 1);
+  var element = namespaces.hasOwnProperty(prefix) // eslint-disable-line no-prototype-builtins
+      ? document.createElementNS(namespaces[prefix], name)
+      : document.createElement(name);
+  if (attributes) for (var key in attributes) {
+    prefix = key, i = prefix.indexOf(":"), value = attributes[key];
+    if (i >= 0 && (prefix = key.slice(0, i)) !== "xmlns") key = key.slice(i + 1);
+    if (namespaces.hasOwnProperty(prefix)) element.setAttributeNS(namespaces[prefix], key, value); // eslint-disable-line no-prototype-builtins
+    else element.setAttribute(key, value);
+  }
+  return element;
+}
+
+function input$1(type) {
+  var input = document.createElement("input");
+  if (type != null) input.type = type;
+  return input;
+}
+
+function range$1(min, max, step) {
+  if (arguments.length === 1) max = min, min = null;
+  var input = document.createElement("input");
+  input.min = min = min == null ? 0 : +min;
+  input.max = max = max == null ? 1 : +max;
+  input.step = step == null ? "any" : step = +step;
+  input.type = "range";
+  return input;
+}
+
+function select(values) {
+  var select = document.createElement("select");
+  Array.prototype.forEach.call(values, function(value) {
+    var option = document.createElement("option");
+    option.value = option.textContent = value;
+    select.appendChild(option);
+  });
+  return select;
+}
+
+function svg$1(width, height) {
+  var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", [0, 0, width, height]);
+  svg.setAttribute("width", width);
+  svg.setAttribute("height", height);
+  return svg;
+}
+
+function text$1(value) {
+  return document.createTextNode(value);
+}
+
+var count = 0;
+
+function uid(name) {
+  return new Id("O-" + (name == null ? "" : name + "-") + ++count);
+}
+
+function Id(id) {
+  this.id = id;
+  this.href = new URL(`#${id}`, location) + "";
+}
+
+Id.prototype.toString = function() {
+  return "url(" + this.href + ")";
+};
+
+var DOM = {
+  canvas: canvas,
+  context2d: context2d,
+  download: download,
+  element: element,
+  input: input$1,
+  range: range$1,
+  select: select,
+  svg: svg$1,
+  text: text$1,
+  uid: uid
+};
+
+function buffer(file) {
+  return new Promise(function(resolve, reject) {
+    var reader = new FileReader;
+    reader.onload = function() { resolve(reader.result); };
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function text(file) {
+  return new Promise(function(resolve, reject) {
+    var reader = new FileReader;
+    reader.onload = function() { resolve(reader.result); };
+    reader.onerror = reject;
+    reader.readAsText(file);
+  });
+}
+
+function url(file) {
+  return new Promise(function(resolve, reject) {
+    var reader = new FileReader;
+    reader.onload = function() { resolve(reader.result); };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+var Files = {
+  buffer: buffer,
+  text: text,
+  url: url
+};
+
+function that() {
+  return this;
+}
+
+function disposable(value, dispose) {
+  let done = false;
+  if (typeof dispose !== "function") {
+    throw new Error("dispose is not a function");
+  }
+  return {
+    [Symbol.iterator]: that,
+    next: () => done ? {done: true} : (done = true, {done: false, value}),
+    return: () => (done = true, dispose(value), {done: true}),
+    throw: () => ({done: done = true})
+  };
+}
+
+function* filter(iterator, test) {
+  var result, index = -1;
+  while (!(result = iterator.next()).done) {
+    if (test(result.value, ++index)) {
+      yield result.value;
+    }
+  }
+}
+
+function observe(initialize) {
+  let stale = false;
+  let value;
+  let resolve;
+  const dispose = initialize(change);
+
+  if (dispose != null && typeof dispose !== "function") {
+    throw new Error(typeof dispose.then === "function"
+        ? "async initializers are not supported"
+        : "initializer returned something, but not a dispose function");
+  }
+
+  function change(x) {
+    if (resolve) resolve(x), resolve = null;
+    else stale = true;
+    return value = x;
+  }
+
+  function next() {
+    return {done: false, value: stale
+        ? (stale = false, Promise.resolve(value))
+        : new Promise(_ => (resolve = _))};
+  }
+
+  return {
+    [Symbol.iterator]: that,
+    throw: () => ({done: true}),
+    return: () => (dispose != null && dispose(), {done: true}),
+    next
+  };
+}
+
+function input(input) {
+  return observe(function(change) {
+    var event = eventof(input), value = valueof(input);
+    function inputted() { change(valueof(input)); }
+    input.addEventListener(event, inputted);
+    if (value !== undefined) change(value);
+    return function() { input.removeEventListener(event, inputted); };
+  });
+}
+
+function valueof(input) {
+  switch (input.type) {
+    case "range":
+    case "number": return input.valueAsNumber;
+    case "date": return input.valueAsDate;
+    case "checkbox": return input.checked;
+    case "file": return input.multiple ? input.files : input.files[0];
+    case "select-multiple": return Array.from(input.selectedOptions, o => o.value);
+    default: return input.value;
+  }
+}
+
+function eventof(input) {
+  switch (input.type) {
+    case "button":
+    case "submit":
+    case "checkbox": return "click";
+    case "file": return "change";
+    default: return "input";
+  }
+}
+
+function* map$1(iterator, transform) {
+  var result, index = -1;
+  while (!(result = iterator.next()).done) {
+    yield transform(result.value, ++index);
+  }
+}
+
+function queue(initialize) {
+  let resolve;
+  const queue = [];
+  const dispose = initialize(push);
+
+  if (dispose != null && typeof dispose !== "function") {
+    throw new Error(typeof dispose.then === "function"
+        ? "async initializers are not supported"
+        : "initializer returned something, but not a dispose function");
+  }
+
+  function push(x) {
+    queue.push(x);
+    if (resolve) resolve(queue.shift()), resolve = null;
+    return x;
+  }
+
+  function next() {
+    return {done: false, value: queue.length
+        ? Promise.resolve(queue.shift())
+        : new Promise(_ => (resolve = _))};
+  }
+
+  return {
+    [Symbol.iterator]: that,
+    throw: () => ({done: true}),
+    return: () => (dispose != null && dispose(), {done: true}),
+    next
+  };
+}
+
+function* range(start, stop, step) {
+  start = +start;
+  stop = +stop;
+  step = (n = arguments.length) < 2 ? (stop = start, start = 0, 1) : n < 3 ? 1 : +step;
+  var i = -1, n = Math.max(0, Math.ceil((stop - start) / step)) | 0;
+  while (++i < n) {
+    yield start + i * step;
+  }
+}
+
+function valueAt(iterator, i) {
+  if (!isFinite(i = +i) || i < 0 || i !== i | 0) return;
+  var result, index = -1;
+  while (!(result = iterator.next()).done) {
+    if (++index === i) {
+      return result.value;
+    }
+  }
+}
+
+function worker(source) {
+  const url = URL.createObjectURL(new Blob([source], {type: "text/javascript"}));
+  const worker = new Worker(url);
+  return disposable(worker, () => {
+    worker.terminate();
+    URL.revokeObjectURL(url);
+  });
+}
+
+var Generators = {
+  disposable: disposable,
+  filter: filter,
+  input: input,
+  map: map$1,
+  observe: observe,
+  queue: queue,
+  range: range,
+  valueAt: valueAt,
+  worker: worker
+};
+
+function template(render, wrapper) {
+  return function(strings) {
+    var string = strings[0],
+        parts = [], part,
+        root = null,
+        node, nodes,
+        walker,
+        i, n, j, m, k = -1;
+
+    // Concatenate the text using comments as placeholders.
+    for (i = 1, n = arguments.length; i < n; ++i) {
+      part = arguments[i];
+      if (part instanceof Node) {
+        parts[++k] = part;
+        string += "<!--o:" + k + "-->";
+      } else if (Array.isArray(part)) {
+        for (j = 0, m = part.length; j < m; ++j) {
+          node = part[j];
+          if (node instanceof Node) {
+            if (root === null) {
+              parts[++k] = root = document.createDocumentFragment();
+              string += "<!--o:" + k + "-->";
+            }
+            root.appendChild(node);
+          } else {
+            root = null;
+            string += node;
+          }
+        }
+        root = null;
+      } else {
+        string += part;
+      }
+      string += strings[i];
+    }
+
+    // Render the text.
+    root = render(string);
+
+    // Walk the rendered content to replace comment placeholders.
+    if (++k > 0) {
+      nodes = new Array(k);
+      walker = document.createTreeWalker(root, NodeFilter.SHOW_COMMENT, null, false);
+      while (walker.nextNode()) {
+        node = walker.currentNode;
+        if (/^o:/.test(node.nodeValue)) {
+          nodes[+node.nodeValue.slice(2)] = node;
+        }
+      }
+      for (i = 0; i < k; ++i) {
+        if (node = nodes[i]) {
+          node.parentNode.replaceChild(parts[i], node);
+        }
+      }
+    }
+
+    // Is the rendered content
+    // … a parent of a single child? Detach and return the child.
+    // … a document fragment? Replace the fragment with an element.
+    // … some other node? Return it.
+    return root.childNodes.length === 1 ? root.removeChild(root.firstChild)
+        : root.nodeType === 11 ? ((node = wrapper()).appendChild(root), node)
+        : root;
+  };
+}
+
+var html = template(function(string) {
+  var template = document.createElement("template");
+  template.innerHTML = string.trim();
+  return document.importNode(template.content, true);
+}, function() {
+  return document.createElement("span");
+});
+
+function md(require) {
+  return require(marked.resolve()).then(function(marked) {
+    return template(
+      function(string) {
+        var root = document.createElement("div");
+        root.innerHTML = marked(string, {langPrefix: ""}).trim();
+        var code = root.querySelectorAll("pre code[class]");
+        if (code.length > 0) {
+          require(highlight.resolve()).then(function(hl) {
+            code.forEach(function(block) {
+              function done() {
+                hl.highlightBlock(block);
+                block.parentNode.classList.add("observablehq--md-pre");
+              }
+              if (hl.getLanguage(block.className)) {
+                done();
+              } else {
+                require(highlight.resolve("async-languages/index.js"))
+                  .then(index => {
+                    if (index.has(block.className)) {
+                      return require(highlight.resolve("async-languages/" + index.get(block.className))).then(language => {
+                        hl.registerLanguage(block.className, language);
+                      });
+                    }
+                  })
+                  .then(done, done);
+              }
+            });
+          });
+        }
+        return root;
+      },
+      function() {
+        return document.createElement("div");
+      }
+    );
+  });
+}
+
+function Mutable(value) {
+  let change;
+  Object.defineProperties(this, {
+    generator: {value: observe(_ => void (change = _))},
+    value: {get: () => value, set: x => change(value = x)} // eslint-disable-line no-setter-return
+  });
+  if (value !== undefined) change(value);
+}
+
+function* now() {
+  while (true) {
+    yield Date.now();
+  }
+}
+
+function delay(duration, value) {
+  return new Promise(function(resolve) {
+    setTimeout(function() {
+      resolve(value);
+    }, duration);
+  });
+}
+
+var timeouts = new Map;
+
+function timeout(now, time) {
+  var t = new Promise(function(resolve) {
+    timeouts.delete(time);
+    var delay = time - now;
+    if (!(delay > 0)) throw new Error("invalid time");
+    if (delay > 0x7fffffff) throw new Error("too long to wait");
+    setTimeout(resolve, delay);
+  });
+  timeouts.set(time, t);
+  return t;
+}
+
+function when(time, value) {
+  var now;
+  return (now = timeouts.get(time = +time)) ? now.then(() => value)
+      : (now = Date.now()) >= time ? Promise.resolve(value)
+      : timeout(now, time).then(() => value);
+}
+
+function tick(duration, value) {
+  return when(Math.ceil((Date.now() + 1) / duration) * duration, value);
+}
+
+var Promises = {
+  delay: delay,
+  tick: tick,
+  when: when
+};
+
+function resolve(name, base) {
+  if (/^(\w+:)|\/\//i.test(name)) return name;
+  if (/^[.]{0,2}\//i.test(name)) return new URL(name, base == null ? location : base).href;
+  if (!name.length || /^[\s._]/.test(name) || /\s$/.test(name)) throw new Error("illegal name");
+  return "https://unpkg.com/" + name;
+}
+
+function requirer(resolve) {
+  return resolve == null ? require : requireFrom(resolve);
+}
+
+var svg = template(function(string) {
+  var root = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  root.innerHTML = string.trim();
+  return root;
+}, function() {
+  return document.createElementNS("http://www.w3.org/2000/svg", "g");
+});
+
+var raw = String.raw;
+
+function style(href) {
+  return new Promise(function(resolve, reject) {
+    var link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    link.onerror = reject;
+    link.onload = resolve;
+    document.head.appendChild(link);
+  });
+}
+
+function tex(require) {
+  return Promise.all([
+    require(katex.resolve()),
+    style(katex.resolve("dist/katex.min.css"))
+  ]).then(function(values) {
+    var katex = values[0], tex = renderer();
+
+    function renderer(options) {
+      return function() {
+        var root = document.createElement("div");
+        katex.render(raw.apply(String, arguments), root, options);
+        return root.removeChild(root.firstChild);
+      };
+    }
+
+    tex.options = renderer;
+    tex.block = renderer({displayMode: true});
+    return tex;
+  });
+}
+
+async function vl(require) {
+  const [v, vl, api] = await Promise.all([vega, vegalite, vegaliteApi].map(d => require(d.resolve())));
+  return api.register(v, vl);
+}
+
+function width() {
+  return observe(function(change) {
+    var width = change(document.body.clientWidth);
+    function resized() {
+      var w = document.body.clientWidth;
+      if (w !== width) change(width = w);
+    }
+    window.addEventListener("resize", resized);
+    return function() {
+      window.removeEventListener("resize", resized);
+    };
+  });
+}
+
+var Library = Object.assign(function Library(resolver) {
+  const require = requirer(resolver);
+  Object.defineProperties(this, properties({
+    FileAttachment: () => NoFileAttachments,
+    Arrow: () => require(arrow.resolve()),
+    Inputs: () => require(inputs.resolve()),
+    Mutable: () => Mutable,
+    Plot: () => require(plot.resolve()),
+    SQLite: () => sqlite(require),
+    SQLiteDatabaseClient: () => SQLiteDatabaseClient,
+    _: () => require(lodash.resolve()),
+    d3: () => require(d3.resolve()),
+    dot: () => require(graphviz.resolve()),
+    htl: () => require(htl.resolve()),
+    html: () => html,
+    md: () => md(require),
+    now,
+    require: () => require,
+    resolve: () => resolve,
+    svg: () => svg,
+    tex: () => tex(require),
+    vl: () => vl(require),
+    width,
+
+    // Note: these are namespace objects, and thus exposed directly rather than
+    // being wrapped in a function. This allows library.Generators to resolve,
+    // rather than needing module.value.
+    DOM,
+    Files,
+    Generators,
+    Promises
+  }));
+}, {resolve: require.resolve});
+
+function properties(values) {
+  return Object.fromEntries(Object.entries(values).map(property));
+}
+
+function property([key, value]) {
+  return [key, ({value, writable: true, enumerable: true})];
+}
+
+function RuntimeError(message, input) {
+  this.message = message + "";
+  this.input = input;
+}
+
+RuntimeError.prototype = Object.create(Error.prototype);
+RuntimeError.prototype.name = "RuntimeError";
+RuntimeError.prototype.constructor = RuntimeError;
+
+function generatorish(value) {
+  return value
+      && typeof value.next === "function"
+      && typeof value.return === "function";
+}
+
+function load(notebook, library, observer) {
+  if (typeof library == "function") observer = library, library = null;
+  if (typeof observer !== "function") throw new Error("invalid observer");
+  if (library == null) library = new Library();
+
+  const {modules, id} = notebook;
+  const map = new Map;
+  const runtime = new Runtime(library);
+  const main = runtime_module(id);
+
+  function runtime_module(id) {
+    let module = map.get(id);
+    if (!module) map.set(id, module = runtime.module());
+    return module;
+  }
+
+  for (const m of modules) {
+    const module = runtime_module(m.id);
+    let i = 0;
+    for (const v of m.variables) {
+      if (v.from) module.import(v.remote, v.name, runtime_module(v.from));
+      else if (module === main) module.variable(observer(v, i, m.variables)).define(v.name, v.inputs, v.value);
+      else module.define(v.name, v.inputs, v.value);
+      ++i;
+    }
+  }
+
+  return runtime;
+}
+
+var prototype = Array.prototype;
+var map = prototype.map;
+var forEach = prototype.forEach;
+
+function constant(x) {
+  return function() {
+    return x;
+  };
+}
+
+function identity(x) {
+  return x;
+}
+
+function rethrow(e) {
+  return function() {
+    throw e;
+  };
+}
+
+function noop() {}
+
+var TYPE_NORMAL = 1; // a normal variable
+var TYPE_IMPLICIT = 2; // created on reference
+var TYPE_DUPLICATE = 3; // created on duplicate definition
+
+var no_observer = {};
+
+function Variable(type, module, observer) {
+  if (!observer) observer = no_observer;
+  Object.defineProperties(this, {
+    _observer: {value: observer, writable: true},
+    _definition: {value: variable_undefined, writable: true},
+    _duplicate: {value: undefined, writable: true},
+    _duplicates: {value: undefined, writable: true},
+    _indegree: {value: NaN, writable: true}, // The number of computing inputs.
+    _inputs: {value: [], writable: true},
+    _invalidate: {value: noop, writable: true},
+    _module: {value: module},
+    _name: {value: null, writable: true},
+    _outputs: {value: new Set, writable: true},
+    _promise: {value: Promise.resolve(undefined), writable: true},
+    _reachable: {value: observer !== no_observer, writable: true}, // Is this variable transitively visible?
+    _rejector: {value: variable_rejector(this)},
+    _type: {value: type},
+    _value: {value: undefined, writable: true},
+    _version: {value: 0, writable: true}
+  });
+}
+
+Object.defineProperties(Variable.prototype, {
+  _pending: {value: variable_pending, writable: true, configurable: true},
+  _fulfilled: {value: variable_fulfilled, writable: true, configurable: true},
+  _rejected: {value: variable_rejected, writable: true, configurable: true},
+  define: {value: variable_define, writable: true, configurable: true},
+  delete: {value: variable_delete, writable: true, configurable: true},
+  import: {value: variable_import, writable: true, configurable: true}
+});
+
+function variable_attach(variable) {
+  variable._module._runtime._dirty.add(variable);
+  variable._outputs.add(this);
+}
+
+function variable_detach(variable) {
+  variable._module._runtime._dirty.add(variable);
+  variable._outputs.delete(this);
+}
+
+function variable_undefined() {
+  throw variable_undefined;
+}
+
+function variable_rejector(variable) {
+  return function(error) {
+    if (error === variable_undefined) throw new RuntimeError(variable._name + " is not defined", variable._name);
+    if (error instanceof Error && error.message) throw new RuntimeError(error.message, variable._name);
+    throw new RuntimeError(variable._name + " could not be resolved", variable._name);
+  };
+}
+
+function variable_duplicate(name) {
+  return function() {
+    throw new RuntimeError(name + " is defined more than once");
+  };
+}
+
+function variable_define(name, inputs, definition) {
+  switch (arguments.length) {
+    case 1: {
+      definition = name, name = inputs = null;
+      break;
+    }
+    case 2: {
+      definition = inputs;
+      if (typeof name === "string") inputs = null;
+      else inputs = name, name = null;
+      break;
+    }
+  }
+  return variable_defineImpl.call(this,
+    name == null ? null : name + "",
+    inputs == null ? [] : map.call(inputs, this._module._resolve, this._module),
+    typeof definition === "function" ? definition : constant(definition)
+  );
+}
+
+function variable_defineImpl(name, inputs, definition) {
+  var scope = this._module._scope, runtime = this._module._runtime;
+
+  this._inputs.forEach(variable_detach, this);
+  inputs.forEach(variable_attach, this);
+  this._inputs = inputs;
+  this._definition = definition;
+  this._value = undefined;
+
+  // Is this an active variable (that may require disposal)?
+  if (definition === noop) runtime._variables.delete(this);
+  else runtime._variables.add(this);
+
+  // Did the variable’s name change? Time to patch references!
+  if (name !== this._name || scope.get(name) !== this) {
+    var error, found;
+
+    if (this._name) { // Did this variable previously have a name?
+      if (this._outputs.size) { // And did other variables reference this variable?
+        scope.delete(this._name);
+        found = this._module._resolve(this._name);
+        found._outputs = this._outputs, this._outputs = new Set;
+        found._outputs.forEach(function(output) { output._inputs[output._inputs.indexOf(this)] = found; }, this);
+        found._outputs.forEach(runtime._updates.add, runtime._updates);
+        runtime._dirty.add(found).add(this);
+        scope.set(this._name, found);
+      } else if ((found = scope.get(this._name)) === this) { // Do no other variables reference this variable?
+        scope.delete(this._name); // It’s safe to delete!
+      } else if (found._type === TYPE_DUPLICATE) { // Do other variables assign this name?
+        found._duplicates.delete(this); // This variable no longer assigns this name.
+        this._duplicate = undefined;
+        if (found._duplicates.size === 1) { // Is there now only one variable assigning this name?
+          found = found._duplicates.keys().next().value; // Any references are now fixed!
+          error = scope.get(this._name);
+          found._outputs = error._outputs, error._outputs = new Set;
+          found._outputs.forEach(function(output) { output._inputs[output._inputs.indexOf(error)] = found; });
+          found._definition = found._duplicate, found._duplicate = undefined;
+          runtime._dirty.add(error).add(found);
+          runtime._updates.add(found);
+          scope.set(this._name, found);
+        }
+      } else {
+        throw new Error;
+      }
+    }
+
+    if (this._outputs.size) throw new Error;
+
+    if (name) { // Does this variable have a new name?
+      if (found = scope.get(name)) { // Do other variables reference or assign this name?
+        if (found._type === TYPE_DUPLICATE) { // Do multiple other variables already define this name?
+          this._definition = variable_duplicate(name), this._duplicate = definition;
+          found._duplicates.add(this);
+        } else if (found._type === TYPE_IMPLICIT) { // Are the variable references broken?
+          this._outputs = found._outputs, found._outputs = new Set; // Now they’re fixed!
+          this._outputs.forEach(function(output) { output._inputs[output._inputs.indexOf(found)] = this; }, this);
+          runtime._dirty.add(found).add(this);
+          scope.set(name, this);
+        } else { // Does another variable define this name?
+          found._duplicate = found._definition, this._duplicate = definition; // Now they’re duplicates.
+          error = new Variable(TYPE_DUPLICATE, this._module);
+          error._name = name;
+          error._definition = this._definition = found._definition = variable_duplicate(name);
+          error._outputs = found._outputs, found._outputs = new Set;
+          error._outputs.forEach(function(output) { output._inputs[output._inputs.indexOf(found)] = error; });
+          error._duplicates = new Set([this, found]);
+          runtime._dirty.add(found).add(error);
+          runtime._updates.add(found).add(error);
+          scope.set(name, error);
+        }
+      } else {
+        scope.set(name, this);
+      }
+    }
+
+    this._name = name;
+  }
+
+  runtime._updates.add(this);
+  runtime._compute();
+  return this;
+}
+
+function variable_import(remote, name, module) {
+  if (arguments.length < 3) module = name, name = remote;
+  return variable_defineImpl.call(this, name + "", [module._resolve(remote + "")], identity);
+}
+
+function variable_delete() {
+  return variable_defineImpl.call(this, null, [], noop);
+}
+
+function variable_pending() {
+  if (this._observer.pending) this._observer.pending();
+}
+
+function variable_fulfilled(value) {
+  if (this._observer.fulfilled) this._observer.fulfilled(value, this._name);
+}
+
+function variable_rejected(error) {
+  if (this._observer.rejected) this._observer.rejected(error, this._name);
+}
+
+function Module(runtime, builtins = []) {
+  Object.defineProperties(this, {
+    _runtime: {value: runtime},
+    _scope: {value: new Map},
+    _builtins: {value: new Map([
+      ["invalidation", variable_invalidation],
+      ["visibility", variable_visibility],
+      ...builtins
+    ])},
+    _source: {value: null, writable: true}
+  });
+}
+
+Object.defineProperties(Module.prototype, {
+  _copy: {value: module_copy, writable: true, configurable: true},
+  _resolve: {value: module_resolve, writable: true, configurable: true},
+  redefine: {value: module_redefine, writable: true, configurable: true},
+  define: {value: module_define, writable: true, configurable: true},
+  derive: {value: module_derive, writable: true, configurable: true},
+  import: {value: module_import, writable: true, configurable: true},
+  value: {value: module_value, writable: true, configurable: true},
+  variable: {value: module_variable, writable: true, configurable: true},
+  builtin: {value: module_builtin, writable: true, configurable: true}
+});
+
+function module_redefine(name) {
+  var v = this._scope.get(name);
+  if (!v) throw new RuntimeError(name + " is not defined");
+  if (v._type === TYPE_DUPLICATE) throw new RuntimeError(name + " is defined more than once");
+  return v.define.apply(v, arguments);
+}
+
+function module_define() {
+  var v = new Variable(TYPE_NORMAL, this);
+  return v.define.apply(v, arguments);
+}
+
+function module_import() {
+  var v = new Variable(TYPE_NORMAL, this);
+  return v.import.apply(v, arguments);
+}
+
+function module_variable(observer) {
+  return new Variable(TYPE_NORMAL, this, observer);
+}
+
+async function module_value(name) {
+  var v = this._scope.get(name);
+  if (!v) throw new RuntimeError(name + " is not defined");
+  if (v._observer === no_observer) {
+    v._observer = true;
+    this._runtime._dirty.add(v);
+  }
+  await this._runtime._compute();
+  return v._promise;
+}
+
+function module_derive(injects, injectModule) {
+  var copy = new Module(this._runtime, this._builtins);
+  copy._source = this;
+  forEach.call(injects, function(inject) {
+    if (typeof inject !== "object") inject = {name: inject + ""};
+    if (inject.alias == null) inject.alias = inject.name;
+    copy.import(inject.name, inject.alias, injectModule);
+  });
+  Promise.resolve().then(() => {
+    const modules = new Set([this]);
+    for (const module of modules) {
+      for (const variable of module._scope.values()) {
+        if (variable._definition === identity) { // import
+          const module = variable._inputs[0]._module;
+          const source = module._source || module;
+          if (source === this) { // circular import-with!
+            console.warn("circular module definition; ignoring"); // eslint-disable-line no-console
+            return;
+          }
+          modules.add(source);
+        }
+      }
+    }
+    this._copy(copy, new Map);
+  });
+  return copy;
+}
+
+function module_copy(copy, map) {
+  copy._source = this;
+  map.set(this, copy);
+  for (const [name, source] of this._scope) {
+    var target = copy._scope.get(name);
+    if (target && target._type === TYPE_NORMAL) continue; // injection
+    if (source._definition === identity) { // import
+      var sourceInput = source._inputs[0],
+          sourceModule = sourceInput._module;
+      copy.import(sourceInput._name, name, map.get(sourceModule)
+        || (sourceModule._source
+           ? sourceModule._copy(new Module(copy._runtime, copy._builtins), map) // import-with
+           : sourceModule));
+    } else {
+      copy.define(name, source._inputs.map(variable_name), source._definition);
+    }
+  }
+  return copy;
+}
+
+function module_resolve(name) {
+  var variable = this._scope.get(name), value;
+  if (!variable) {
+    variable = new Variable(TYPE_IMPLICIT, this);
+    if (this._builtins.has(name)) {
+      variable.define(name, constant(this._builtins.get(name)));
+    } else if (this._runtime._builtin._scope.has(name)) {
+      variable.import(name, this._runtime._builtin);
+    } else {
+      try {
+        value = this._runtime._global(name);
+      } catch (error) {
+        return variable.define(name, rethrow(error));
+      }
+      if (value === undefined) {
+        this._scope.set(variable._name = name, variable);
+      } else {
+        variable.define(name, constant(value));
+      }
+    }
+  }
+  return variable;
+}
+
+function module_builtin(name, value) {
+  this._builtins.set(name, value);
+}
+
+function variable_name(variable) {
+  return variable._name;
+}
+
+const frame = typeof requestAnimationFrame === "function" ? requestAnimationFrame : setImmediate;
+
+var variable_invalidation = {};
+var variable_visibility = {};
+
+function Runtime(builtins = new Library, global = window_global) {
+  var builtin = this.module();
+  Object.defineProperties(this, {
+    _dirty: {value: new Set},
+    _updates: {value: new Set},
+    _computing: {value: null, writable: true},
+    _init: {value: null, writable: true},
+    _modules: {value: new Map},
+    _variables: {value: new Set},
+    _disposed: {value: false, writable: true},
+    _builtin: {value: builtin},
+    _global: {value: global}
+  });
+  if (builtins) for (var name in builtins) {
+    (new Variable(TYPE_IMPLICIT, builtin)).define(name, [], builtins[name]);
+  }
+}
+
+Object.defineProperties(Runtime, {
+  load: {value: load, writable: true, configurable: true}
+});
+
+Object.defineProperties(Runtime.prototype, {
+  _compute: {value: runtime_compute, writable: true, configurable: true},
+  _computeSoon: {value: runtime_computeSoon, writable: true, configurable: true},
+  _computeNow: {value: runtime_computeNow, writable: true, configurable: true},
+  dispose: {value: runtime_dispose, writable: true, configurable: true},
+  module: {value: runtime_module, writable: true, configurable: true},
+  fileAttachments: {value: FileAttachments, writable: true, configurable: true}
+});
+
+function runtime_dispose() {
+  this._computing = Promise.resolve();
+  this._disposed = true;
+  this._variables.forEach(v => {
+    v._invalidate();
+    v._version = NaN;
+  });
+}
+
+function runtime_module(define, observer = noop) {
+  let module;
+  if (define === undefined) {
+    if (module = this._init) {
+      this._init = null;
+      return module;
+    }
+    return new Module(this);
+  }
+  module = this._modules.get(define);
+  if (module) return module;
+  this._init = module = new Module(this);
+  this._modules.set(define, module);
+  try {
+    define(this, observer);
+  } finally {
+    this._init = null;
+  }
+  return module;
+}
+
+function runtime_compute() {
+  return this._computing || (this._computing = this._computeSoon());
+}
+
+function runtime_computeSoon() {
+  var runtime = this;
+  return new Promise(function(resolve) {
+    frame(function() {
+      resolve();
+      runtime._disposed || runtime._computeNow();
+    });
+  });
+}
+
+function runtime_computeNow() {
+  var queue = [],
+      variables,
+      variable;
+
+  // Compute the reachability of the transitive closure of dirty variables.
+  // Any newly-reachable variable must also be recomputed.
+  // Any no-longer-reachable variable must be terminated.
+  variables = new Set(this._dirty);
+  variables.forEach(function(variable) {
+    variable._inputs.forEach(variables.add, variables);
+    const reachable = variable_reachable(variable);
+    if (reachable > variable._reachable) {
+      this._updates.add(variable);
+    } else if (reachable < variable._reachable) {
+      variable._invalidate();
+    }
+    variable._reachable = reachable;
+  }, this);
+
+  // Compute the transitive closure of updating, reachable variables.
+  variables = new Set(this._updates);
+  variables.forEach(function(variable) {
+    if (variable._reachable) {
+      variable._indegree = 0;
+      variable._outputs.forEach(variables.add, variables);
+    } else {
+      variable._indegree = NaN;
+      variables.delete(variable);
+    }
+  });
+
+  this._computing = null;
+  this._updates.clear();
+  this._dirty.clear();
+
+  // Compute the indegree of updating variables.
+  variables.forEach(function(variable) {
+    variable._outputs.forEach(variable_increment);
+  });
+
+  do {
+    // Identify the root variables (those with no updating inputs).
+    variables.forEach(function(variable) {
+      if (variable._indegree === 0) {
+        queue.push(variable);
+      }
+    });
+
+    // Compute the variables in topological order.
+    while (variable = queue.pop()) {
+      variable_compute(variable);
+      variable._outputs.forEach(postqueue);
+      variables.delete(variable);
+    }
+
+    // Any remaining variables are circular, or depend on them.
+    variables.forEach(function(variable) {
+      if (variable_circular(variable)) {
+        variable_error(variable, new RuntimeError("circular definition"));
+        variable._outputs.forEach(variable_decrement);
+        variables.delete(variable);
+      }
+    });
+  } while (variables.size);
+
+  function postqueue(variable) {
+    if (--variable._indegree === 0) {
+      queue.push(variable);
+    }
+  }
+}
+
+function variable_circular(variable) {
+  const inputs = new Set(variable._inputs);
+  for (const i of inputs) {
+    if (i === variable) return true;
+    i._inputs.forEach(inputs.add, inputs);
+  }
+  return false;
+}
+
+function variable_increment(variable) {
+  ++variable._indegree;
+}
+
+function variable_decrement(variable) {
+  --variable._indegree;
+}
+
+function variable_value(variable) {
+  return variable._promise.catch(variable._rejector);
+}
+
+function variable_invalidator(variable) {
+  return new Promise(function(resolve) {
+    variable._invalidate = resolve;
+  });
+}
+
+function variable_intersector(invalidation, variable) {
+  let node = typeof IntersectionObserver === "function" && variable._observer && variable._observer._node;
+  let visible = !node, resolve = noop, reject = noop, promise, observer;
+  if (node) {
+    observer = new IntersectionObserver(([entry]) => (visible = entry.isIntersecting) && (promise = null, resolve()));
+    observer.observe(node);
+    invalidation.then(() => (observer.disconnect(), observer = null, reject()));
+  }
+  return function(value) {
+    if (visible) return Promise.resolve(value);
+    if (!observer) return Promise.reject();
+    if (!promise) promise = new Promise((y, n) => (resolve = y, reject = n));
+    return promise.then(() => value);
+  };
+}
+
+function variable_compute(variable) {
+  variable._invalidate();
+  variable._invalidate = noop;
+  variable._pending();
+  var value0 = variable._value,
+      version = ++variable._version,
+      invalidation = null,
+      promise = variable._promise = Promise.all(variable._inputs.map(variable_value)).then(function(inputs) {
+    if (variable._version !== version) return;
+
+    // Replace any reference to invalidation with the promise, lazily.
+    for (var i = 0, n = inputs.length; i < n; ++i) {
+      switch (inputs[i]) {
+        case variable_invalidation: {
+          inputs[i] = invalidation = variable_invalidator(variable);
+          break;
+        }
+        case variable_visibility: {
+          if (!invalidation) invalidation = variable_invalidator(variable);
+          inputs[i] = variable_intersector(invalidation, variable);
+          break;
+        }
+      }
+    }
+
+    // Compute the initial value of the variable.
+    return variable._definition.apply(value0, inputs);
+  }).then(function(value) {
+    // If the value is a generator, then retrieve its first value,
+    // and dispose of the generator if the variable is invalidated.
+    // Note that the cell may already have been invalidated here,
+    // in which case we need to terminate the generator immediately!
+    if (generatorish(value)) {
+      if (variable._version !== version) return void value.return();
+      (invalidation || variable_invalidator(variable)).then(variable_return(value));
+      return variable_precompute(variable, version, promise, value);
+    }
+    return value;
+  });
+  promise.then(function(value) {
+    if (variable._version !== version) return;
+    variable._value = value;
+    variable._fulfilled(value);
+  }, function(error) {
+    if (variable._version !== version) return;
+    variable._value = undefined;
+    variable._rejected(error);
+  });
+}
+
+function variable_precompute(variable, version, promise, generator) {
+  function recompute() {
+    var promise = new Promise(function(resolve) {
+      resolve(generator.next());
+    }).then(function(next) {
+      return next.done ? undefined : Promise.resolve(next.value).then(function(value) {
+        if (variable._version !== version) return;
+        variable_postrecompute(variable, value, promise).then(recompute);
+        variable._fulfilled(value);
+        return value;
+      });
+    });
+    promise.catch(function(error) {
+      if (variable._version !== version) return;
+      variable_postrecompute(variable, undefined, promise);
+      variable._rejected(error);
+    });
+  }
+  return new Promise(function(resolve) {
+    resolve(generator.next());
+  }).then(function(next) {
+    if (next.done) return;
+    promise.then(recompute);
+    return next.value;
+  });
+}
+
+function variable_postrecompute(variable, value, promise) {
+  var runtime = variable._module._runtime;
+  variable._value = value;
+  variable._promise = promise;
+  variable._outputs.forEach(runtime._updates.add, runtime._updates); // TODO Cleaner?
+  return runtime._compute();
+}
+
+function variable_error(variable, error) {
+  variable._invalidate();
+  variable._invalidate = noop;
+  variable._pending();
+  ++variable._version;
+  variable._indegree = NaN;
+  (variable._promise = Promise.reject(error)).catch(noop);
+  variable._value = undefined;
+  variable._rejected(error);
+}
+
+function variable_return(generator) {
+  return function() {
+    generator.return();
+  };
+}
+
+function variable_reachable(variable) {
+  if (variable._observer !== no_observer) return true; // Directly reachable.
+  var outputs = new Set(variable._outputs);
+  for (const output of outputs) {
+    if (output._observer !== no_observer) return true;
+    output._outputs.forEach(outputs.add, outputs);
+  }
+  return false;
+}
+
+function window_global(name) {
+  return window[name];
+}
+
 /**
  * @author Jonathan Terrell <jonathan.terrell@springbrook.es>
  * @copyright Copyright (c) 2019-2021 Springbrook S.L.
@@ -30373,23 +30373,8 @@ var Nivo = { ResponsiveBar, ResponsiveChord, ResponsiveSankey };
  */
 
 // -------------------------------------------------------------------------------------------------------------------------------
-// Exports
+// Notebook
 // -------------------------------------------------------------------------------------------------------------------------------
-
-var React = { React: React$1, ReactDOM };
-
-/**
- * @author Jonathan Terrell <jonathan.terrell@springbrook.es>
- * @copyright Copyright (c) 2019-2021 Springbrook S.L.
- * @license "Apache-2.0"
- */
-
-// -------------------------------------------------------------------------------------------------------------------------------
-// Load Notebook
-// -------------------------------------------------------------------------------------------------------------------------------
-
-const urlPrefix = 'https://api.observablehq.com/@jonathan-terrell/';
-const urlSuffix = '.js?v=3';
 
 const cellTypeMap = new Map([
     ['h1', { label: 'Level 1 Header' }],
@@ -30398,6 +30383,8 @@ const cellTypeMap = new Map([
     ['t', { label: 'Tile' }],
     ['v', { label: 'Visual' }]
 ]);
+const urlPrefix = 'https://api.observablehq.com/@jonathan-terrell/';
+const urlSuffix = '.js?v=3';
 
 const loadNotebook = (notebookId, elementRef) =>
     new Promise((resolve, reject) => {
@@ -30433,4 +30420,22 @@ const loadNotebook = (notebookId, elementRef) =>
             .catch((error) => reject(error));
     });
 
-export { Nivo, React, loadNotebook };
+// -------------------------------------------------------------------------------------------------------------------------------
+// Exports
+// -------------------------------------------------------------------------------------------------------------------------------
+
+var Observable = { loadNotebook };
+
+/**
+ * @author Jonathan Terrell <jonathan.terrell@springbrook.es>
+ * @copyright Copyright (c) 2019-2021 Springbrook S.L.
+ * @license "Apache-2.0"
+ */
+
+// -------------------------------------------------------------------------------------------------------------------------------
+// Exports
+// -------------------------------------------------------------------------------------------------------------------------------
+
+var React = { React: React$1, ReactDOM };
+
+export { Nivo, Observable, React };
