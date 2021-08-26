@@ -4,6 +4,7 @@
  * @license "Apache-2.0"
  */
 
+import ChartJS from './ChartJS';
 import Nivo from './Nivo';
 import Notebook from './Notebook';
 import React from './React';
@@ -12,4 +13,4 @@ import React from './React';
 // Exports
 // -------------------------------------------------------------------------------------------------------------------------------
 
-export { Nivo, Notebook, React };
+export { ChartJS, Nivo, Notebook, React };
