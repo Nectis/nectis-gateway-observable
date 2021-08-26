@@ -12170,6 +12170,7 @@ Chart.defaults.plugins.title.display = true;
 Chart.defaults.plugins.title.font.size = 20;
 Chart.defaults.plugins.title.font.weight = 'normal';
 Chart.defaults.maintainAspectRatio = false;
+Chart.defaults.responsive = false;
 
 // -------------------------------------------------------------------------------------------------------------------------------
 // Declarations - Variables
