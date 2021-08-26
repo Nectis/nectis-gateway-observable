@@ -12193,21 +12193,13 @@ class Visualiser {
     build() {
         this.element = document.createElement('canvas');
         if (this.container) {
-            console.log(
-                1111,
-                this.container.clientHeight || defaultVisualHeight,
-                this.container.clientHeight,
-                defaultVisualHeight
-            );
             this.element.height = this.container.clientHeight || defaultVisualHeight;
-            // this.element.width = width; // `${this.container.clientWidth || width}px`;
         } else {
-            console.log(2222, defaultVisualHeight);
+            this.container = document.createElement('div');
             this.element.height = defaultVisualHeight;
-            // this.element.width = `${width}px`;
+            this.container.appendChild(this.element);
         }
         this.element.style.padding = '0 16px';
-        console.log(3333, this.element.height, this.element.width);
 
         this.visual = new Chart(this.element, this.options);
 
