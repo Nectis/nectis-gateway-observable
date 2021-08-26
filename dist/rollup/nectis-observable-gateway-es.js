@@ -12160,6 +12160,17 @@ Chart.register(PointElement);
 Chart.register(plugin_title);
 Chart.register(plugin_tooltip);
 
+Chart.defaults.animation = false;
+Chart.defaults.font.size = 16;
+Chart.defaults.layout.padding = 2;
+Chart.defaults.plugins.legend.position = 'bottom';
+Chart.defaults.plugins.legend.labels.boxHeight = 15;
+Chart.defaults.plugins.legend.labels.boxWidth = 30;
+Chart.defaults.plugins.title.display = true;
+Chart.defaults.plugins.title.font.size = 20;
+Chart.defaults.plugins.title.font.weight = 'normal';
+Chart.defaults.maintainAspectRatio = false;
+
 // -------------------------------------------------------------------------------------------------------------------------------
 // Declarations - Variables
 // -------------------------------------------------------------------------------------------------------------------------------
