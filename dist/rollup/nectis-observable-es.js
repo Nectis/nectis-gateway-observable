@@ -30406,8 +30406,13 @@ const loadNotebook = (notebookId, elementRef) =>
             .then((moduleNamespace) => {
                 const notebook = moduleNamespace.default;
 
-                const presentationElement = typeof elementRef === 'object' ? elementRef : document.getElementById(elementRef);
-                while (presentationElement.firstChild) presentationElement.removeChild(presentationElement.lastChild);
+                let presentationElement;
+                if (elementRef) {
+                    presentationElement = typeof elementRef === 'object' ? elementRef : document.getElementById(elementRef);
+                    while (presentationElement.firstChild) presentationElement.removeChild(presentationElement.lastChild);
+                } else {
+                    presentationElement = document.createElement('div');
+                }
 
                 const runtime = new Runtime();
                 const observableModule = runtime.module(notebook, (name) => {
@@ -30423,7 +30428,7 @@ const loadNotebook = (notebookId, elementRef) =>
                 });
                 observableModule.redefine('embedded', true);
 
-                resolve(observableModule);
+                resolve(presentationElement);
             })
             .catch((error) => reject(error));
     });
