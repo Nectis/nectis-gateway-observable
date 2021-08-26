@@ -4,7 +4,7 @@
  * @license "Apache-2.0"
  */
 
-import ChartJS from './ChartJS';
+import ChartJS from './ChartJS'; // TODO: Move this to nectis-chartjs-gateway
 import Nivo from './Nivo';
 import Notebook from './Notebook';
 import React from './React';

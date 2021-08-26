@@ -12180,6 +12180,8 @@ class Visualiser {
     }
 
     build() {
+        console.log(1111, this.container.clientHeight, this.container.clientWidth);
+
         this.element = document.createElement('canvas');
         if (this.container) {
             this.element.style.height = `${this.container.clientHeight || defaultVisualHeight}px`;
