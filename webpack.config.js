@@ -23,5 +23,15 @@ module.exports = [
             library: { type: 'module' },
             path: path.resolve(__dirname, 'dist/webpack')
         }
+    },
+    {
+        entry: './src/index.js',
+        mode: 'development', // Fails if this is changed to 'production'. It appears to be linked to dynamic import of notebooks.
+        output: {
+            // chunkFormat: 'module',
+            filename: 'index.umd.js',
+            library: { name: 'Nectis', type: 'umd' },
+            path: path.resolve(__dirname, 'dist/webpack')
+        }
     }
 ];

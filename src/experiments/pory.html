@@ -1,0 +1,22 @@
+<div id="container"></div>
+<script type="module">
+    import { ChartJS } from 'https://unpkg.com/@nectis/nectis-observable-gateway@0.0.325/dist/webpack';
+    const container = document.getElementById('container');
+    const visualiser = new ChartJS.Visualiser(container, {
+        type: 'line',
+        data: {
+            datasets: [
+                {
+                    label: 'My First dataset',
+                    backgroundColor: 'rgb(255, 99, 132)',
+                    borderColor: 'rgb(255, 99, 132)',
+                    data: [0, 10, 5, 2, 20, 30, 45]
+                }
+            ],
+            labels: ['January', 'February', 'March', 'April', 'May', 'June']
+        },
+        options: {}
+    }).build();
+    while (container.firstChild) container.removeChild(container.lastChild);
+    container.appendChild(visualiser.element);
+</script>
