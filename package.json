@@ -4,7 +4,7 @@
     "author": "Jonathan Terrell for Springbrook S.L.",
     "license": "ISC",
     "main": "./src/index.js",
-    "version": "0.0.330",
+    "version": "0.0.331",
     "dependencies": {
         "@nivo/bar": "^0.73.1",
         "@nivo/chord": "^0.73.0",
@@ -16,7 +16,6 @@
         "react-dom": "^16.14.0"
     },
     "devDependencies": {
-        "@nectis/eslint-config-nectis": "^0.1.71",
         "@rollup/plugin-commonjs": "^19.0.1",
         "@rollup/plugin-json": "^4.1.0",
         "@rollup/plugin-node-resolve": "^13.0.2",
