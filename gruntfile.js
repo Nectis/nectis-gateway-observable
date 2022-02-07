@@ -36,8 +36,7 @@ module.exports = (grunt) => {
             outdated: { args: ['npm', 'outdated'], cmd: 'npx' },
             publish: { args: ['publish'], cmd: 'npx' },
             rollup: { args: ['rollup', '-c'], cmd: 'npx' },
-            test: { args: ['WARNING: No tests implemented.'], cmd: 'echo' },
-            update: { args: ['npm-check-updates', '-u'], cmd: 'npx' }
+            test: { args: ['WARNING: No tests implemented.'], cmd: 'echo' }
         },
 
         // Webpack configuration.
@@ -57,7 +56,6 @@ module.exports = (grunt) => {
     grunt.registerTask('lint', ['run:lint']);
     grunt.registerTask('outdated', ['run:outdated']);
     grunt.registerTask('release', ['webpack', 'run:rollup', 'bump', 'run:publish']);
+    grunt.registerTask('synchronise', ['bump']);
     grunt.registerTask('test', ['run:test']);
-    grunt.registerTask('sync', ['bump']);
-    grunt.registerTask('update', ['run:update', 'run:install']);
 };
