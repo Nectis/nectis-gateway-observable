@@ -4,7 +4,7 @@
     "author": "Jonathan Terrell for Springbrook S.L.",
     "license": "ISC",
     "main": "./src/index.js",
-    "version": "0.0.333",
+    "version": "0.0.334",
     "dependencies": {
         "@nivo/bar": "^0.73.1",
         "@nivo/chord": "^0.73.0",
