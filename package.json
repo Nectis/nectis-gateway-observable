@@ -21,7 +21,7 @@
         "@rollup/plugin-node-resolve": "^13.0.2",
         "@rollup/plugin-replace": "^3.0.0",
         "eslint": "^7.30.0",
-        "grunt": "^1.4.1",
+        "grunt": "^1.5.3",
         "grunt-bump": "^0.8.0",
         "grunt-run": "^0.8.1",
         "grunt-webpack": "^4.0.3",
